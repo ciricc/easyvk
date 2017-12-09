@@ -1,6 +1,7 @@
 var VK = require('../index');
 
 //Example for auth, get messages and auth-answer they
+//You can put yours data
 
 var username = "email";
 var password = "password";
