@@ -14,7 +14,7 @@ class VK {
 		this.session_file = __dirname + "/.vksession"; //File, which that stores itself json-session
 		this.session = {};
 
-		this.v = "0.0.1";
+		this.v = "0.0.7";
 
 	}
 
