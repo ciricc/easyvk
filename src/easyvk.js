@@ -11,7 +11,7 @@ class VK {
 		this.MAX_SCOPE = "notify,friends,photos,audio,video,pages,status,notes,messages,wall,offline,docs,groups,notifications,stats,email,market"; //This is max scope and permissions FOR STAND-ALONE APP!!!
 		this.WINDOWS_CLIENT_ID = "2274003"; //If you will use password and username, sdk login width this parameters by oauth.vk.com
 		this.WINDOWS_CLIENT_SECRET = "hHbZxrka2uZ6jB1inYsH"; //And this
-		this.session_file = ".vksession"; //File, which that stores itself json-session
+		this.session_file = __dirname + "/.vksession"; //File, which that stores itself json-session
 		this.session = {};
 
 		this.v = "0.0.1";
@@ -33,6 +33,8 @@ class VK {
 	*/
 
 	login (username_arg, password_arg, captcha_sid_arg, captcha_key_arg, reauth_arg) {
+		
+
 		var self = this;
 		var username, password, access_token, captcha_sid, captcha_key, scope, save_session, reauth, username;
 
@@ -74,7 +76,7 @@ class VK {
 
 			if (captcha_sid) self.session['captcha_sid'] = captcha_sid;
 			if (captcha_key) self.session['captcha_key'] = captcha_key;
-
+			
 			if (username &&  password && access_token) {
 				reject("Please, enter only access_token or only password with username. Not all together!");	
 			}
@@ -97,54 +99,58 @@ class VK {
 
 							} catch (e) {
 								if (session_json.length == 0) {
-									reject("Session file is empty! Please, enter username and password or only access_token fields!");
+									if (username && password) {
+										not_finded_session = true;
+									} else {
+										reject("Session file is empty! Please, enter username and password or only access_token fields!");
+									}
+
+									var params = {
+										username: username,
+										password: password,
+										client_id: self.WINDOWS_CLIENT_ID,
+										client_secret: self.WINDOWS_CLIENT_SECRET,
+										captcha_sid: captcha_sid,
+										captcha_key: captcha_key,
+										grant_type: "password",
+										scope: scope
+									}
+									
+									params = self.urlencode(params);
+
+									if (reauth || not_finded_session) {
+										request.get(self.BASE_OAUTH_URL + "token/?" + params, function(err, res, vkr){
+											if (err) {
+												reject("Server was down or we don't know what happaned [responseCode " + res.statusCode + "]");
+											}
+
+											try {
+												vkr = JSON.parse(vkr);
+												var error = self.check_error(vkr);
+												
+												if (error) {
+													reject(error);
+												} else {
+													
+													if (save_session) {
+														self.save_session();
+													}
+
+													self.session = vkr;
+													resolve(self.session);
+												}	
+
+											} catch(e) {
+												reject(e);
+											}
+
+										});
+									}
 								} else {
 									reject(e);
 								}
 							}
 						}
-					});
-				}
-				
-				var params = {
-					username: username,
-					password: password,
-					client_id: self.WINDOWS_CLIENT_ID,
-					client_secret: self.WINDOWS_CLIENT_SECRET,
-					captcha_sid: captcha_sid,
-					captcha_key: captcha_key,
-					grant_type: "password",
-					scope: scope
-				}
-				
-				params = self.urlencode(params);
-
-				if (reauth || not_finded_session) {
-					request.get(self.BASE_OAUTH_URL + "token/?" + params, function(err, res, vkr){
-						if (err) {
-							reject("Server was down or we don't know what happaned [responseCode " + res.statusCode + "]");
-						}
-
-						try {
-							vkr = JSON.parse(vkr);
-							var error = self.check_error(vkr);
-							
-							if (error) {
-								reject(error);
-							} else {
-								
-								if (save_session) {
-									self.save_session();
-								}
-
-								self.session = vkr;
-								resolve(self.session);
-							}	
-
-						} catch(e) {
-							reject(e);
-						}
-
 					});
 				}
 			} else if (access_token && !password && !username) {
