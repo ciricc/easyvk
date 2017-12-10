@@ -2,34 +2,33 @@ var request = require('request');
 var fs = require('fs');
 class VK {
 	constructor() {
-		// super();
 
-		this.PROTOCOL = "https"; //Standart protocol, vk.com demand it is this protocol fro communicate
+		this.PROTOCOL = "https"; //Standart protocol, vk.com demand this protocol for communicate
 		this.BASE_DOMAIN = "vk.com";
 		this.BASE_CALL_URL = this.PROTOCOL + "://" + "api." + this.BASE_DOMAIN + "/method/";
 		this.BASE_OAUTH_URL = this.PROTOCOL + "://" + "oauth." + this.BASE_DOMAIN + "/";
 		this.MAX_SCOPE = "notify,friends,photos,audio,video,pages,status,notes,messages,wall,offline,docs,groups,notifications,stats,email,market"; //This is max scope and permissions FOR STAND-ALONE APP!!!
-		this.WINDOWS_CLIENT_ID = "2274003"; //If you will use password and username, sdk login width this parameters by oauth.vk.com
+		this.WINDOWS_CLIENT_ID = "2274003"; //If you use password and username then sdk login with this parameters on oauth.vk.com
 		this.WINDOWS_CLIENT_SECRET = "hHbZxrka2uZ6jB1inYsH"; //And this
-		this.session_file = __dirname + "/.vksession"; //File, which that stores itself json-session
+		this.session_file = __dirname + "/.vksession"; //File that stores itself json-session
 		this.session = {};
 
-		this.v = "0.0.7";
+		this.v = "0.0.8";
 
 	}
 
 	/*
 
 		Authorization and session creation function.
-		Used to create a session for an application for windows.
+		Use it to create a session for an windows application.
 
-		@param username_arg [string / object]: if you put username_arg as {} then all arguments will be use from it
-		else it is just a username string (email, phone and what else?)
-		@param password_arg [string]: if you puted an username_arg as a string then you must put this parameter
-		@param captcha_sid_arg [number / string]: if you got an error from last query, you must put a captcha_sid from error info and captcha_key (just a text on image) parameter
-		@param captcha_key [string]: text on captcha
+		@param {String} {Object} username_arg if you put username_arg as object then all arguments will be use from it else it is just a username string (email, phone and what else?)
+		@param {String} password_arg if you puted an username_arg as a string then you must put this parameter
+		@param {Number} {String} captcha_sid_arg if you got an error from last query, you must put a captcha_sid from error info and captcha_key (just a text on image) parameter
+		@param {String} captcha_key text on captcha
 		
-		@returns Promise
+		@return {Promise}
+
 	*/
 
 	login (username_arg, password_arg, captcha_sid_arg, captcha_key_arg, reauth_arg) {
@@ -76,84 +75,91 @@ class VK {
 
 			if (captcha_sid) self.session['captcha_sid'] = captcha_sid;
 			if (captcha_key) self.session['captcha_key'] = captcha_key;
-			
+
+
 			if (username &&  password && access_token) {
 				reject("Please, enter only access_token or only password with username. Not all together!");	
 			}
 
 			if ((username && password && !access_token) || (!password && !username && !access_token)) {
 				var not_finded_session = false;
-				if (!reauth) {
-					fs.readFile(self.session_file, function(err, session_json){
-						if (err) {
-							reject(err);
-						} else {
-							try {
-								session_json = JSON.parse(session_json);
-								if (session_json['access_token']) {
+				fs.readFile(self.session_file, function(err, session_json){
+					if (err) {
+						reject(err);
+					} else {
+						try {
+							session_json = JSON.parse(session_json);
+							if (session_json['access_token']) {
+								if (!reauth) {
 									self.session = session_json;
 									resolve(self.session);
 								} else {
-									reject("Undefined access_token in file session!");
+									session_json = "";
+									throw "User wants to reauth";
 								}
+							} else {
+								reject("Undefined access_token in file session!");
+							}
 
-							} catch (e) {
-								if (session_json.length == 0) {
-									if (username && password) {
-										not_finded_session = true;
-									} else {
-										reject("Session file is empty! Please, enter username and password or only access_token fields!");
-									}
-
-									var params = {
-										username: username,
-										password: password,
-										client_id: self.WINDOWS_CLIENT_ID,
-										client_secret: self.WINDOWS_CLIENT_SECRET,
-										captcha_sid: captcha_sid,
-										captcha_key: captcha_key,
-										grant_type: "password",
-										scope: scope
-									}
-									
-									params = self.urlencode(params);
-
-									if (reauth || not_finded_session) {
-										request.get(self.BASE_OAUTH_URL + "token/?" + params, function(err, res, vkr){
-											if (err) {
-												reject("Server was down or we don't know what happaned [responseCode " + res.statusCode + "]");
-											}
-
-											try {
-												vkr = JSON.parse(vkr);
-												var error = self.check_error(vkr);
-												
-												if (error) {
-													reject(error);
-												} else {
-													
-													if (save_session) {
-														self.save_session();
-													}
-
-													self.session = vkr;
-													resolve(self.session);
-												}	
-
-											} catch(e) {
-												reject(e);
-											}
-
-										});
-									}
+						} catch (e) {
+							if (session_json.length == 0) {
+								if (username && password) {
+									not_finded_session = true;
 								} else {
-									reject(e);
+									reject("Session file is empty! Please, enter username and password or only access_token fields!");
 								}
+
+								var params = {
+									username: username,
+									password: password,
+									client_id: self.WINDOWS_CLIENT_ID,
+									client_secret: self.WINDOWS_CLIENT_SECRET,
+									captcha_sid: captcha_sid,
+									captcha_key: captcha_key,
+									grant_type: "password",
+									scope: scope
+								}
+								
+								params = self.urlencode(params);
+
+								if (reauth || not_finded_session) {
+									request.get(self.BASE_OAUTH_URL + "token/?" + params, function(err, res, vkr){
+										if (err) {
+											reject("Server was down or we don't know what happaned [responseCode " + res.statusCode + "]");
+										}
+										try {
+											vkr = JSON.parse(vkr);
+											var error = self.check_error(vkr);
+											
+											if (error) {
+												reject(error);
+											} else {
+												
+
+
+												self.session = vkr;
+												
+												if (save_session) {
+													self.save_session();
+												}
+
+												resolve(self.session);
+											}	
+
+										} catch(e) {
+											reject(e);
+										}
+
+									});
+								}
+							} else {
+								reject(e);
 							}
 						}
-					});
-				}
+					}
+				});
 			} else if (access_token && !password && !username) {
+
 				//Reuth = false, try to auth and get session by token
 
 				var params = {
@@ -199,10 +205,10 @@ class VK {
 		Function for calling to methods and get anything
 		Docs: vk.com/dev/methods
 
-		@param method_name [string]: Is just a method name :D (messages.get/wall.edit an others)
-		@param data [object]: If vk.com asks a paramaeters, you can do this. (You can not put access_token to this from session, but also you can it)
+		@param {String} method_name is just a method name :D (messages.get/wall.edit and others)
+		@param {Object} data  if vk.com asks a parameters, you can send they. (Send access_token to this from session is not necessary, but also you can do this)
 		
-		@returns Promise
+		@return {Promise}
 
 	*/
 
@@ -240,9 +246,9 @@ class VK {
 
 	/*
 		
-		This function get a server, ts and key parameters from vk.com for create a long-poll connection.
+		This function gets the server, ts and key parameters from api.vk.com for create a long-poll connection.
 
-		@returns Promise
+		@return {Promise}
 
 	*/
 
@@ -266,10 +272,10 @@ class VK {
 
 	/*
 		
-		If you need get platform by id, you can do this by this function
+		If you need get the platform by id, you can do this with this function
 		
 		Docs: https://vk.com/dev/using_longpoll_2?f=7.+Платформы
-		@param platformID [number]: Is a platform_id, which you can find on docs-page
+		@param {Number} platformID is a platform_id, which you can find on docs-page
 
 	*/
 
@@ -310,11 +316,11 @@ class VK {
 
 	/*
 	
-		This function return a get url with parameters. If you want get url encoded string from object you can use it.
+		This function return a GET url with parameters. If you want get url encoded string from object you can use it.
 
-		@param object [object, it is clear, man!]: It just a object.................. :(
+		@param {Object} object it is clear, man! it just a object.................. :(
 		
-		@returns string
+		@return {String}
 
 	*/
 
@@ -323,7 +329,7 @@ class VK {
 		
 		for (let key in object) {
 			if (parameters != "") {parameters += "&";}
-			if (String(object[key]).match(/&/)) { //SOmetimes vk.com love push to response many parameters like: {key: "yourkey....&version=2"} ...
+			if (String(object[key]).match(/&/)) { //Sometimes vk.com love push to response many parameters like: {key: "yourkey....&version=2"} ...
 				var p = object[key].split("&");
 
 				for (var i = 1; i < p.length; i++) {
@@ -395,13 +401,13 @@ class LongPollConnection {
 		This function create a listener (callback) for eventType
 		If vk.com return an updates array and my sdk have this event in eventTypes object, you can listen it with yours handlers
 		Example:
-			vk.com returned for me that user Kirill puted message to user Maksim
+			vk.com returned me that user Kirill sended message to user Maksim
 			and you can listen it
 			.on('message', function(msg){console.log(msg)});
 		Ok?
 
-		@param eventType [string]: name of event, supported events you can see on github page
-		@param callback [function]: callback-frunction which get an answer from vk.com
+		@param {String} eventType name of event, supported events you can see on github page
+		@param {Function} callback callback-function which get an answer from vk.com
 
 	*/
 
@@ -417,13 +423,13 @@ class LongPollConnection {
 
 	/*
 		
-		This function cll to listener which you created with .on or .addEventCodeListener functions
-		I.e if you create cllback function with .on method, this function call to she!
+		This function calls to listener which you created with .on or .addEventCodeListener functions
+		I.e if you create csllback function with .on method, this function call to she!
 		.on('message', function(data){console.og(data)}); //Hello, world
 		.emit('message', 'Hello, world!');
 
-		@param eventType [string]: name of event, supported events you can see on github page
-		@param data [...any...]
+		@param {String} eventType name of event, supported events you can see on github page
+		@param {Any} data
 
 	*/
 
@@ -570,7 +576,7 @@ class LongPollConnection {
 	/*
 		
 		So hhaaaard!!!
-		Sory for my english, it was hard form me, describe this function.
+		Sorry for my english, it was hard for me, describe this function.
 		
 		If you want to create yours handlers or rewrite my handlers (why?) 
 		you can do this with this method.
@@ -592,10 +598,10 @@ class LongPollConnection {
 
 			.addEventType... function(data) and .on... function(msg) Is different functions! Do not confuse!
 		
-		@param eventCode [number (desirable)]: This is eventCode from docs page
-		@param eventType [string]: You can create name for your event
-		@param handler [function]: Is handler-function (not callback)
-		@param rewrite [boolean]: If you want rewire my handlers and get inforametion clean info from vk.com you can do this,
+		@param {Number} eventCode this is eventCode from docs page
+		@param {String} eventType you can create name for your event
+		@param {Function} handler is handler-function (not callback)
+		@param {Boolean} rewrite if you want rewrire my handlers and get clean information from vk.com you can do this,
 		just put for example 4, 'message', function(msg){ }, true in paramaters
 
 	*/
@@ -620,18 +626,18 @@ class LongPollConnection {
 
 	/*
 	
-		If my SDK not support certain event it doesnt mean that my SDK is not support it :D
+		If my SDK not support certain event it doesn't mean that my SDK not support it :D
 		You can add yours listeners with this function.
 		
 		Docs: vk.com/dev/using_longpoll
 
-		@param eventCode [number]: Number of event which you can finc on the docs pages
-		@param handler [function]: Is a handler function
+		@param {Number} eventCode number of event which you can find on the docs page
+		@param {Function} handler is a handler function
 
 	*/
 
 
-	addEventCodeListener(eventCode, handler) { //Only fro create new event listeneres (if there are not in default listeners, you can get a code and add it!)
+	addEventCodeListener(eventCode, handler) { //Only for create new event listeneres (if there are not in default listeners, you can get a code and add it!)
 		var self = this;
 		return new Promise(function(resolve, reject){
 			if (eventCode && handler) {

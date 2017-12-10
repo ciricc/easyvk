@@ -1,4 +1,4 @@
-# Easyvk
+# Easyvk (VK API Manager)
 
 This app helps you create an apps with vk api easy!
 You can use it for know more: vk.com/dev/manuals
@@ -130,6 +130,10 @@ VK.login("username", "password").then(function(session){
       console.log(rvk); //User is calls (but user can't call :D )
     });    
   });
+}, function(error){
+  
+  console.log(error);
+  
 });
 
 ```
@@ -144,6 +148,10 @@ VK.login("username", "password").then(function(session){
       console.log(rvk); //User is calls (but user can't call :D ) //Надо доделать тут описание
     }); 
   });
+}, function(error){
+  
+  console.log(error);
+  
 });
 
 ```
@@ -159,6 +167,10 @@ VK.login("username", "password").then(function(session){
       console.log(rvk); //rvk - is response from vk (oooooh shit...)
     }, true);    
   });
+}, function(error){
+  
+  console.log(error);
+  
 });
 
 ```
