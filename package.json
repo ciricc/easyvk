@@ -1,6 +1,6 @@
 {
   "name": "easyvk",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "This app helps you create an apps with vk api easy!",
   "main": "index.js",
   "repository": {
