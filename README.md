@@ -186,7 +186,7 @@ So, ....
 In next version i will create upload files and try download music, videos and other content.
 Maybe i will create Bot API for group bots and finish login system.
 
-I need help. PLS, show me what you would like to see in this SDK.
+I need a help. PLS, show me what you would like to see in this SDK.
 If you got an error or this SDK don't works for you, call me, pls, call me: vk.com/kinock
 
 
