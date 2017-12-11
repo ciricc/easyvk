@@ -113,6 +113,7 @@ You can see which type of events my SDK support.
 |    4      | message   | Arises when your friend send the message. You can to distinguish one from one's own message.|
 |    8      | friendOnline   | Arises when your friend becomes online |
 |    9      | friendOffline   | Arises when your friend becomes offline |
+|    51     | editChat | Arises when some user chande/edit chat |
 |    61      | typeInDialog   | Arises when user typing for in dialog with you |
 |    62      | typeInChat   | Arises when some of users in chat is typing |
 

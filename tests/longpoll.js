@@ -23,6 +23,7 @@ VK.login(username, password, captcha_sid, captcha_key, reauth).then(function(ses
 			}
 		});
 
+
 	}, function(error){
 		console.log(error);
 	});

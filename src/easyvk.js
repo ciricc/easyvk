@@ -489,10 +489,11 @@ class LongPollConnection {
 
 		this.eventTypes = {
 			4: 'message',
-			61: 'typeInDialog',
-			62: 'typeInChat',
 			8: 'friendOnline',
 			9: 'friendOffline',
+			51: 'editChat',
+			61: 'typeInDialog',
+			62: 'typeInChat',
 		};
 	}
 	
@@ -576,6 +577,7 @@ class LongPollConnection {
 	//My handler, you can create yours!
 	message__handler(msg) {
 		var self = this;
+	
 		self._vk.call('messages.getById', {
 			message_ids: msg[1],
 		}).then(function(vkr){
@@ -585,15 +587,18 @@ class LongPollConnection {
 		}, function(err){
 			console.log(err);
 		});
+	
 	}
 
 	//My handler, you can create yours!
 	typeInDialog__handler(msg) {
 		var self = this;
+	
 		self.emit('typeInDialog', {
 			user_id: msg[1],
 			flags: msg[2],
 		});
+	
 	}
 
 	//My handler, you can create yours!
@@ -604,30 +609,46 @@ class LongPollConnection {
 			user_id: msg[1],
 			chat_id: msg[2],
 		});
+	
+	}
+
+	//My handler, you can create yours!
+	editChat__handler(msg) {
+		var self = this;
+	
+		self.emit('editChat', {
+			chat_id: msg[1],
+			self: msg[2]
+		});
+	
 	}
 	
 	//My handler, you can create yours!
 	friendOnline__handler(msg) {
 		var self = this;
 		var platform = self._vk.platformById(msg[2] % 256);
+		
 		self.emit('friendOnline', {
 			user_id: msg[1],
 			extra: msg[2],
 			timestamp: msg[3],
 			platform: platform,
 		});
+	
 	}
 
 	//My handler, you can create yours!
 	friendOffline__handler(msg) {
 		var self = this;
 		var platform = self._vk.platformById(msg[2] % 256);
+		
 		self.emit('friendOffline', {
 			user_id: msg[1],
 			extra: msg[2],
 			timestamp: msg[3],
 			platform: platform,
 		});
+
 	}
 
 	//This method start listen a long-poll server and do some actions
