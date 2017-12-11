@@ -255,6 +255,93 @@ class VK {
 
 	/*
 		
+		It is first version and will be debug.
+		No docs, no comments (for now)
+
+	*/
+
+	uploadPhotoMessages(file_name) {
+		var self = this;
+		return new Promise(function(resolve, reject){
+			self.call('photos.getMessagesUploadServer').then(function(rvk){
+				try {
+					rvk = rvk.response;
+					if (rvk.upload_url) {
+						var stream = fs.createReadStream(file_name);
+						
+						stream.on('error', function(err){
+							throw err;
+						});
+
+						stream.on('open', function(){
+							request.post({
+								method: 'POST',
+								uri: rvk.upload_url,
+								formData: {
+									photo: stream
+								}
+							}, function(err, response, rvk){
+								if (err) reject(err);
+								rvk = JSON.parse(rvk);
+								self.call('photos.saveMessagesPhoto', {
+									photo: rvk.photo,
+									server: rvk.server,
+									hash: rvk.hash
+								}).then(function(photo){
+									resolve(photo.response[0]);
+								}, reject);
+							});
+						});
+
+					} else {
+						throw "Undefined upload_url (maybe API was updated or this method was deleted)";
+					}
+				} catch (e) {
+					reject(e);
+				}
+			}, reject);
+		});
+	}
+
+	/*
+		
+		It is first version and will be debug.
+		No docs, no comments (for now)
+
+	*/
+
+	uploadPhotosMessages(photos) {
+		var self = this;
+		return new Promise(function(resolve, reject){
+			try {
+				if (Array.isArray(photos)) {
+					var result = [];
+					var i = 0;
+					function loadNewPhoto() {
+						if (i == photos.length) {
+							resolve(result);
+						} else {
+							self.uploadPhotoMessages(photos[i]).then(function(photo){
+								result.push(photo);
+								i++;
+								loadNewPhoto();
+							}, function(err){
+								reject(err);
+							});
+						}
+					}
+					loadNewPhoto();
+				} else {
+					throw "You puted not array photos!;"
+				}
+			} catch (e) {
+				reject(e);
+			}
+		});
+	}
+
+	/*
+		
 		This function gets the server, ts and key parameters from api.vk.com for create a long-poll connection.
 
 		@return {Promise}
