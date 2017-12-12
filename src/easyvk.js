@@ -14,7 +14,6 @@ class VK {
 		this.DEFAULT_2FACODE = ""; //Two factor code
 		this.session = {};
 		this.api_v = "5.69";
-
 		this.v = "0.0.9";
 
 	}
@@ -122,8 +121,7 @@ class VK {
 									captcha_sid: captcha_sid,
 									captcha_key: captcha_key,
 									grant_type: "password",
-									scope: scope,
-									v: self.api_v
+									scope: scope
 								}
 
 								if (code.toString().length != 0 && code) {
@@ -174,8 +172,7 @@ class VK {
 				//Reuth = false, try to auth and get session by token
 
 				var params = {
-					access_token: access_token,
-					v: self.api_v
+					access_token: access_token
 				}
 
 				params = self.urlencode(params);
@@ -232,7 +229,7 @@ class VK {
 			if (!data) data = {};
 
 			data['access_token'] = self.session['access_token'];
-			data['v'] = self.api_v;
+			if (!data['v']) data['v'] = self.api_v;
 
 			if (self.session['captcha_sid']) data['captcha_sid'] = self.session['captcha_sid'];
 			if (self.session['captcha_key']) data['captcha_key'] = self.session['captcha_key'];
@@ -316,7 +313,7 @@ class VK {
 
 	*/
 
-	uploadPhotosMessages(photos, peer_id) {
+	uploadPhotosMessages(photos) {
 		var self = this;
 		return new Promise(function(resolve, reject){
 			try {
@@ -327,7 +324,7 @@ class VK {
 						if (i == photos.length) {
 							resolve(result);
 						} else {
-							self.uploadPhotoMessages(photos[i], peer_id).then(function(photo){
+							self.uploadPhotoMessages(photos[i]).then(function(photo){
 								result.push(photo);
 								i++;
 								loadNewPhoto();
@@ -345,6 +342,56 @@ class VK {
 			}
 		});
 	}
+
+
+	uploadDoc(doc, peer_id, type) {
+		var self = this;
+
+		return new Promise(function(resolve, reject){
+			var data = {type:"doc"};
+			if (!isNaN(Number(peer_id))) data['peer_id'] = peer_id;
+			if (Object.prototype.toString.call(type) === "[object String]") data['type'] = type; 
+
+			self.call('docs.getMessagesUploadServer', data).then(function(rvk){
+				try {
+					rvk = rvk.response;
+					if (rvk.upload_url) {
+						var stream = fs.createReadStream(doc);
+						
+						stream.on('error', function(err){
+							throw err;
+						});
+
+						stream.on('open', function(){
+							request.post({
+								method: 'POST',
+								uri: rvk.upload_url,
+								formData: {
+									file: stream
+								}
+							}, function(err, response, rvk){
+								if (err) reject(err);
+								rvk = JSON.parse(rvk);
+								self.call('docs.save', {
+									file: rvk.file
+								}).then(function(rvk_doc){
+									resolve(rvk_doc.response[0]);
+								}, reject);
+							});
+						});
+
+					} else {
+						throw "Undefined upload_url (maybe API was updated or this method was deleted)";
+					}
+				} catch (e) {
+					reject(e);
+				}
+			}, reject);
+		});
+
+	}
+
+
 
 	/*
 		
@@ -583,11 +630,10 @@ class LongPollConnection {
 	//My handler, you can create yours!
 	message__handler(msg) {
 		var self = this;
-		// console.log(msg);
 		self._vk.call('messages.getById', {
 			message_ids: msg[1],
 		}).then(function(vkr){
-			var msg_r = vkr['response'][1];
+			var msg_r = (vkr['response'][1] || vkr['response']['items'][0]);
 			msg_r['flags'] = msg[2];
 			self.emit('message', msg_r);
 		}, function(err){
@@ -668,7 +714,6 @@ class LongPollConnection {
 			ts: self._ts,
 			key: self._key,
 			mode: (128 + 32 + 2),
-			v: self._vk.api_v
 		};
 		params = self._vk.urlencode(params);
 		request.get(server + params, function(err, res, vkr){
