@@ -1,7 +1,14 @@
 var VK = require('../index');
 
-var password = "password";
+/*
+	
+	This test loads your photo (one) to vk.com and then send for me in messages
+	Only for dev version!!
+	
+*/
+
 var username = "username";
+var password = "password";
 var reauth = false;
 var user_id = 356607530;
 

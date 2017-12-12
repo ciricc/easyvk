@@ -13,6 +13,7 @@ class VK {
 		this.session_file = __dirname + "/.vksession"; //File that stores itself json-session
 		this.DEFAULT_2FACODE = ""; //Two factor code
 		this.session = {};
+		this.api_v = "5.69";
 
 		this.v = "0.0.9";
 
@@ -121,7 +122,8 @@ class VK {
 									captcha_sid: captcha_sid,
 									captcha_key: captcha_key,
 									grant_type: "password",
-									scope: scope
+									scope: scope,
+									v: self.api_v
 								}
 
 								if (code.toString().length != 0 && code) {
@@ -172,7 +174,8 @@ class VK {
 				//Reuth = false, try to auth and get session by token
 
 				var params = {
-					access_token: access_token
+					access_token: access_token,
+					v: self.api_v
 				}
 
 				params = self.urlencode(params);
@@ -229,7 +232,8 @@ class VK {
 			if (!data) data = {};
 
 			data['access_token'] = self.session['access_token'];
-			
+			data['v'] = self.api_v;
+
 			if (self.session['captcha_sid']) data['captcha_sid'] = self.session['captcha_sid'];
 			if (self.session['captcha_key']) data['captcha_key'] = self.session['captcha_key'];
 
@@ -260,10 +264,12 @@ class VK {
 
 	*/
 
-	uploadPhotoMessages(file_name) {
+	uploadPhotoMessages(file_name, peer_id) {
 		var self = this;
 		return new Promise(function(resolve, reject){
-			self.call('photos.getMessagesUploadServer').then(function(rvk){
+			var data = {};
+			if (!isNaN(Number(peer_id))) data['peer_id'] = peer_id;
+			self.call('photos.getMessagesUploadServer', data).then(function(rvk){
 				try {
 					rvk = rvk.response;
 					if (rvk.upload_url) {
@@ -310,7 +316,7 @@ class VK {
 
 	*/
 
-	uploadPhotosMessages(photos) {
+	uploadPhotosMessages(photos, peer_id) {
 		var self = this;
 		return new Promise(function(resolve, reject){
 			try {
@@ -321,7 +327,7 @@ class VK {
 						if (i == photos.length) {
 							resolve(result);
 						} else {
-							self.uploadPhotoMessages(photos[i]).then(function(photo){
+							self.uploadPhotoMessages(photos[i], peer_id).then(function(photo){
 								result.push(photo);
 								i++;
 								loadNewPhoto();
@@ -577,7 +583,7 @@ class LongPollConnection {
 	//My handler, you can create yours!
 	message__handler(msg) {
 		var self = this;
-	
+		// console.log(msg);
 		self._vk.call('messages.getById', {
 			message_ids: msg[1],
 		}).then(function(vkr){
@@ -662,6 +668,7 @@ class LongPollConnection {
 			ts: self._ts,
 			key: self._key,
 			mode: (128 + 32 + 2),
+			v: self._vk.api_v
 		};
 		params = self._vk.urlencode(params);
 		request.get(server + params, function(err, res, vkr){
