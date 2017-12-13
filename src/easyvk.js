@@ -14,7 +14,7 @@ class VK {
 		this.DEFAULT_2FACODE = ""; //Two factor code
 		this.session = {};
 		this.api_v = "5.69";
-		this.v = "0.0.9";
+		this.v = "0.1.0";
 
 	}
 
@@ -313,7 +313,7 @@ class VK {
 
 	*/
 
-	uploadPhotosMessages(photos) {
+	uploadPhotosMessages(photos, peer_id) {
 		var self = this;
 		return new Promise(function(resolve, reject){
 			try {
@@ -324,7 +324,7 @@ class VK {
 						if (i == photos.length) {
 							resolve(result);
 						} else {
-							self.uploadPhotoMessages(photos[i]).then(function(photo){
+							self.uploadPhotoMessages(photos[i], peer_id).then(function(photo){
 								result.push(photo);
 								i++;
 								loadNewPhoto();
