@@ -3,8 +3,8 @@
 This app helps you create an apps with vk api easy!
 You can use it for know more: vk.com/dev/manuals
 
-| [Example](https://vk.com/sayme_bot) |
-|---------------------------------------|
+|[All examples](https://github.com/ciricc/easyvk) | [Example (bot)](https://vk.com/sayme_bot) |
+|---------------------------------------|---------------------------------------|
 
 ## What can it do?
 
