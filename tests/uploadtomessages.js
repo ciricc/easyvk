@@ -18,18 +18,15 @@ VK.login({
 	password: password,
 	reauth: reauth
 }).then(function(session){
-	
 	VK.uploadPhotoMessages('./images/left.jpg').then(function(photo){
-		
 		VK.call('messages.send', {
 			user_id: user_id,
-			attachment: [photo.id]
+			attachment: ["photo"+photo.owner_id+"_"+photo.id]
 		}).then(function(rvk){
 			console.log(rvk);
 		}, function(error){
 			console.log(error);
 		});
-
 	}, function(error){
 		console.log(error);
 	});

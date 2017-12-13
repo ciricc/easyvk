@@ -3,13 +3,8 @@
 This app helps you create an apps with vk api easy!
 You can use it for know more: vk.com/dev/manuals
 
-<<<<<<< HEAD
 |[All examples](https://github.com/ciricc/easyvk) | [Example (bot)](https://vk.com/sayme_bot) |
 |---------------------------------------|---------------------------------------|
-=======
-| [Example](https://vk.com/sayme_bot) |
-|---------------------------------------|
->>>>>>> dev
 
 ## What can it do?
 
@@ -223,11 +218,9 @@ VK.login("username", "password").then(function(session){
 
 ```
 
-<<<<<<< HEAD
+
 ### Upload photos in messages
-=======
-### Upload hotos in messages
->>>>>>> dev
+
 
 Such as upload voices you can upload photos in messages
 

@@ -22,7 +22,7 @@ VK.login({
 	VK.uploadPhotosMessages(['./images/left.jpg', './images/home.jpg']).then(function(photos){
 		var attachment = [];
 		for (var i = 0; i < photos.length; i++) {
-			attachment.push(photos[i].id);
+			attachment.push("photo"+photos[i].owner_id+"_"+photos[i].id);
 		}
 
 		VK.call('messages.send', {
