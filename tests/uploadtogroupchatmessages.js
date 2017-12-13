@@ -22,7 +22,7 @@ VK.login({
 				VK.uploadPhotoMessages('./images/left.jpg', peer_id).then(function(photo){
 					VK.call('messages.send', {
 						peer_id: peer_id,
-						attachment: [photo.id]
+						attachment: ["photo"+photo.owner_id+"_"+photos.id]
 					}).then(function(rvk){
 						console.log(rvk);
 					}, function(error){
