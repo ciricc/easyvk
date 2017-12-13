@@ -3,11 +3,19 @@
 This app helps you create an apps with vk api easy!
 You can use it for know more: vk.com/dev/manuals
 
+| [Example](https://vk.com/sayme_bot) |
+|---------------------------------------|
+
 ## What can it do?
 
 1. Longpolling
 2. Call to vk methods
 3. Auth
+4. Upload docs, voices to messages
+5. Upload photos to messages
+6. Two factor authentication
+7. Save session
+8. Captcha 
 
 ### Installation
 I am using npmjs.org for storage my SDK. So, if you want to install my SDK on your project you can use this command
@@ -113,6 +121,7 @@ You can see which type of events my SDK support.
 |    4      | message   | Arises when your friend send the message. You can to distinguish one from one's own message.|
 |    8      | friendOnline   | Arises when your friend becomes online |
 |    9      | friendOffline   | Arises when your friend becomes offline |
+|    51     | editChat | Arises when some user change/edit chat |
 |    61      | typeInDialog   | Arises when user typing for in dialog with you |
 |    62      | typeInChat   | Arises when some of users in chat is typing |
 
@@ -177,17 +186,69 @@ VK.login("username", "password").then(function(session){
 
 In this case last parameter was true? Yes. Because this parameter is "rewrite".
 
+### Voice messages, docs for messages
+
+In 0.1.0 version i am added new feature - upload voice, photos, doc in messages
+And this snippet shows how you can use it!
+
+```javascript
+
+VK.login("username", "password").then(function(session){
+	var type = "voice_message";
+	var user_id = 356607530;
+
+	VK.uploadDoc("my_voice.wav", user_id, type).then(function(voice_doc){
+		
+		VK.call('message.send', {
+			user_id: user_id,
+			attachment: ["doc"+voice_doc.owner_id+"_"+voice_doc.id]
+		}).then(function(vkr){
+			console.log(vkr);
+		}, function(error){
+			console.log(error);
+		});
+
+	}, function(error){
+		console.log(error);
+	});
+
+}, function(error){
+	console.log(error);
+});
+
+```
+
+### Upload hotos in messages
+
+Such as upload voices you can upload photos in messages
+
+```javascript
+
+VK.uploadPhotosMessages(['./images/left.jpg', './images/home.jpg']).then(...);
+
+//Or if you want upload only one pic
+
+VK.uploadPhotoMessages('./images/home.jpg').then(...);
+
+
+//Or if you want upload for group messages
+var peer_id = 356607530;
+
+VK.uploadPhotoMessages('./images/home.jpg', peer_id).then(...);
+VK.uploadPhotosMessages(['./images/home.jpg'], peer_id).then(...);
+
+```
 
 For now my SDK can very little, but if you help me with ideas, i create new features and write code!
 So, ....
 
-## What's next?
 
-In next version i will create upload files and try download music, videos and other content.
-Maybe i will create Bot API for group bots and finish login system.
 
-I need help. PLS, show me what you would like to see in this SDK.
-If you got an error or this SDK don't works for you, call me, pls, call me: vk.com/kinock
+## What's next? (0.2.0?)
+
+In next versions i will add upload all types of files (documents, photos, audio etc)
+Working with products. And little functions like isFriend(), isMember() and other.
+It will be cool, guys! And you can help me with crete it: vk.com/kinock.
 
 
 Bye.

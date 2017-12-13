@@ -11,9 +11,10 @@ class VK {
 		this.WINDOWS_CLIENT_ID = "2274003"; //If you use password and username then sdk login with this parameters on oauth.vk.com
 		this.WINDOWS_CLIENT_SECRET = "hHbZxrka2uZ6jB1inYsH"; //And this
 		this.session_file = __dirname + "/.vksession"; //File that stores itself json-session
+		this.DEFAULT_2FACODE = ""; //Two factor code
 		this.session = {};
-
-		this.v = "0.0.8";
+		this.api_v = "5.69";
+		this.v = "0.1.0";
 
 	}
 
@@ -26,16 +27,17 @@ class VK {
 		@param {String} password_arg if you puted an username_arg as a string then you must put this parameter
 		@param {Number} {String} captcha_sid_arg if you got an error from last query, you must put a captcha_sid from error info and captcha_key (just a text on image) parameter
 		@param {String} captcha_key text on captcha
+		@param {Number} {String} code_arg is code from two factor message. It may be sms code or app code (for example, Google Authenticator)
 		
 		@return {Promise}
 
 	*/
 
-	login (username_arg, password_arg, captcha_sid_arg, captcha_key_arg, reauth_arg) {
+	login (username_arg, password_arg, captcha_sid_arg, captcha_key_arg, reauth_arg, code_arg) {
 		
 
 		var self = this;
-		var username, password, access_token, captcha_sid, captcha_key, scope, save_session, reauth, username;
+		var username, password, access_token, captcha_sid, captcha_key, scope, save_session, reauth, username, code;
 
 		return new Promise(function(resolve, reject){
 			
@@ -46,6 +48,7 @@ class VK {
 					captcha_sid = captcha_sid_arg;
 					captcha_key = captcha_key_arg;
 					reauth = reauth_arg;
+					code = code_arg;
 				} else {
 					reject("Please, if you enter a string login then enter a pass string too");
 				}
@@ -61,6 +64,7 @@ class VK {
 				save_session = p.save_session;
 				reauth = p.reauth;
 				username = p.username;
+				code = p.code;
 
 				if (p.session_file) {
 					self.session_file = p.session_file;
@@ -72,7 +76,7 @@ class VK {
 			if (!scope) scope = self.MAX_SCOPE;
 			if (save_session != false || save_session != 0) save_session = true;
 			if (reauth != true || reauth != 1) reauth = false;
-
+			if (!code) code = self.DEFAULT_2FACODE;
 			if (captcha_sid) self.session['captcha_sid'] = captcha_sid;
 			if (captcha_key) self.session['captcha_key'] = captcha_key;
 
@@ -118,6 +122,11 @@ class VK {
 									captcha_key: captcha_key,
 									grant_type: "password",
 									scope: scope
+								}
+
+								if (code.toString().length != 0 && code) {
+									params['2fa_supported'] = 1;
+									params['code'] = code;
 								}
 								
 								params = self.urlencode(params);
@@ -220,7 +229,8 @@ class VK {
 			if (!data) data = {};
 
 			data['access_token'] = self.session['access_token'];
-			
+			if (!data['v']) data['v'] = self.api_v;
+
 			if (self.session['captcha_sid']) data['captcha_sid'] = self.session['captcha_sid'];
 			if (self.session['captcha_key']) data['captcha_key'] = self.session['captcha_key'];
 
@@ -243,6 +253,145 @@ class VK {
 			});
 		});
 	}
+
+	/*
+		
+		It is first version and will be debug.
+		No docs, no comments (for now)
+
+	*/
+
+	uploadPhotoMessages(file_name, peer_id) {
+		var self = this;
+		return new Promise(function(resolve, reject){
+			var data = {};
+			if (!isNaN(Number(peer_id))) data['peer_id'] = peer_id;
+			self.call('photos.getMessagesUploadServer', data).then(function(rvk){
+				try {
+					rvk = rvk.response;
+					if (rvk.upload_url) {
+						var stream = fs.createReadStream(file_name);
+						
+						stream.on('error', function(err){
+							throw err;
+						});
+
+						stream.on('open', function(){
+							request.post({
+								method: 'POST',
+								uri: rvk.upload_url,
+								formData: {
+									photo: stream
+								}
+							}, function(err, response, rvk){
+								if (err) reject(err);
+								rvk = JSON.parse(rvk);
+								self.call('photos.saveMessagesPhoto', {
+									photo: rvk.photo,
+									server: rvk.server,
+									hash: rvk.hash
+								}).then(function(photo){
+									resolve(photo.response[0]);
+								}, reject);
+							});
+						});
+
+					} else {
+						throw "Undefined upload_url (maybe API was updated or this method was deleted)";
+					}
+				} catch (e) {
+					reject(e);
+				}
+			}, reject);
+		});
+	}
+
+	/*
+		
+		It is first version and will be debug.
+		No docs, no comments (for now)
+
+	*/
+
+	uploadPhotosMessages(photos, peer_id) {
+		var self = this;
+		return new Promise(function(resolve, reject){
+			try {
+				if (Array.isArray(photos)) {
+					var result = [];
+					var i = 0;
+					function loadNewPhoto() {
+						if (i == photos.length) {
+							resolve(result);
+						} else {
+							self.uploadPhotoMessages(photos[i], peer_id).then(function(photo){
+								result.push(photo);
+								i++;
+								loadNewPhoto();
+							}, function(err){
+								reject(err);
+							});
+						}
+					}
+					loadNewPhoto();
+				} else {
+					throw "You puted not array photos!;"
+				}
+			} catch (e) {
+				reject(e);
+			}
+		});
+	}
+
+
+	uploadDoc(doc, peer_id, type) {
+		var self = this;
+
+		return new Promise(function(resolve, reject){
+			var data = {type:"doc"};
+			if (!isNaN(Number(peer_id))) data['peer_id'] = peer_id;
+			if (Object.prototype.toString.call(type) === "[object String]") data['type'] = type; 
+
+			self.call('docs.getMessagesUploadServer', data).then(function(rvk){
+				try {
+					rvk = rvk.response;
+					if (rvk.upload_url) {
+						var stream = fs.createReadStream(doc);
+						
+						stream.on('error', function(err){
+							throw err;
+						});
+
+						stream.on('open', function(){
+							request.post({
+								method: 'POST',
+								uri: rvk.upload_url,
+								formData: {
+									file: stream
+								}
+							}, function(err, response, rvk){
+								if (err) reject(err);
+								rvk = JSON.parse(rvk);
+								self.call('docs.save', {
+									file: rvk.file
+								}).then(function(rvk_doc){
+									resolve(rvk_doc.response[0]);
+								}, reject);
+							});
+						});
+
+					} else {
+						throw "Undefined upload_url (maybe API was updated or this method was deleted)";
+					}
+				} catch (e) {
+					reject(e);
+				}
+			}, reject);
+		});
+
+	}
+
+
 
 	/*
 		
@@ -301,6 +450,10 @@ class VK {
 
 				if (rvk['error'] == "need_captcha" || rvk['error']['error_code'] == 14) {
 					return rvk;
+				} else if (rvk['error'] == "need_validation") {
+					var type = "sms";
+					if (rvk['validation_type'].match('app')) type = "app";
+					return "Please, enter your "+ type +" code in code parameter!";
 				}
 
 				if (rvk['error']['error_msg']) {
@@ -389,10 +542,11 @@ class LongPollConnection {
 
 		this.eventTypes = {
 			4: 'message',
-			61: 'typeInDialog',
-			62: 'typeInChat',
 			8: 'friendOnline',
 			9: 'friendOffline',
+			51: 'editChat',
+			61: 'typeInDialog',
+			62: 'typeInChat',
 		};
 	}
 	
@@ -479,21 +633,24 @@ class LongPollConnection {
 		self._vk.call('messages.getById', {
 			message_ids: msg[1],
 		}).then(function(vkr){
-			var msg_r = vkr['response'][1];
+			var msg_r = (vkr['response'][1] || vkr['response']['items'][0]);
 			msg_r['flags'] = msg[2];
 			self.emit('message', msg_r);
 		}, function(err){
 			console.log(err);
 		});
+	
 	}
 
 	//My handler, you can create yours!
 	typeInDialog__handler(msg) {
 		var self = this;
+	
 		self.emit('typeInDialog', {
 			user_id: msg[1],
 			flags: msg[2],
 		});
+	
 	}
 
 	//My handler, you can create yours!
@@ -504,30 +661,46 @@ class LongPollConnection {
 			user_id: msg[1],
 			chat_id: msg[2],
 		});
+	
+	}
+
+	//My handler, you can create yours!
+	editChat__handler(msg) {
+		var self = this;
+	
+		self.emit('editChat', {
+			chat_id: msg[1],
+			self: msg[2]
+		});
+	
 	}
 	
 	//My handler, you can create yours!
 	friendOnline__handler(msg) {
 		var self = this;
 		var platform = self._vk.platformById(msg[2] % 256);
+		
 		self.emit('friendOnline', {
 			user_id: msg[1],
 			extra: msg[2],
 			timestamp: msg[3],
 			platform: platform,
 		});
+	
 	}
 
 	//My handler, you can create yours!
 	friendOffline__handler(msg) {
 		var self = this;
 		var platform = self._vk.platformById(msg[2] % 256);
+		
 		self.emit('friendOffline', {
 			user_id: msg[1],
 			extra: msg[2],
 			timestamp: msg[3],
 			platform: platform,
 		});
+
 	}
 
 	//This method start listen a long-poll server and do some actions
