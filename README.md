@@ -218,7 +218,7 @@ VK.login("username", "password").then(function(session){
 
 ```
 
-### Upload hotos in messages
+### Upload photos in messages
 
 Such as upload voices you can upload photos in messages
 
