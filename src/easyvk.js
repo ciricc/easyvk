@@ -339,7 +339,14 @@ class VK {
 		});
 	}
 
+	/*
+		
+		It is first version and will be debug.
+		No docs, no comments (for now)
 
+	*/
+
+	
 	uploadDoc(doc, peer_id, type) {
 		var self = this;
 

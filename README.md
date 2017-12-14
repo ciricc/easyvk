@@ -3,7 +3,7 @@
 This app helps you create an apps with vk api easy!
 You can use it for know more: vk.com/dev/manuals
 
-|[All examples](https://github.com/ciricc/easyvk) | [Example (bot)](https://vk.com/sayme_bot) |
+|[All examples](https://github.com/ciricc/easyvk/tree/master/tests) | [Example (bot)](https://vk.com/sayme_bot) |
 |---------------------------------------|---------------------------------------|
 
 ## What can it do?
@@ -82,37 +82,12 @@ And if you use only arguments you need look at it!
 
 ```
 
-Login method create session and then save to the file `.vksession`, after first login next login will login by this file, if you want to reauth with new parameters you need this use snippet.
-
-```javascript
-
-VK.login({
-  username: 'username',
-  password: 'password',
-  reauth: true
-}).then(...)
-
-```
-
-If you use access_token then you can put it in login function.
-
-```javascript
-
-VK.login({
-  access_token: "c4d6fdca71d3898132c74a45b4b8d4deb...",
-  reauth: true
-}).then(...);
-
-```
-
 Sometimes you can get an error. This error may captcha_error. So what can you do?
 You need get captcha_sid, captcha_img from console log and go to the captcha_img url and then put in captcha_key parameter text on image like this.
 
 ```javascript
 
 VK.login({
-  access_token: "c4d6fdca71d3898132c74a45b4b8d4deb...",
-  reauth: true,
   captcha_sid: '641431868246',
   captcha_key: 'vkMsfe'
 }).then(...);
