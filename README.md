@@ -198,12 +198,12 @@ And this snippet shows how you can use it!
 ```javascript
 
 VK.login("username", "password").then(function(session){
-	var type = "voice_message";
+	var type = "audio_message"; //Type can be else doc or graffiti
 	var user_id = 356607530;
 
-	VK.uploadDoc("my_voice.wav", user_id, type).then(function(voice_doc){
+	VK.uploadDoc("./my_voice.wav", user_id, type).then(function(voice_doc){
 		
-		VK.call('message.send', {
+		VK.call('messages.send', {
 			user_id: user_id,
 			attachment: ["doc"+voice_doc.owner_id+"_"+voice_doc.id]
 		}).then(function(vkr){

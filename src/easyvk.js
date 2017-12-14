@@ -7,6 +7,7 @@ class VK {
 		this.BASE_DOMAIN = "vk.com";
 		this.BASE_CALL_URL = this.PROTOCOL + "://" + "api." + this.BASE_DOMAIN + "/method/";
 		this.BASE_OAUTH_URL = this.PROTOCOL + "://" + "oauth." + this.BASE_DOMAIN + "/";
+		this.WINDOWS_CLIENT_ID = "2274003";
 		this.WINDOWS_CLIENT_SECRET = "hHbZxrka2uZ6jB1inYsH"; //And this
 		this.session_file = __dirname + "/.vksession"; //File that stores itself json-session
 		this.DEFAULT_2FACODE = ""; //Two factor code
@@ -346,7 +347,7 @@ class VK {
 
 	*/
 
-	
+
 	uploadDoc(doc, peer_id, type) {
 		var self = this;
 
