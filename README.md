@@ -23,6 +23,9 @@ in your project core (clear node_modles folder).
 
   `npm install easyvk`
 
+I recommend that you install 0.1.1 version. Then this readme will actual. Or you can got an error(s).
+But if you install other version, you need read readme for this version not other!
+
 And after this you can import it.
 
 ```javascript
@@ -52,6 +55,30 @@ VK.login('username', 'password').then(function(session){
   console.log(error);
   
 });
+
+```
+
+So you can look at the table with the list of parameters of the login method only if you put an object in this!!!
+If you don't put object, you can look at next table.
+
+| Parameter | Description| Default|
+|-----------|------------|---------|
+| username  | This username, if you want login with username and password, you can use it| - |
+| password  | This password field | - |
+| access_token | If you have your access_token you need enter him or you can login with password | - |
+| captcha_sid | This field is captcha_sid, which you can get from error response, when make some call to API. If you got this, you need put it in parameters and then go to captcha_img url and enter captcha_key parameter as text on image | - |
+| captcha_key | This field is text on image, which you get on captcha_img! (From error) | - |
+| code | If you use 2 factor authentication, you must input code from sms or app in this field after get error | - |
+| reauth | My SDK save your session if you login first time, but if you login not first, it will try get session from .vksession file. And if you want reauth with new params, you need set reauth param true | false |
+| save_session | But you may be want do not save session in file, then you need set this parameter false | true |
+| session_file | You can save session in your file if do nt want save in .vksession file. But i don't recommend do this | .vksession |
+| api_v | My SDK uses now 5.69 API (2017) version but you can change it | 5.69 |
+
+And if you use only arguments you need look at it!
+
+```
+
+.login(username, password, captcha_sid, captcha, reauth, code).then(...);
 
 ```
 
@@ -114,6 +141,7 @@ VK.login("username", "password").then(function(session){
 });
 
 ```
+
 You can see which type of events my SDK support.
 
 | EventCode | EventType | Description |
@@ -124,7 +152,8 @@ You can see which type of events my SDK support.
 |    51     | editChat | Arises when some user change/edit chat |
 |    61      | typeInDialog   | Arises when user typing for in dialog with you |
 |    62      | typeInChat   | Arises when some of users in chat is typing |
-
+|    -    | failure | Arises when server returns error. You can catch it and make something... |
+|    -    | error | Arises when in my code occurets any error |
 
 But i am unserstand that you may want to create your listeners or your handlers.
 And i gave this opportunity. (:D)

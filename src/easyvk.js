@@ -7,8 +7,6 @@ class VK {
 		this.BASE_DOMAIN = "vk.com";
 		this.BASE_CALL_URL = this.PROTOCOL + "://" + "api." + this.BASE_DOMAIN + "/method/";
 		this.BASE_OAUTH_URL = this.PROTOCOL + "://" + "oauth." + this.BASE_DOMAIN + "/";
-		this.MAX_SCOPE = "notify,friends,photos,audio,video,pages,status,notes,messages,wall,offline,docs,groups,notifications,stats,email,market"; //This is max scope and permissions FOR STAND-ALONE APP!!!
-		this.WINDOWS_CLIENT_ID = "2274003"; //If you use password and username then sdk login with this parameters on oauth.vk.com
 		this.WINDOWS_CLIENT_SECRET = "hHbZxrka2uZ6jB1inYsH"; //And this
 		this.session_file = __dirname + "/.vksession"; //File that stores itself json-session
 		this.DEFAULT_2FACODE = ""; //Two factor code
@@ -37,7 +35,7 @@ class VK {
 		
 
 		var self = this;
-		var username, password, access_token, captcha_sid, captcha_key, scope, save_session, reauth, username, code;
+		var username, password, access_token, captcha_sid, captcha_key, scope, save_session, reauth, username, code, api_v;
 
 		return new Promise(function(resolve, reject){
 			
@@ -60,11 +58,11 @@ class VK {
 				access_token = p.access_token;
 				captcha_sid = p.captcha_sid;
 				captcha_key = p.captcha_key;
-				scope = p.scope;
 				save_session = p.save_session;
 				reauth = p.reauth;
 				username = p.username;
 				code = p.code;
+				api_v = p.api_v;
 
 				if (p.session_file) {
 					self.session_file = p.session_file;
@@ -73,13 +71,12 @@ class VK {
 			}
 
 			if (!captcha_sid) captcha_sid = "";
-			if (!scope) scope = self.MAX_SCOPE;
 			if (save_session != false || save_session != 0) save_session = true;
 			if (reauth != true || reauth != 1) reauth = false;
 			if (!code) code = self.DEFAULT_2FACODE;
 			if (captcha_sid) self.session['captcha_sid'] = captcha_sid;
 			if (captcha_key) self.session['captcha_key'] = captcha_key;
-
+			if (Object.prototype.toString.call(api_v) !== "[object String]") self.v = api_v;
 
 			if (username &&  password && access_token) {
 				reject("Please, enter only access_token or only password with username. Not all together!");	
@@ -120,8 +117,7 @@ class VK {
 									client_secret: self.WINDOWS_CLIENT_SECRET,
 									captcha_sid: captcha_sid,
 									captcha_key: captcha_key,
-									grant_type: "password",
-									scope: scope
+									grant_type: "password"
 								}
 
 								if (code.toString().length != 0 && code) {
