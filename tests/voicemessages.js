@@ -1,6 +1,6 @@
 var VK = require('../index');
 
-VK.login("facevk.02@mail.ru", "zxcvAwedxzsqw123#").then(function(session){
+VK.login("username", "password").then(function(session){
 	var type = "audio_message";
 	var user_id = 356607530;
 
