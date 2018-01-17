@@ -17,7 +17,7 @@ You can use it for know more: vk.com/dev/manuals
 6. Two factor authentication
 7. Save session
 8. Captcha
-9. StreamingAPI
+9. Streaming API
 10. Routine functions like isFriend and others
 
 
@@ -27,7 +27,7 @@ I am added new features. The main one is the support of the Streaming API, which
 You can see all changes:
   
 
-  * StreamingAPI
+  * Streaming API
     * events
     * add new rules
     * delete all rules
@@ -35,7 +35,7 @@ You can see all changes:
   * isFriend method, which help you check that user is friend for other user
   * getAllFriendsList method
   * userFollowed method, which help you check that user is subscribed on other user
-  * encodeHtml method cal encode symbols from & amp; to &
+  * encodeHtml method can encode symbols from & amp; to &
 
 ### Installation
 I am using npmjs.org for storage my SDK. So, if you want to install my SDK on your project you can use this command
@@ -119,8 +119,10 @@ On account of authorization that is all (for now).
 
 ### Streaming API
 
-With my SDK you can reate your streams by Streaming API. In 0.2 version i am added this feature in support list
-For connect to stream and create it, you need create own application on [vk.com/editapp?act=create](http://vk.com/editapp?act=create) page.
+With my SDK you can create your streams by Streaming API.
+
+From 0.2 version i am added this feature in support list.
+For connect to the stream and create it, you need create own application on [vk.com/editapp?act=create](http://vk.com/editapp?act=create) page.
 Then you need save your client_id and client_secret. And then, you can create stream with `streamingAPI()` method
 
 ```javascript
@@ -141,7 +143,7 @@ Then you need save your client_id and client_secret. And then, you can create st
 ```
 
 So, you created `connection` and if you read the documentation, it must be you wanted to add your own rules in the stream.
-You can do this in several ways. But i am recommend you use rules manager:
+You can do this in several ways. But i recommend you use rules manager:
 
 ```javascript
   
@@ -156,16 +158,20 @@ This manager can easily manage your rules. It automatically deletes the rules if
 ```javascript
 
   connection.initRules({
-    'tag value changed'
-  }, functin (error, tag, type){
+    'tag' : 'value changed'
+  }, function (error, tag, type){
+
     console.log(error, tag, type);
-  }).then(function(logobj){
-    console.log(logobj);
+
+  }).then(function(logObj){
+
+    console.log(logObj);
+  
   });
 
 ```
 
-But if you want just add/delete one rule, you can use it:
+But if you want just add / delete one rule, you can use it:
 
 ```javascript
   
@@ -179,7 +185,7 @@ Or if you want to delete ALL  rules:
 
 ```javascript
   
-  connection.addAllRules().then(...);
+  connection.deleteAllRules().then(...);
 
 ```
 
@@ -245,8 +251,17 @@ Or if you want to create new event you can do this with this snippet.
 VK.login("username", "password").then(function(session){
   VK.longpoll().then(function(connection){
     connection.addEventType(70, 'call', function(rvk){
-      console.log(rvk); //User is calls (but user can't call :D ) //Надо доделать тут описание
-    }); 
+      console.log(rvk); //User is calls (but user can't call :D )
+    });
+
+    /*..and then you can do this
+      
+      .on('call', function(){
+  
+      });
+
+    */
+
   });
 }, function(error){
   
@@ -395,7 +410,9 @@ You can use it so:
 
   setInterval(function(){
     //You can use this method without login!
-    VK.getLiveViews('-16487904_456239423').then(function(views){
+    var video_id_from_url = '-16487904_456239423';
+
+    VK.getLiveViews(video_id_from_url).then(function(views){
       console.log(views);
     }, errHandler);
   }, 3000);
