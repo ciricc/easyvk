@@ -58,9 +58,7 @@ But if you install other version, you need read readme for this version not othe
 And after this you can import it.
 
 ```javascript
-
 var VK = require('easyvk');
-
 ```
 
 ### Usage
@@ -69,7 +67,6 @@ For first example, you can send messages with official method (vk.com/dev/method
 As we use Promises, we use Promise in some functions like `login`
 
 ```javascript
-
 var VK = require('easyvk');
 
 VK.login('username', 'password').then(function(session){
@@ -84,7 +81,6 @@ VK.login('username', 'password').then(function(session){
   console.log(error);
   
 });
-
 ```
 
 So you can look at the table with the list of parameters of the login method only if you put an object in this!!!
@@ -106,21 +102,17 @@ If you don't put object, you can look at next table.
 And if you use only arguments you need look at it!
 
 ```
-
 .login(username, password, captcha_sid, captcha, reauth, code).then(...);
-
 ```
 
 Sometimes you can get an error. This error may captcha_error. So what can you do?
 You need get captcha_sid, captcha_img from console log and go to the captcha_img url and then put in captcha_key parameter text on image like this.
 
 ```javascript
-
 VK.login({
   captcha_sid: '641431868246',
   captcha_key: 'vkMsfe'
 }).then(...);
-
 ```
 
 This error may  spread on all queries and so you need always catch it.
@@ -135,79 +127,68 @@ For connect to the stream and create it, you need create own application on [vk.
 Then you need save your client_id and client_secret. And then, you can create stream with `streamingAPI()` method
 
 ```javascript
+VK.login("username", "password").then(function(){
   
-  VK.login("username", "password").then(function(){
-    
-    VK.streamingAPI({
-      client_id: '222222',
-      client_secret: 'wzkLEmKOlDflwaaWwdWM' //Example
-    }).then(function(connection){
-      console.log(connection);
-    }, function(err){
-      console.log(err);
-    });
-
+  VK.streamingAPI({
+    client_id: '222222',
+    client_secret: 'wzkLEmKOlDflwaaWwdWM' //Example
+  }).then(function(connection){
+    console.log(connection);
+  }, function(err){
+    console.log(err);
   });
 
+});
 ```
 
 So, you created `connection` and if you read the documentation, it must be you wanted to add your own rules in the stream.
 You can do this in several ways. But i recommend you use rules manager:
 
-```javascript
-  
-  connection.initRules({
-    'tag': 'value'
-  });
-
+```javascript  
+connection.initRules({
+  'tag': 'value'
+});
 ```
 
 This manager can easily manage your rules. It automatically deletes the rules if it is not in the object, and also replaces it in case of changes. You can also add new rules to the existing rules easy. After all the changes, you will get a log-object in which there will be all changed / deleted / added rules.
 
 ```javascript
+connection.initRules({
+  'tag' : 'value changed'
+}, function (error, tag, type){
 
-  connection.initRules({
-    'tag' : 'value changed'
-  }, function (error, tag, type){
+  console.log(error, tag, type);
 
-    console.log(error, tag, type);
+}).then(function(logObj){
 
-  }).then(function(logObj){
+  console.log(logObj);
 
-    console.log(logObj);
-  
-  });
-
+});
 ```
 
 But if you want just add / delete one rule, you can use it:
 
 ```javascript
-  
-  connection.addRule('value', 'tag').then(function(){
-    connection.deleteRule('tag');
-  });
-
+connection.addRule('value', 'tag').then(function(){
+  connection.deleteRule('tag');
+});
 ```
 
 Or if you want to delete ALL  rules:
 
 ```javascript
-  
-  connection.deleteAllRules().then(...);
-
+connection.deleteAllRules().then(...);
 ```
 
 
 Once you have defined the rules, you need to "listen" to the websocket event. You can see the following table to see what events you can get.
 
 ```javascript
-  /* Usage */
+/* Usage */
 
-  connection.on('eventType', function (eventData) {
-    console.log(eventData);
-  });
-
+connection.on('eventType', function (eventData) {
+  console.log(eventData);
+});
 ```
 
 | EventType | Description |
@@ -226,21 +207,17 @@ For example:
 If you want listen only `post` event, then you need use it:
 
 ```javascript
-  
-  connection.on('post', function(event){
-    console.log(event);
-  });
-
+connection.on('post', function(event){
+  console.log(event);
+});
 ```
 
 And if you want listen all types of event on websocket (besides failure, error, serviceMessage), you need use it:
 
 ```javascript
-
-  connection.on('pullEvent', function(event){
-    console.log(event);
-  });
-
+connection.on('pullEvent', function(event){
+  console.log(event);
+});
 ```
 
 
@@ -251,7 +228,6 @@ This snippet creates simple longpoll listener and log all messages!
 If you want understand what means each field in `message` you need to go on [messages.get](vk.com/dev/messages.get)
 
 ```javascript
-
 VK.login("username", "password").then(function(session){
   VK.longpoll().then(function(connection){
     connection.on('message', function(message){
@@ -261,7 +237,6 @@ VK.login("username", "password").then(function(session){
 }, function(error){
   console.log(error);
 });
-
 ```
 
 You can see which type of events my SDK support.
@@ -283,7 +258,6 @@ And i gave this opportunity. (:D)
 If you want add only one listener and  not create new event, you can use this snippet
 
 ```javascript
-
 VK.login("username", "password").then(function(session){
   VK.longpoll().then(function(connection){
     connection.addEventCodeListener(70, function(rvk){
@@ -295,13 +269,11 @@ VK.login("username", "password").then(function(session){
   console.log(error);
   
 });
-
 ```
 
 Or if you want to create new event you can do this with this snippet.
 
 ```javascript
-
 VK.login("username", "password").then(function(session){
   VK.longpoll().then(function(connection){
     connection.addEventType(70, 'call', function(rvk){
@@ -322,14 +294,12 @@ VK.login("username", "password").then(function(session){
   console.log(error);
   
 });
-
 ```
 
 But what can i do if i want rewrite your handler?
 You can do this.
 
 ```javascript
-
 VK.login("username", "password").then(function(session){
   VK.longpoll().then(function(connection){
     connection.addEventType(4, 'message', function(rvk){
@@ -341,7 +311,6 @@ VK.login("username", "password").then(function(session){
   console.log(error);
   
 });
-
 ```
 
 In this case last parameter was true? Yes. Because this parameter is "rewrite".
@@ -352,7 +321,6 @@ In 0.1.0 version i am added new feature - upload voice, photos, doc in messages
 And this snippet shows how you can use it!
 
 ```javascript
-
 VK.login("username", "password").then(function(session){
 	var type = "audio_message"; //Type can be else doc or graffiti
 	var user_id = 356607530;
@@ -375,7 +343,6 @@ VK.login("username", "password").then(function(session){
 }, function(error){
 	console.log(error);
 });
-
 ```
 
 
@@ -407,48 +374,42 @@ VK.uploadPhotosMessages(['./images/home.jpg'], peer_id).then(...);
 In 0.2 version i am added new type of methods - helpers. Helpers can help you do something very easy. For example, you can get all user's friends with it:
 
 ```javascript
-
-  VK.login("username", "password").then(function(){
-    var user_id = 356607530;
-    VK.getAllFriendsList(user_id).then(function(friends){
-      console.log(friends);
-    });
+VK.login("username", "password").then(function(){
+  var user_id = 356607530;
+  VK.getAllFriendsList(user_id).then(function(friends){
+    console.log(friends);
   });
-
+});
 ``` 
 
 Or you can check that follower_id is followed on user_id. And if follower_id was down, it will be your user_id from login session.
 
-```javascript
+```javascript  
+VK.login("username", "password").then(function(){
   
-  VK.login("username", "password").then(function(){
-    
-    var user_id = 356607530;
-    var follower_id = 279411716;
+  var user_id = 356607530;
+  var follower_id = 279411716;
 
-    VK.userFollowed(user_id, follower_id).then(function(followed){
-      console.log(followed);
-    });
-
+  VK.userFollowed(user_id, follower_id).then(function(followed){
+    console.log(followed);
   });
 
+});
 ```
 
 Also you can check that friend_id is friends with user_id. And if friend_id was down, it will be your user_id from login session.
 
-```javascript
+```javascript  
+VK.login("username", "password").then(function(){
   
-  VK.login("username", "password").then(function(){
-    
-    var user_id = 356607530;
-    var friend_id = 279411716;
+  var user_id = 356607530;
+  var friend_id = 279411716;
 
-    VK.isFirend(user_id, friend_id).then(function(isfriend){
-      console.log(isfriend);
-    }, errHandler);
-  
-  });
+  VK.isFirend(user_id, friend_id).then(function(isfriend){
+    console.log(isfriend);
+  }, errHandler);
 
+});
 ```
 
 ## Watch live stream video (count views)
@@ -459,18 +420,16 @@ Started from 0.2 version you can get live views count on video. Unfortunately VK
 You can use it so:
 
 ```javascript
+//No need login 
 
-  //No need login 
+setInterval(function(){
+  //You can use this method without login!
+  var video_id_from_url = '-16487904_456239423';
 
-  setInterval(function(){
-    //You can use this method without login!
-    var video_id_from_url = '-16487904_456239423';
-
-    VK.getLiveViews(video_id_from_url).then(function(views){
-      console.log(views);
-    }, errHandler);
-  }, 3000);
-
+  VK.getLiveViews(video_id_from_url).then(function(views){
+    console.log(views);
+  }, errHandler);
+}, 3000);
 ```
 
 
