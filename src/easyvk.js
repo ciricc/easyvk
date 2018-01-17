@@ -1,5 +1,8 @@
 var request = require('request'); 
 var fs = require('fs');
+var encoding = require('encoding');
+var ws_client = require('websocket').client;
+
 class VK {
 	constructor() {
 
@@ -13,7 +16,7 @@ class VK {
 		this.DEFAULT_2FACODE = ""; //Two factor code
 		this.session = {};
 		this.api_v = "5.69";
-		this.v = "0.1.2";
+		this.v = "0.2.0";
 
 	}
 
@@ -225,7 +228,7 @@ class VK {
 			if (!method_name) reject("Undefined method!");
 			if (!data) data = {};
 
-			data['access_token'] = self.session['access_token'];
+			if (!data['access_token']) data['access_token'] = self.session['access_token'];
 			if (!data['v']) data['v'] = self.api_v;
 
 			if (self.session['captcha_sid']) data['captcha_sid'] = self.session['captcha_sid'];
@@ -233,9 +236,11 @@ class VK {
 
 			data = self.urlencode(data);
 
-			request.get(self.BASE_CALL_URL + method_name + "?" + data, function(err, res, vkr){
+			request.get(self.BASE_CALL_URL + method_name + "?" + data, function(err, res){
 				if (err) reject(err);
 				try {
+					var vkr = res.body;
+					if (rvk[0] != "{") reject('Is not JSON' + rvk);
 					vkr = JSON.parse(vkr);
 					var error = self.check_error(vkr);
 					if (error) {
@@ -282,6 +287,8 @@ class VK {
 								}
 							}, function(err, response, rvk){
 								if (err) reject(err);
+								if (rvk[0] != "{") reject('Is not JSON' + rvk);
+								
 								rvk = JSON.parse(rvk);
 								self.call('photos.saveMessagesPhoto', {
 									photo: rvk.photo,
@@ -448,6 +455,7 @@ class VK {
 	// Only for me, but you can use it if understand how
 
 	check_error(rvk) {
+
 		try {
 			if (rvk['error']) {
 				
@@ -462,6 +470,8 @@ class VK {
 
 				if (rvk['error']['error_msg']) {
 					return rvk['error']['error_msg'];
+				} else if (rvk['error']['message']) {
+					return rvk['error']['message'];
 				} else {
 					return rvk['error_description'];
 				}
@@ -482,25 +492,25 @@ class VK {
 	*/
 
 	urlencode(object = {}) {
-		var parameters = "";
-		
-		for (let key in object) {
-			if (parameters != "") {parameters += "&";}
-			if (String(object[key]).match(/&/)) { //Sometimes vk.com love push to response many parameters like: {key: "yourkey....&version=2"} ...
-				var p = object[key].split("&");
-
-				for (var i = 1; i < p.length; i++) {
-					parameters += p[i] + "&";
+	    
+	    function serialiseObject (obj) {
+		    var pairs = [];
+			for (var prop in obj) {
+				if (!obj.hasOwnProperty(prop)) {
+					continue;
 				}
-				object[key] = p[0];
+				if (Object.prototype.toString.call(obj[prop]) == '[object Object]') {
+					pairs.push(serialiseObject(obj[prop]));
+					continue;
+				}
+				pairs.push(prop + '=' + encodeURIComponent(obj[prop]));
 			}
 
-			var com = encodeURIComponent(object[key]);
-			if (Array.isArray(object[key])) com.replace(/\[\]/g, "");
-			parameters += key + "=" + com;
-		}
+			return pairs.join('&');
+	    }
 
-		return parameters;
+		var str = serialiseObject(object);
+		return str;
 	}
 
 	//Only for me, but you can use it
@@ -533,6 +543,282 @@ class VK {
 			this[i] = objectKeys[i];
 		}
 	}
+
+
+	/*
+		
+		This function return Promise and in resolve method you can get list of all friends user_id's
+		count 10000 - is maximum count of friends for one user. (See also - https://vk.com/page-53003970_46897420)
+
+		@param {Number} user_id this is the user's id,  list of friends whom you want to receive
+			
+		@return {Promise}
+
+	*/
+
+
+	getAllFriendsList(user_id) {
+		var self = this;
+
+		return new Promise(function(resolve, reject){
+			self.call('friends.get', {
+				user_id: user_id,
+				count: 10000
+			}).then(function(rvk){
+				resolve(rvk.response.items);
+			}, reject);
+		});
+	}
+
+
+	/*
+		
+		This function return Promise and in resolve method you can get true or false, which means friends whether the user of firend_id's
+
+
+		@param {Number} friend_id this is the user's id,  which presumably a friend of check_id user
+		@param {Number} check_id this is the user'd id, which presumably a friend of friend_id user.
+		If this paramater was down, it will be user_id from vksession i.e your id from auth system.
+
+		@return {Promise}
+
+	*/
+
+	isFriend(friend_id, check_id) {
+		var self = this;
+
+		if (!check_id || check_id <= 0) check_id = self.session.user_id;
+		return new Promise(function (resolve, reject){
+			self.getAllFriendsList(friend_id).then(function(list){
+				resolve(list.indexOf(check_id) != - 1);
+			}, reject);
+		});
+	}
+
+
+	/*
+	
+		This function can help you get number of views live stream!
+		This unofficial function, so she can to break in one of the moments!!! [!!! Warning !!!]
+
+
+		@param {String} video_source_id is source_id from URL of video, for example: In URL (https://vk.com/video?z=video-34884057_456239322) video_id is -34884057_456239322
+	
+
+		@return {Promise}
+	*/
+
+
+	getLiveViews (video_source_id) {
+		var self = this;
+
+
+		return new Promise(function(resolve, reject) {
+
+			if (!video_source_id || Object.prototype.toString.call(video_source_id) != '[object String]') {
+				reject('video_source_id must be like -2222_222222222 (String only)');
+			} 
+
+			var headers = {
+					'user-agent': 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36',
+					'content-type': 'application/x-www-form-urlencoded'
+			};
+
+			var al_video_url = self.PROTOCOL + '://' + self.BASE_DOMAIN + '/al_video.php';
+			var video = video_source_id.split('_');
+			var oid = video[0];
+			var vid = video[1];
+
+			//Get specify hash for get permissions to watch
+			request.post({
+				url: al_video_url,
+				headers: headers,
+				body: 'act=show&al=1&al_ad=0&autoplay=0&list=&module=videocat&video=' + video_source_id
+			}, function(err, res, vkr){
+				
+				//Parsing hash from response body {"action_hash" : "hash"}
+				var hash = res.body.match(/(\"|\')action_hash(\"|\')(\s)?\:(\s)?(\'|\")(.*?)(\'|\")/)[0]
+				.replace(/([\s\'\:\"])/g, "")
+				.replace('action_hash', "");
+				
+				request.post({
+					url: al_video_url + '?act=live_heartbeat',
+					body: 'al=1&hash=' + hash + '&oid=' + oid + '&user_id=0&vid=' + vid,
+					encoding: 'binary', //Special
+					headers: headers,
+				}, function(err, vkr, res) {
+					
+					var videoInfo = encoding.convert(vkr.body, 'windows-1252');
+					videoInfo = videoInfo.toString();
+					
+					if (videoInfo.match('<!int>')) {
+						var countViews = videoInfo.match('<!int>([0-9]+)<!>');
+						
+						if (countViews) {
+							countViews = parseInt(countViews[1]);
+							resolve(countViews);
+						} else {
+							reject('Maybe VK video page was changed, we can\'t get a number of views from response');
+						}
+
+					} else {
+						reject('Maybe VK video page was changed, we can\'t get a number of views from response');
+					}
+
+				});
+			});
+		});
+	}
+
+
+	//Only for me
+	generate_error (msg) {
+
+		return {
+			error: {
+				error_msg: msg
+			}
+		};
+
+	}
+
+
+	/*
+		
+		This function can check if the follower_id user is in the subscribers of the user_id user
+
+
+		@param {Number} user_id is the user who needs to search for a follower_id subscriber
+		@param {Number} follower_id is the follower user, if it was down it will be user_id from current Auth session
+		@param {Number} maximum is number of max value for count subs. For example: if account has 500000 subs, and you put max 100K, then this user 
+		will be skipped to not load the system
+
+
+		@return {Promise}
+
+	*/
+
+
+	userFollowed (user_id, follower_id, maximum) {
+		var self = this;
+		if (!follower_id || follower_id <= 0) follower_id = self.session.user_id;
+		if (!maximum) maximum = -1;
+
+		return new Promise(function (resolve, reject) {
+			var offset = 0;
+			var followers = [];
+			var breakon = false;
+
+			function getFollowers () {
+				self.call('users.getFollowers', {
+					user_id: user_id,
+					offset: offset
+				}).then(function(rvk){
+
+					if ((maximum != -1 && rvk.response.count > maximum)) {
+						reject('Maximum followers for user is: ' + maximum + ' , user have ' + rvk.response.count + ' followers');
+					}
+
+					if (rvk.response.items.indexOf(follower_id) != -1) {
+						resolve(true);
+					}
+
+					if (offset < rvk.response.count) {
+						offset += 1000;
+						getFollowers();
+					} else {
+						resolve(false);
+					}
+
+				});
+			}
+
+			getFollowers();
+
+		});
+	}
+
+	/*
+		
+		Streaming API was added in 0.2.0 version. This API was documented on man page: https://vk.com/dev/streaming_api,
+		My SDK can help you create rules easy and manage them too easy!
+
+		@param {Object} application This object is your applications settings with two parameters:
+		
+		{
+			client_id: '222222222 (example)',
+			client_secret: 'SKflEUmyZlpgmgyvUS (example)'
+		}, if it was down, you will get an error! Please, don't use Official windows app id and secret, or other, who can do this too, may be delete your settings! 
+
+		Create own applications!! [Warning]
+		
+
+		@return {Promise}
+
+	*/
+
+
+
+	streamingAPI (application) {
+		var self = this;
+		return new Promise(function(resolve, reject){
+			if (application && application.client_id && application.client_secret) {
+				var params = {
+					client_id: application.client_id,
+					client_secret: application.client_secret, 
+					v: self.api_v,
+					grant_type: 'client_credentials'
+				}
+
+				params = self.urlencode(params);
+
+				request.get(self.BASE_OAUTH_URL + 'access_token?' + params, function (err, res, vkr_client){
+					if (err) {
+						reject("Server was down or we don't know what happaned [responseCode " + res.statusCode + "]");
+					}
+
+					try {
+						vkr_client = JSON.parse(vkr_client);
+
+						var error = self.check_error(vkr_client);
+						
+						if (error) {
+							reject(error);
+						}
+
+						self.call('streaming.getServerUrl', {
+							access_token: vkr_client.access_token
+						}).then(function(vkr_server){
+
+							self.streaming_session = {
+								server: vkr_server.response,
+								client: vkr_client
+							}
+
+							var wsc = new ws_client();
+							var streaming_connection = new StreamingAPI(self, wsc);
+							
+							resolve.call(streaming_connection, streaming_connection);
+						}, reject);
+
+					} catch (e) {
+						reject(e);
+					}
+
+				});
+			} else {
+				reject('You need create your app on https://vk.com/editapp?act=create (Standalone) and then put your client_id and client_secret in this! Please, not use officiall app\'s for windows client_id and client_secret!!!')
+			}
+		});
+	}
+
+	//For me only
+	encodeHtml (text) {
+		return text.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+		.replace(/&quot;/g, "\"")
+		.replace(/&#039;/g, "'");
+	}
+
 }
 
 class LongPollConnection {
@@ -835,3 +1121,444 @@ class LongPollConnection {
 }
 
 module.exports = new VK();
+
+
+class StreamingAPI {
+
+	constructor (vk, wsc) {
+		this._vk = vk;
+		this._wsc = wsc;
+		this.url_http = this._vk.PROTOCOL + '://' + this._vk.streaming_session.server.endpoint;
+		this.key = this._vk.streaming_session.server.key;
+		this.endpoint = this._vk.streaming_session.server.endpoint;
+		this.listeners = {};
+
+		this.__initConnection__();
+	}
+
+	__initConnection__ () {
+		var self = this;
+
+
+		self._wsc.on('connectFailed', function(error) {
+			self.emit('failure', error.toString());
+		});
+		 
+		//Listen WebSocket connection
+		self._wsc.on('connect', function(connection) {
+		    console.log('Streaming API Init successfully!');
+		    
+		    connection.on('error', function(error) {
+		    	self.emit('errror', error.toString());
+		    });
+
+		    connection.on('close', function() {
+		    	self.emit('failure', 'Connection closed');
+		    });
+		    
+		    connection.on('message', function(message) {
+		        if (message.type == 'utf8') {
+		        	self.__initMessage__(message.utf8Data);
+		        }
+		    });
+
+		});
+
+		self._wsc.connect('wss://' + self.endpoint + '/stream?key=' + self.key );
+	}
+
+	/*
+		
+		Read: LongPoll.on
+
+	*/
+
+
+	on (eventType, callback) {
+		var self = this;
+		if (Object.prototype.toString.call(callback) == "[object Function]") {
+			self.listeners[String(eventType)] = callback;
+		} else {
+			throw "Why are you put to listener not a function?! Why???";
+		}
+	}
+
+	/*
+		
+		Read: LongPoll.emit
+
+	*/
+
+	emit(eventType, data) {
+		var self = this;
+
+		if (self.listeners[eventType]) {
+			try {
+				self.listeners[eventType].call(self, data);
+			} catch (e) {
+				throw e;
+			}
+		}
+	}
+
+	__initMessage__ (body) {
+		var self = this;
+
+		try {
+			body = JSON.parse(body);
+			if (body.code == 100) {
+				if (self.listeners[body.event.event_type]) {
+					self.emit(body.event.event_type, body.event);
+				} else {
+					self.emit('pullEvent', body.event);
+				}
+			} else if (body.code == 300) {
+				self.emit('serviceMessage', body.service_message);
+			}
+		} catch (e) {
+			self.emit('error', e);
+		}
+	}
+
+	/*
+		
+		This function add new rule in your stream. Only one!
+		If you want add many rules, you need use rules manager with initRules() method!
+
+		@param {String} rule is string rule, for exmaple: 'кот -собака'
+		@param {String} tag is tag for rule
+
+
+		@return {Promise}
+
+	*/
+
+	addRule (rule, tag) {
+		var self = this;
+
+		return new Promise (function(resolve, reject) {
+			var url__delete = self.url_http + '/rules?key=' + self.key;
+
+			request.post({
+				method: 'POST',
+				url: url__delete,
+				json: {
+					"rule": {
+						"value": rule,
+						"tag": tag
+					}
+				}
+			}, function(err, res, rvk) {
+				
+				if (err) {
+					reject(err, null);
+				}
+
+				if (rvk) {
+					try {
+						var error = self._vk.check_error(rvk);
+
+						if (error) {
+							reject(error, rvk.error.error_code);
+						} else {
+							resolve.call(rvk, true, rvk);
+						}
+
+					} catch (e) {
+						reject(e, null);
+					}
+				}
+
+			});
+		});
+	}
+
+	/*
+		
+		This function delete rule in your stream. Only one!
+		If you want delete many rules, you need use rules manager with initRules() method or deleteAllRules().
+	
+		@param {String} tag is tag for rule, which you want to delete
+
+
+		@return {Promise}
+
+	*/
+
+	deleteRule (tag) {
+		var self = this;
+
+		return new Promise (function(resolve, reject) {
+			var url__delete = self.url_http + '/rules?key=' + self.key;
+			tag = tag.toString();
+
+			request.delete({
+				method: 'DELETE',
+				url: url__delete,
+				json: {
+					"tag": tag
+				}
+			}, function(err, res) {
+						
+				if (err) {
+					reject(err, null);
+				}
+				
+				try {
+					var rvk = res.body;
+					var error = self._vk.check_error(rvk);
+
+					if (error) {
+						reject(error, rvk.error.error_code);
+					} else {
+						resolve.call(tag, tag);
+					}
+				} catch (e) {
+					reject(e, null);
+				}
+			});
+		});
+	}
+
+	/*
+	
+		This function return in resolve function all your rules from stream
+
+		@return {Promise}
+
+	*/
+
+
+	getRules () {
+		var self = this;
+
+		return new Promise (function(resolve, reject) {
+			var url__delete = self.url_http + '/rules?key=' + self.key;
+
+			request.get({
+				method: 'GET',
+				url: url__delete
+			}, function(err, res, rvk) {
+				
+				if (err) {
+					reject(err, null);
+				}
+
+				try {
+					var error = self._vk.check_error(rvk);
+
+					if (error) {
+						reject(error, rvk.error.error_code);
+					} else {
+						rvk = JSON.parse(rvk);
+						resolve.call(rvk, rvk.rules, true);
+					}
+
+				} catch (e) {
+					reject(e, null);
+				}
+
+			});
+		});
+	}
+
+
+	/*
+		@return {Promise}
+	*/
+
+	deleteAllRules() {
+		var self = this;
+
+		return new Promise (function(resolve, reject){
+			self.getRules().then(function(rules){
+				
+				if (rules && rules.length > 0) {
+					var i = 0;
+
+					function del () {
+						self.deleteRule(rules[i].tag).then(function(){
+							i+= 1;
+
+							if (i === rules.length) {
+								resolve.call(this, [true, i]);
+							} else {
+								del();
+							}
+
+						})
+					} 
+
+					del();
+				} else {
+					resolve.call(this, [true, 0]);
+				}
+
+			}, reject); 			
+		});
+
+	}
+
+	/*
+		
+		This method can help you create, delete and manage your rules too easy!
+		For example: You need create your rules, cat, dog: 
+			initRules({
+				'cat': 'кошка',
+				'dog': 'собака'
+			});
+
+		And after this, you may want to delete dog. If there was not this function, you would have to use deleteRule('dog'), but...
+		I am created this method and so you can do it:
+			initRules({
+				'cat': 'кошка'
+			});
+		:D
+
+		After this, if you want to replace/change already existing rule, you can do it:
+			initRules({
+				'cat': 'кошка киса'
+			});
+		
+		After all manipulations, you can get changelog and result so:
+			initRules({
+				'cat': 'кошка'
+			}).then(function(log){
+				console.log(log); //{addedRules: {'cat': 'кошка'}, replacedRules: {}, deletedRules: {}}
+			});
+
+		It's very easy!
+
+		@param {Object} rules
+		@param {Function} errorHandler is function, which will be use when is some of actions arise new error. reject and this - is different functions, use 
+		each for their own affairs!
+
+		@return {Promise}
+
+	*/
+
+	initRules (rules, errorHandler) {
+		var self = this;
+		
+
+		return new Promise (function(resolve, reject){
+			
+			if (Object.prototype.toString.call(errorHandler) !== "[object Function]") {
+				errorHandler = function () {};
+			}
+
+			if (Object.prototype.toString.call(rules) !== "[object Object]") {
+				rules = {};
+			}
+
+			self.getRules().then(function(st_rules){
+
+				var st_rules__obj = {};
+				var deletedRules = {};
+				var replacedRules = {};
+				var addedRules = {};
+
+
+				if (st_rules) {
+					for (var i = 0; i < st_rules.length; i++) {
+						st_rules__obj[st_rules[i].tag] = st_rules[i].value;
+					}
+
+					for (var tag in st_rules__obj) {
+						if (rules[tag] != undefined) {
+							if (Object.prototype.toString.call(rules[tag]) === "[object String]" && rules[tag] != st_rules__obj[tag]) {
+								
+								replacedRules[tag] = {
+									last_val: st_rules__obj[tag],
+									new_val: rules[tag]
+								};
+
+								self.deleteRule(tag).then(function(t){
+									if (t != false && t != undefined) {
+										self.addRule(rules[t], t).then(function(){
+										}, function(error){
+											errorHandler.call(this, error, t, null);
+										});
+									}
+								}, reject);
+
+
+							} else if (Object.prototype.toString.call(rules[tag]) === "[object String]" && rules[tag] == st_rules__obj[tag]) {
+								// ...
+							} else {
+								errorHandler.call(this, "Value must be string type, if you want use word undefined, you need use it: \'undefined\' !!!", rules[tag], null);
+							}
+						} else {
+								
+							self.deleteRule(tag).then(function(){
+
+							}, function(err){
+								errorHandler.call(this, err, tag, "delete_error");
+							});
+
+
+							deletedRules[tag] = {
+								val: st_rules__obj[tag] 
+							};
+
+						}
+					} 
+
+				}
+
+				var rules_tags = [];
+				var tagi = 0;
+
+				for (var i in rules) rules_tags.push(i);
+
+				function addRule () {
+					if (tagi == rules_tags.length) {
+						return;
+					}
+
+					if (st_rules__obj[rules_tags[tagi]] === undefined) {
+						self.addRule(rules[rules_tags[tagi]], rules_tags[tagi]).then(function(){
+
+
+							addedRules[rules_tags[tagi]] = {
+								tag: rules_tags[tagi],
+								val: rules[rules_tags[tagi]]
+							};
+
+							tagi += 1;
+
+							if (tagi < rules_tags.length) {
+								addRule();
+							} else {
+								resolve.call(this, {
+									added: addedRules,
+									replaced: replacedRules,
+									deleted: deletedRules
+								});
+							}
+						}, function (err) {
+							errorHandler.call(this, err, rules_tags[tagi], null);
+						});
+
+					} else {
+						tagi += 1;
+
+						if (tagi < rules_tags.length) {
+							addRule();
+						} else {
+							resolve.call(this, {
+								added: addedRules,
+								replaced: replacedRules,
+								deleted: deletedRules
+							});
+						}
+					}
+				}
+
+				addRule();
+
+			});
+
+		});
+	}
+}

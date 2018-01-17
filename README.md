@@ -1,9 +1,10 @@
-# Easyvk (VK API Manager)
+![EasyVK Logo](src/logo.jpg?raw=true "EasyVK can help you create applications on VK API easy!")
+# EasyVK (VK API Manager)
 
 This app helps you create an apps with vk api easy!
 You can use it for know more: vk.com/dev/manuals
 
-|[All examples](https://github.com/ciricc/easyvk/tree/master/tests) | [Example (bot)](https://vk.com/sayme_bot) |
+|[All examples](https://github.com/ciricc/easyvk/tree/master/tests) | [Example (bot)](https://github.com/ciricc/easyvk/blob/master/tests/mybot.js) |
 |---------------------------------------|---------------------------------------|
 
 ## What can it do?
@@ -15,7 +16,26 @@ You can use it for know more: vk.com/dev/manuals
 5. Upload photos to messages
 6. Two factor authentication
 7. Save session
-8. Captcha 
+8. Captcha
+9. StreamingAPI
+10. Routine functions like isFriend and others
+
+
+## What's new? (0.2)
+I am added new features. The main one is the support of the Streaming API, which will help you collect information from various sources in real time. Also I could not pass by the convenience so I added a new convenient method for developers.
+
+You can see all changes:
+  
+
+  * StreamingAPI
+    * events
+    * add new rules
+    * delete all rules
+    * manage rules easy with manager (auto-add auto-delete auto-change)
+  * isFriend method, which help you check that user is friend for other user
+  * getAllFriendsList method
+  * userFollowed method, which help you check that user is subscribed on other user
+  * encodeHtml method cal encode symbols from & amp; to &
 
 ### Installation
 I am using npmjs.org for storage my SDK. So, if you want to install my SDK on your project you can use this command
@@ -23,7 +43,7 @@ in your project core (clear node_modles folder).
 
   `npm install easyvk`
 
-I recommend that you install 0.1.1 version. Then this readme will actual. Or you can got an error(s).
+I recommend that you install 0.2.0 version. Then this readme will actual. Or you can got an error(s).
 But if you install other version, you need read readme for this version not other!
 
 And after this you can import it.
@@ -72,7 +92,7 @@ If you don't put object, you can look at next table.
 | reauth | My SDK save your session if you login first time, but if you login not first, it will try get session from .vksession file. And if you want reauth with new params, you need set reauth param true | false |
 | save_session | But you may be want do not save session in file, then you need set this parameter false | true |
 | session_file | You can save session in your file if do nt want save in .vksession file. But i don't recommend do this | .vksession |
-| api_v | My SDK uses now 5.69 API (2017) version but you can change it | 5.69 |
+| api_v | My SDK uses now 5.69 API (2018) version but you can change it | 5.69 |
 
 And if you use only arguments you need look at it!
 
@@ -96,6 +116,73 @@ VK.login({
 
 This error may  spread on all queries and so you need always catch it.
 On account of authorization that is all (for now).
+
+### Streaming API
+
+With my SDK you can reate your streams by Streaming API. In 0.2 version i am added this feature in support list
+For connect to stream and create it, you need create own application on [vk.com/editapp?act=create](http://vk.com/editapp?act=create) page.
+Then you need save your client_id and client_secret. And then, you can create stream with `streamingAPI()` method
+
+```javascript
+  
+  VK.login("username", "password").then(function(){
+    
+    VK.streamingAPI({
+      client_id: '222222',
+      client_secret: 'wzkLEmKOlDflwaaWwdWM' //Example
+    }).then(function(connection){
+      console.log(connection);
+    }, function(err){
+      console.log(err);
+    });
+
+  });
+
+```
+
+So, you created `connection` and if you read the documentation, it must be you wanted to add your own rules in the stream.
+You can do this in several ways. But i am recommend you use rules manager:
+
+```javascript
+  
+  connection.initRules({
+    'tag': 'value'
+  });
+
+```
+
+This manager can easily manage your rules. It automatically deletes the rules if it is not in the object, and also replaces it in case of changes. You can also add new rules to the existing rules easy. After all the changes, you will get a log-object in which there will be all changed / deleted / added rules.
+
+```javascript
+
+  connection.initRules({
+    'tag value changed'
+  }, functin (error, tag, type){
+    console.log(error, tag, type);
+  }).then(function(logobj){
+    console.log(logobj);
+  });
+
+```
+
+But if you want just add/delete one rule, you can use it:
+
+```javascript
+  
+  connection.addRule('value', 'tag').then(function(){
+    connection.deleteRule('tag');
+  });
+
+```
+
+Or if you want to delete ALL  rules:
+
+```javascript
+  
+  connection.addAllRules().then(...);
+
+```
+
 
 ### Longpolling (Bots)
 
@@ -245,9 +332,75 @@ VK.uploadPhotosMessages(['./images/home.jpg'], peer_id).then(...);
 
 ```
 
-For now my SDK can very little, but if you help me with ideas, i create new features and write code!
-So, ....
 
+## Helpers
+
+In 0.2 version i am added new type of methods - helpers. Helpers can help you do something very easy. For example, you can get all user's friends with it:
+
+```javascript
+
+  VK.login("username", "password").then(function(){
+    var user_id = 356607530;
+    VK.getAllFriendsList(user_id).then(function(friends){
+      console.log(friends);
+    });
+  });
+
+``` 
+
+Or you can check that follower_id is followed on user_id. And if follower_id was down, it will be your user_id from login session.
+
+```javascript
+  
+  VK.login("username", "password").then(function(){
+    
+    var user_id = 356607530;
+    var follower_id = 279411716;
+
+    VK.userFollowed(user_id, follower_id).then(function(followed){
+      console.log(followed);
+    });
+
+  });
+
+```
+
+Also you can check that friend_id is friends with user_id. And if friend_id was down, it will be your user_id from login session.
+
+```javascript
+  
+  VK.login("username", "password").then(function(){
+    
+    var user_id = 356607530;
+    var friend_id = 279411716;
+
+    VK.isFirend(user_id, friend_id).then(function(isfriend){
+      console.log(isfriend);
+    }, errHandler);
+  
+  });
+
+```
+
+## Watch live stream video (count views)
+
+Started from 0.2 version you can get live views count on video. Unfortunately VK API does not give us the opportunity to get the number of live video views, so I wrote this convenient method, which can help with creating your own video statistics without unnecessary gestures.
+
+[WARNING!!] This method is informal and therefore at any time it can stop working correctly.
+You can use it so:
+
+```javascript
+
+  //No need login 
+
+  setInterval(function(){
+    //You can use this method without login!
+    VK.getLiveViews('-16487904_456239423').then(function(views){
+      console.log(views);
+    }, errHandler);
+  }, 3000);
+
+```
 
 
 ## What's next? (0.2.0?)

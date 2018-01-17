@@ -1,6 +1,6 @@
 {
   "name": "easyvk",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "This SDK can help you easily create applications on NodeJS using an accessible and free VK API.",
   "main": "index.js",
   "repository": {
@@ -23,6 +23,9 @@
   "author": "ciricc",
   "license": "MIT",
   "dependencies": {
-    "request": "^2.83.0"
+    "encoding": "*",
+    "iconv": "*",
+    "request": "^2.83.0",
+    "websocket": "^1.0.25"
   }
 }

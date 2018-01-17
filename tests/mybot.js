@@ -10,7 +10,7 @@ const { exec } = require('child_process');
 	My live example: vk.com/sayme_bot
 	
 	P.S: Only for windows (sorry)
-	For test it you need download balcon program (говорилка) and add to it new language and voice - https://goo.gl/62F9wS (install it too)
+	For test it you need download balcon program (балаболка) and add to it new language and voice - https://goo.gl/62F9wS (install it too)
 	
 */
 
