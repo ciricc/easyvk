@@ -199,6 +199,51 @@ Or if you want to delete ALL  rules:
 ```
 
 
+Once you have defined the rules, you need to "listen" to the websocket event. You can see the following table to see what events you can get.
+
+```javascript
+  /* Usage */
+
+  connection.on('eventType', function (eventData) {
+    console.log(eventData);
+  });
+
+```
+
+| EventType | Description |
+| --------- | ---------- |
+| pullEvent | Arises when when the websocket receives a message from the VK that a stream event has occurred. This event can help you create listener for any type of events. I.e any event on stream call to this  event. But only if this event does not define its own listener|
+| failure | Arises when websocket fail |
+| error | Is calls when on websocket connection arise som error |
+| serviceMessage | Arises when VK sends new service message |
+
+All types of events you can read on [this page](https://vk.com/dev/streaming_api_docs_2), to now, there are `post`, `share`, `comment`.
+
+Warning: `error` and `failure` it's mine events and they do not apply to the VK API!
+
+For example: 
+
+If you want listen only `post` event, then you need use it:
+
+```javascript
+  
+  connection.on('post', function(event){
+    console.log(event);
+  });
+
+```
+
+And if you want listen all types of event on websocket (besides failure, error, serviceMessage), you need use it:
+
+```javascript
+
+  connection.on('pullEvent', function(event){
+    console.log(event);
+  });
+
+```
+
+
 ### Longpolling (Bots)
 
 With my SDK you can create yours message bots, which will be use a longpoll server.
