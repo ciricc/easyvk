@@ -403,11 +403,8 @@ You can use it so:
 ```
 
 
-## What's next? (0.2.0?)
+## What's next? (0.3.0?)
 
-In next versions i will add upload all types of files (documents, photos, audio etc)
-Working with products. And little functions like isFriend(), isMember() and other.
-It will be cool, guys! And you can help me with crete it: vk.com/kinock.
-
+I don't know.
 
 Bye.
