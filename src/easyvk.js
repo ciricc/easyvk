@@ -16,7 +16,7 @@ class VK {
 		this.DEFAULT_2FACODE = ""; //Two factor code
 		this.session = {};
 		this.api_v = "5.69";
-		this.v = "0.2.2";
+		this.v = "0.2.3";
 
 	}
 
@@ -1193,6 +1193,7 @@ class StreamingAPI {
 		var self = this;
 
 		if (self.listeners[eventType]) {
+			console.log(true);
 			try {
 				self.listeners[eventType].call(self, data);
 			} catch (e) {
@@ -1248,14 +1249,20 @@ class StreamingAPI {
 						"tag": tag
 					}
 				}
-			}, function(err, res, rvk) {
+			}, function(err, res) {
 				
+				var rvk = res.body;
+
 				if (err) {
 					reject(err, null);
 				}
 
 				if (rvk) {
 					try {
+						
+						if (rvk[0] != "{" && Object.prototype.toString.call(rvk) != "[object Object]") reject("Is not JSON!" + rvk); 
+						if (Object.prototype.toString.call(rvk) != "[object Object]") rvk = JSON.parse(rvk);
+
 						var error = self._vk.check_error(rvk);
 
 						if (error) {
@@ -1267,6 +1274,8 @@ class StreamingAPI {
 					} catch (e) {
 						reject(e, null);
 					}
+				} else {
+					console.log("We don't know that error, vk returned us: ", rvk);
 				}
 
 			});
@@ -1288,6 +1297,7 @@ class StreamingAPI {
 	deleteRule (tag) {
 		var self = this;
 
+
 		return new Promise (function(resolve, reject) {
 			var url__delete = self.url_http + '/rules?key=' + self.key;
 			tag = tag.toString();
@@ -1299,22 +1309,31 @@ class StreamingAPI {
 					"tag": tag
 				}
 			}, function(err, res) {
-						
+				
+				var rvk = res.body;
+
 				if (err) {
 					reject(err, null);
 				}
 				
-				try {
-					var rvk = res.body;
-					var error = self._vk.check_error(rvk);
+				if (rvk) {
+					try {
 
-					if (error) {
-						reject(error, rvk.error.error_code);
-					} else {
-						resolve.call(tag, tag);
+						if (rvk[0] != "{" && Object.prototype.toString.call(rvk) != "[object Object]") reject("Is not JSON!" + rvk); 
+						if (Object.prototype.toString.call(rvk) != "[object Object]") rvk = JSON.parse(rvk);
+
+						var error = self._vk.check_error(rvk);
+
+						if (error) {
+							reject(error, rvk.error.error_code);
+						} else {
+							resolve(tag);
+						}
+					} catch (e) {
+						reject(e, null);
 					}
-				} catch (e) {
-					reject(e, null);
+				} else {
+					console.log("We don't know that error, vk returned us: ", rvk);
 				}
 			});
 		});
@@ -1338,24 +1357,34 @@ class StreamingAPI {
 			request.get({
 				method: 'GET',
 				url: url__delete
-			}, function(err, res, rvk) {
-				
+			}, function(err, res) {
+				var rvk = res.body;
+
 				if (err) {
 					reject(err, null);
 				}
+				
+				if (rvk) {
+					try {
 
-				try {
-					var error = self._vk.check_error(rvk);
 
-					if (error) {
-						reject(error, rvk.error.error_code);
-					} else {
-						rvk = JSON.parse(rvk);
-						resolve.call(rvk, rvk.rules, true);
+						if (rvk[0] != "{" && Object.prototype.toString.call(rvk) != "[object Object]") reject("Is not JSON!" + rvk); 
+						if (Object.prototype.toString.call(rvk) != "[object Object]") rvk = JSON.parse(rvk);
+						
+
+						var error = self._vk.check_error(rvk);
+
+						if (error) {
+							reject(error, rvk.error.error_code);
+						} else {
+							resolve.call(rvk, rvk.rules, true);
+						}
+
+					} catch (e) {
+						reject(e, null);
 					}
-
-				} catch (e) {
-					reject(e, null);
+				}  else {
+					console.log("We don't know that error, vk returned us: ", rvk);
 				}
 
 			});
@@ -1452,7 +1481,6 @@ class StreamingAPI {
 			}
 
 			self.getRules().then(function(st_rules){
-
 				var st_rules__obj = {};
 				var deletedRules = {};
 				var replacedRules = {};
@@ -1473,6 +1501,7 @@ class StreamingAPI {
 									new_val: rules[tag]
 								};
 
+
 								self.deleteRule(tag).then(function(t){
 									if (t != false && t != undefined) {
 										self.addRule(rules[t], t).then(function(){
@@ -1480,6 +1509,7 @@ class StreamingAPI {
 											errorHandler.call(this, error, t, null);
 										});
 									}
+
 								}, reject);
 
 
