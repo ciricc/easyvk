@@ -16,7 +16,7 @@ class VK {
 		this.DEFAULT_2FACODE = ""; //Two factor code
 		this.session = {};
 		this.api_v = "5.69";
-		this.v = "0.2.0";
+		this.v = "0.2.1";
 
 	}
 
@@ -240,7 +240,7 @@ class VK {
 				if (err) reject(err);
 				try {
 					var vkr = res.body;
-					if (rvk[0] != "{") reject('Is not JSON' + rvk);
+					if (vkr[0] != "{") reject('Is not JSON' + vkr);
 					vkr = JSON.parse(vkr);
 					var error = self.check_error(vkr);
 					if (error) {
