@@ -1,7 +1,7 @@
 var request = require('request'); 
 var fs = require('fs');
 var encoding = require('encoding');
-var ws_client = require('websocket').client;
+var WS = require('ws');
 
 class VK {
 	constructor() {
@@ -795,7 +795,7 @@ class VK {
 								client: vkr_client
 							}
 
-							var wsc = new ws_client();
+							var wsc = new WS('wss://' + vkr_server.response.endpoint + '/stream?key=' + vkr_server.response.key );
 							var streaming_connection = new StreamingAPI(self, wsc);
 							
 							resolve.call(streaming_connection, streaming_connection);
@@ -1138,33 +1138,23 @@ class StreamingAPI {
 
 	__initConnection__ () {
 		var self = this;
+		
+		self._wsc.on('open', function() {
+			console.log('Streaming API Init successfully!');
+		});	 
 
-
-		self._wsc.on('connectFailed', function(error) {
-			self.emit('failure', error.toString());
-		});
-		 
-		//Listen WebSocket connection
-		self._wsc.on('connect', function(connection) {
-		    console.log('Streaming API Init successfully!');
-		    
-		    connection.on('error', function(error) {
+		self._wsc.on('error', function(error) {
 		    	self.emit('errror', error.toString());
-		    });
-
-		    connection.on('close', function() {
-		    	self.emit('failure', 'Connection closed');
-		    });
-		    
-		    connection.on('message', function(message) {
-		        if (message.type == 'utf8') {
-		        	self.__initMessage__(message.utf8Data);
-		        }
-		    });
-
 		});
 
-		self._wsc.connect('wss://' + self.endpoint + '/stream?key=' + self.key );
+		self._wsc.on('message', function(message) {
+	        self.__initMessage__(message);
+	    });
+
+	    self._wsc.on('close', function() {
+	    	self.emit('failure', 'Connection closed');
+	    });
+
 	}
 
 	/*
@@ -1275,7 +1265,7 @@ class StreamingAPI {
 						reject(e, null);
 					}
 				} else {
-					console.log("We don't know that error, vk returned us: ", rvk);
+					console.log("We don't know that error, vk returned us: ", res);
 				}
 
 			});
@@ -1401,7 +1391,6 @@ class StreamingAPI {
 
 		return new Promise (function(resolve, reject){
 			self.getRules().then(function(rules){
-				
 				if (rules && rules.length > 0) {
 					var i = 0;
 
@@ -1412,13 +1401,16 @@ class StreamingAPI {
 							if (i === rules.length) {
 								resolve.call(this, [true, i]);
 							} else {
-								del();
+								setInterval(function(){
+									del();
+								}, 1200);
 							}
 
 						})
 					} 
 
 					del();
+
 				} else {
 					resolve.call(this, [true, 0]);
 				}

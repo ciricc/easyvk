@@ -24,8 +24,7 @@
   "license": "MIT",
   "dependencies": {
     "encoding": "*",
-    "iconv": "*",
     "request": "^2.83.0",
-    "websocket": "^1.0.25"
+    "ws": "^4.0.0"
   }
 }

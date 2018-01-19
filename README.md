@@ -37,14 +37,6 @@ You can see all changes:
   * userFollowed method, which help you check that user is subscribed on other user
   * encodeHtml method can encode symbols from & amp; to &
 
-### Note for Windows Users
-
-Since version 0.2 of the Streaming API, which requires a websocket, we chose the [websocket](https://github.com/theturtle32/WebSocket-Node) module from npm. This module has some requirements for working on the WIndows platform. And you need to know them so that you do not have problems installing them.
-
-Because there is a small C++ component used for validating UTF-8 data, you will need to install a few other software packages in addition to Node to be able to build this module:
-
-[Microsoft Visual C++](http://www.microsoft.com/visualstudio/en-us/products/2010-editions/visual-cpp-express)
-[Python 2.7 (NOT Python 3.x)](https://www.python.org/downloads/)
 
 ### Installation
 I am using npmjs.org for storage my SDK. So, if you want to install my SDK on your project you can use this command
