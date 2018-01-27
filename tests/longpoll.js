@@ -6,7 +6,7 @@ var username = "username"; //Phone or email (+7,+8 etc..)
 var password = "password";
 var captcha_sid = "128774110628";
 var captcha_key = "d7e5kcd";
-var reauth = false; //If you are authorized for the first time then my script create session file and in next time you will auth by him
+var reauth = true; //If you are authorized for the first time then my script create session file and in next time you will auth by him
 
 VK.login(username, password, captcha_sid, captcha_key, reauth).then(function(session){
 	VK.longpoll().then(function(connection){
@@ -22,6 +22,8 @@ VK.login(username, password, captcha_sid, captcha_key, reauth).then(function(ses
 				});
 			}
 		});
+
+		connection.close();
 
 
 	}, function(error){

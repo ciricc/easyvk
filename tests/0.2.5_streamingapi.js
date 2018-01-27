@@ -10,10 +10,11 @@ VK.login("username", "password").then(function(session){
 	
 	// New feature: Support Streaming API!!
 	VK.streamingAPI({
-		client_id: '222222',
-		client_secret: 'wzkLEmKOlDflwaaWwdWM' //Example
+		client_id: '222232332',
+		client_secret: 'MklOppwhHHwmKloADfJ' //Example
 	}).then(function(connection){
-			
+		
+
 		connection.initRules({
 			'tt': '1',
 			'tt__': '2',
@@ -30,6 +31,9 @@ VK.login("username", "password").then(function(session){
 		connection.on('post', function (event) {
 			console.log(event);
 		});
+
+		//Close connection
+		// connection.close();
 
 	}, errHandler);
 

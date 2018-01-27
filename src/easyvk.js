@@ -16,7 +16,7 @@ class VK {
 		this.DEFAULT_2FACODE = ""; //Two factor code
 		this.session = {};
 		this.api_v = "5.69";
-		this.v = "0.2.6";
+		this.v = "0.2.7";
 
 	}
 
@@ -103,12 +103,20 @@ class VK {
 									throw "User wants to reauth";
 								}
 							} else {
+								if (reauth) throw "User wants to reauth";
 								reject("Undefined access_token in file session!");
 							}
 
 						} catch (e) {
-							if (session_json.length == 0) {
-								if (username && password) {
+							console.log(session_json);
+						
+							var keys = [];
+							if (Object.prototype.toString.call(session_json) == "[object Object]") {
+								for (i in session_json) keys.push(i);
+							}
+
+							if (session_json.length == 0 || session_json == null || keys.length == 0) {
+								if (username && password || reauth) {
 									not_finded_session = true;
 								} else {
 									reject("Session file is empty! Please, enter username and password or only access_token fields!");
@@ -781,15 +789,13 @@ class VK {
 
 				request.get(self.BASE_OAUTH_URL + 'access_token?' + params, function (err, res){
 					
-					var vkr_client = res.body;
+
 
 					if (err) {
-						if (res) {
-							reject("Server was down or we don't know what happaned [responseCode " + res.statusCode + "]");
-						} else {
-							reject("Server returned us error: " + err);
-						}
+						reject (err);
 					}
+
+					var vkr_client = res.body;
 
 					try {
 						vkr_client = JSON.parse(vkr_client);
@@ -1020,7 +1026,7 @@ class LongPollConnection {
 			mode: (128 + 32 + 2),
 		};
 		params = self._vk.urlencode(params);
-		request.get(server + params, function(err, res){
+		self._lpconnection = request.get(server + params, function(err, res){
 			if (err) {
 				self.emit('error', err);
 			} else {
@@ -1047,6 +1053,20 @@ class LongPollConnection {
 				} catch (e) {
 					self.emit('error', e);
 				}
+			}
+		});
+	}
+
+
+	close () {
+		var self = this;
+		
+
+		return new Promise (function(resolve, reject){
+			if (self._lpconnection) {
+				resolve(self._lpconnection.abort());
+			} else {
+				reject("Longpoll not initialized !!");
 			}
 		});
 	}
@@ -1172,6 +1192,19 @@ class StreamingAPI {
 
 	}
 
+	close () {
+
+		var self = this;
+
+		return  new Promise( function(resolve, reject) {
+			if (self._wsc) {
+				resolve(self._wsc.close());
+			} else {
+				reject("WebSocket not connected!!");
+			}
+		});
+	}
+
 	/*
 		
 		Read: LongPoll.on
@@ -1198,7 +1231,6 @@ class StreamingAPI {
 		var self = this;
 
 		if (self.listeners[eventType]) {
-			console.log(true);
 			try {
 				self.listeners[eventType].call(self, data);
 			} catch (e) {
