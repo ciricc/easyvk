@@ -1,7 +1,7 @@
 {
   "name": "easyvk",
-  "version": "0.2.5",
-  "description": "This SDK can help you easily create applications on NodeJS using an accessible and free VK API.",
+  "version": "0.2.7",
+  "description": "Functional SDK fo vk.com and VK API",
   "main": "index.js",
   "repository": {
     "type": "git",

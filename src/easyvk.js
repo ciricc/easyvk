@@ -16,7 +16,7 @@ class VK {
 		this.DEFAULT_2FACODE = ""; //Two factor code
 		this.session = {};
 		this.api_v = "5.69";
-		this.v = "0.2.5";
+		this.v = "0.2.6";
 
 	}
 
@@ -380,9 +380,16 @@ class VK {
 								formData: {
 									file: stream
 								}
-							}, function(err, response, rvk){
+							}, function(err, response){
 								if (err) reject(err);
-								rvk = JSON.parse(rvk);
+								var rvk = response.body;
+								
+								try {
+									rvk = JSON.parse(rvk);
+								} catch (e) {
+									reject(e);
+								}
+
 								self.call('docs.save', {
 									file: rvk.file
 								}).then(function(rvk_doc){
@@ -772,9 +779,16 @@ class VK {
 
 				params = self.urlencode(params);
 
-				request.get(self.BASE_OAUTH_URL + 'access_token?' + params, function (err, res, vkr_client){
+				request.get(self.BASE_OAUTH_URL + 'access_token?' + params, function (err, res){
+					
+					var vkr_client = res.body;
+
 					if (err) {
-						reject("Server was down or we don't know what happaned [responseCode " + res.statusCode + "]");
+						if (res) {
+							reject("Server was down or we don't know what happaned [responseCode " + res.statusCode + "]");
+						} else {
+							reject("Server returned us error: " + err);
+						}
 					}
 
 					try {
@@ -1006,11 +1020,12 @@ class LongPollConnection {
 			mode: (128 + 32 + 2),
 		};
 		params = self._vk.urlencode(params);
-		request.get(server + params, function(err, res, vkr){
+		request.get(server + params, function(err, res){
 			if (err) {
 				self.emit('error', err);
 			} else {
 				try {
+					var vkr = res.body;
 					vkr = JSON.parse(vkr);
 					if (vkr['failed']) {
 						self.emit('failure', vkr);
@@ -1144,7 +1159,7 @@ class StreamingAPI {
 		});	 
 
 		self._wsc.on('error', function(error) {
-		    	self.emit('errror', error.toString());
+		    self.emit('error', error.toString());
 		});
 
 		self._wsc.on('message', function(message) {
