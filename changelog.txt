@@ -10,10 +10,10 @@
 	Must have: * * * * * / * * * * *
 	Changes: * / * * * * *
 
-	Fixed video streaming error, when live stream where is not, but porgrammer try get views.
+	Fixed video streaming error, when live stream there is not, but programmer try get views.
 	In older version it can throw error and stop your script. It was solved.
 
-	Fixed my "UUURAA!!" in log
+	Fixed my "UUURAA!!" in console's log.
 
 [0.2.8] version:
 	
