@@ -4,8 +4,8 @@
 This app helps you create an apps with vk api easy!
 You can use it for know more: vk.com/dev/manuals
 
-|[All examples](https://github.com/ciricc/easyvk/tree/master/tests) | [Example (bot)](https://github.com/ciricc/easyvk/blob/master/tests/mybot.js) |
-|---------------------------------------|---------------------------------------|
+|[All examples](https://github.com/ciricc/easyvk/tree/master/tests) | [Example (bot)](https://github.com/ciricc/easyvk/blob/master/tests/mybot.js) | [Changelog](https://github.com/ciricc/easyvk/tree/master/changelog.txt) |
+|---------------------------------------|---------------------------------------|-------------|
 
 ## What can it do?
 
@@ -243,6 +243,7 @@ You can see which type of events my SDK support.
 |    62      | typeInChat   | Arises when some of users in chat is typing |
 |    -    | failure | Arises when server returns error. You can catch it and make something... |
 |    -    | error | Arises when in my code occurets any error |
+|    -    | close | Arises when USER / PROGRAMMER closed connection by .close() method |
 
 But i am unserstand that you may want to create your listeners or your handlers.
 And i gave this opportunity. (:D)

@@ -6,11 +6,12 @@ var username = "username"; //Phone or email (+7,+8 etc..)
 var password = "password";
 var captcha_sid = "128774110628";
 var captcha_key = "d7e5kcd";
-var reauth = true; //If you are authorized for the first time then my script create session file and in next time you will auth by him
+var reauth = false; //If you are authorized for the first time then my script create session file and in next time you will auth by him
 
 VK.login(username, password, captcha_sid, captcha_key, reauth).then(function(session){
+
 	VK.longpoll().then(function(connection){
-		
+
 		connection.on('message', function(message){
 			if (!message.out && !message.chat_id && message.uid != session.user_id) { //If is not my message and it is not a group chat (chat)
 				VK.call('messages.send', {
@@ -21,6 +22,10 @@ VK.login(username, password, captcha_sid, captcha_key, reauth).then(function(ses
 					console.log(err);
 				});
 			}
+		});
+
+		connection.on('close', function (event) {
+			console.log(event);
 		});
 
 		connection.close();

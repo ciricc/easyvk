@@ -1,0 +1,26 @@
+/*
+	This file is from 0.2.8 version of easyvk. So, In older versions you can see the changes in the commits.
+*/
+
+
+[Changelog]
+==========
+
+[0.2.8] version:
+	
+	Must have: * * * / * * * * * * 
+	Changes: * / * * * * *
+
+	Fixed StreamingAPI. When you may be ried delete many rules, there was a mistake "vk respnse undefined"
+	Now, this problem was fixed and it works normal.
+
+	Fixed api_v parameter. Previously, this parameter could not be changed because of the shortcomings in the code.
+	Now this problem is solved
+
+	Fixed longpoll connection, and also fixed test examples
+
+	For new update in VK API (5 feb 2018) , now you need to specify the version in v parameter (&v=5.71)
+
+	Changed VK API version on 5.71
+
+	Added new event type for longpoll - close. (Arises when program closed connection by .close() method)

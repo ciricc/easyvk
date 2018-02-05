@@ -15,8 +15,8 @@ class VK {
 		this.session_file = __dirname + "/.vksession"; //File that stores itself json-session
 		this.DEFAULT_2FACODE = ""; //Two factor code
 		this.session = {};
-		this.api_v = "5.69";
-		this.v = "0.2.7";
+		this.api_v = "5.71";
+		this.v = "0.2.8";
 
 	}
 
@@ -80,7 +80,7 @@ class VK {
 			if (!code) code = self.DEFAULT_2FACODE;
 			if (captcha_sid) self.session['captcha_sid'] = captcha_sid;
 			if (captcha_key) self.session['captcha_key'] = captcha_key;
-			if (Object.prototype.toString.call(api_v) !== "[object String]") self.v = api_v;
+			if (Object.prototype.toString.call(api_v) !== "[object String]") api_v = self.api_v;
 
 			if (username &&  password && access_token) {
 				reject("Please, enter only access_token or only password with username. Not all together!");	
@@ -129,7 +129,8 @@ class VK {
 									client_secret: self.WINDOWS_CLIENT_SECRET,
 									captcha_sid: captcha_sid,
 									captcha_key: captcha_key,
-									grant_type: "password"
+									grant_type: "password",
+									v: api_v
 								}
 
 								if (code.toString().length != 0 && code) {
@@ -180,7 +181,8 @@ class VK {
 				//Reuth = false, try to auth and get session by token
 
 				var params = {
-					access_token: access_token
+					access_token: access_token,
+					v: api_v
 				}
 
 				params = self.urlencode(params);
@@ -635,8 +637,8 @@ class VK {
 			} 
 
 			var headers = {
-					'user-agent': 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36',
-					'content-type': 'application/x-www-form-urlencoded'
+				'user-agent': 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36',
+				'content-type': 'application/x-www-form-urlencoded'
 			};
 
 			var al_video_url = self.PROTOCOL + '://' + self.BASE_DOMAIN + '/al_video.php';
@@ -652,35 +654,39 @@ class VK {
 			}, function(err, res, vkr){
 				
 				//Parsing hash from response body {"action_hash" : "hash"}
-				var hash = res.body.match(/(\"|\')action_hash(\"|\')(\s)?\:(\s)?(\'|\")(.*?)(\'|\")/)[0]
-				.replace(/([\s\'\:\"])/g, "")
-				.replace('action_hash', "");
-				
-				request.post({
-					url: al_video_url + '?act=live_heartbeat',
-					body: 'al=1&hash=' + hash + '&oid=' + oid + '&user_id=0&vid=' + vid,
-					encoding: 'binary', //Special
-					headers: headers,
-				}, function(err, vkr, res) {
-					
-					var videoInfo = encoding.convert(vkr.body, 'windows-1252');
-					videoInfo = videoInfo.toString();
-					
-					if (videoInfo.match('<!int>')) {
-						var countViews = videoInfo.match('<!int>([0-9]+)<!>');
+				var matCH = res.body.match(/(\"|\')action_hash(\"|\')(\s)?\:(\s)?(\'|\")(.*?)(\'|\")/);
+				if (matCH) {
+					var hash = matCH[0]
+					.replace(/([\s\'\:\"])/g, "")
+					.replace('action_hash', "");
+					request.post({
+						url: al_video_url + '?act=live_heartbeat',
+						body: 'al=1&hash=' + hash + '&oid=' + oid + '&user_id=0&vid=' + vid,
+						encoding: 'binary', //Special
+						headers: headers,
+					}, function(err, vkr, res) {
 						
-						if (countViews) {
-							countViews = parseInt(countViews[1]);
-							resolve(countViews);
+						var videoInfo = encoding.convert(vkr.body, 'windows-1252');
+						videoInfo = videoInfo.toString();
+						
+						if (videoInfo.match('<!int>')) {
+							var countViews = videoInfo.match('<!int>([0-9]+)<!>');
+							
+							if (countViews) {
+								countViews = parseInt(countViews[1]);
+								resolve(countViews);
+							} else {
+								reject('Maybe VK video page was changed, we can\'t get a number of views from response');
+							}
+
 						} else {
 							reject('Maybe VK video page was changed, we can\'t get a number of views from response');
 						}
 
-					} else {
-						reject('Maybe VK video page was changed, we can\'t get a number of views from response');
-					}
-
-				});
+					});
+				} else {
+					reject('The live video (' + video + ') is not streaming now!');
+				}
 			});
 		});
 	}
@@ -1027,6 +1033,7 @@ class LongPollConnection {
 		};
 		params = self._vk.urlencode(params);
 		self._lpconnection = request.get(server + params, function(err, res){
+			console.log('UUURAA!!');
 			if (err) {
 				self.emit('error', err);
 			} else {
@@ -1064,6 +1071,11 @@ class LongPollConnection {
 
 		return new Promise (function(resolve, reject){
 			if (self._lpconnection) {
+
+				self.emit('close', {
+					time: new Date().getTime(),
+				});
+
 				resolve(self._lpconnection.abort());
 			} else {
 				reject("Longpoll not initialized !!");
@@ -1275,11 +1287,11 @@ class StreamingAPI {
 		var self = this;
 
 		return new Promise (function(resolve, reject) {
-			var url__delete = self.url_http + '/rules?key=' + self.key;
+			var url__post = self.url_http + '/rules?key=' + self.key;
 
 			request.post({
 				method: 'POST',
-				url: url__delete,
+				url: url__post,
 				json: {
 					"rule": {
 						"value": rule,
@@ -1370,7 +1382,7 @@ class StreamingAPI {
 						reject(e, null);
 					}
 				} else {
-					console.log("We don't know that error, vk returned us: ", rvk);
+					console.log("We don't know that error, vk returned us (Delete Rule): ", rvk);
 				}
 			});
 		});
@@ -1389,11 +1401,11 @@ class StreamingAPI {
 		var self = this;
 
 		return new Promise (function(resolve, reject) {
-			var url__delete = self.url_http + '/rules?key=' + self.key;
+			var url__get = self.url_http + '/rules?key=' + self.key;
 
 			request.get({
 				method: 'GET',
-				url: url__delete
+				url: url__get
 			}, function(err, res) {
 				var rvk = res.body;
 
@@ -1421,7 +1433,7 @@ class StreamingAPI {
 						reject(e, null);
 					}
 				}  else {
-					console.log("We don't know that error, vk returned us: ", rvk);
+					console.log("We don't know that error, vk returned us (Get rule): ", rvk);
 				}
 
 			});
@@ -1524,6 +1536,7 @@ class StreamingAPI {
 				var deletedRules = {};
 				var replacedRules = {};
 				var addedRules = {};
+				var tagi, rules_tags;
 
 
 				if (st_rules) {
@@ -1531,19 +1544,25 @@ class StreamingAPI {
 						st_rules__obj[st_rules[i].tag] = st_rules[i].value;
 					}
 
-					for (var tag in st_rules__obj) {
+					
+					var tags__ = [];
+					for (var tag in st_rules__obj) { tags__.push(tag); }
+					var i__tag = 0;
+
+					function initTag () {
+						var tag = tags__[i__tag];
+						i__tag += 1;
 						if (rules[tag] != undefined) {
 							if (Object.prototype.toString.call(rules[tag]) === "[object String]" && rules[tag] != st_rules__obj[tag]) {
 								
-								replacedRules[tag] = {
-									last_val: st_rules__obj[tag],
-									new_val: rules[tag]
-								};
-
-
 								self.deleteRule(tag).then(function(t){
 									if (t != false && t != undefined) {
 										self.addRule(rules[t], t).then(function(){
+											replacedRules[tag] = {
+												last_val: st_rules__obj[tag],
+												new_val: rules[tag]
+											};
+											nextTag(); 
 										}, function(error){
 											errorHandler.call(this, error, t, null);
 										});
@@ -1553,32 +1572,48 @@ class StreamingAPI {
 
 
 							} else if (Object.prototype.toString.call(rules[tag]) === "[object String]" && rules[tag] == st_rules__obj[tag]) {
-								// ...
+								nextTag(); 
 							} else {
+								nextTag();
 								errorHandler.call(this, "Value must be string type, if you want use word undefined, you need use it: \'undefined\' !!!", rules[tag], null);
 							}
 						} else {
-								
-							self.deleteRule(tag).then(function(){
+							
 
+							self.deleteRule(tag).then(function(){
+								deletedRules[tag] = {
+									val: st_rules__obj[tag] 
+								};
+								nextTag();
 							}, function(err){
 								errorHandler.call(this, err, tag, "delete_error");
 							});
 
-
-							deletedRules[tag] = {
-								val: st_rules__obj[tag] 
-							};
-
 						}
-					} 
+					}
 
+					function nextTag () {
+						console.log(tags__);
+						if (i__tag < tags__.length) {
+							initTag();
+						} else {
+							runAdd();
+						}
+					}
+
+					initTag();
 				}
 
-				var rules_tags = [];
-				var tagi = 0;
+				function runAdd() {
 
-				for (var i in rules) rules_tags.push(i);
+					rules_tags = [];
+					tagi = 0;
+
+					for (var i in rules) rules_tags.push(i);
+
+					addRule();
+
+				}
 
 				function addRule () {
 					if (tagi == rules_tags.length) {
@@ -1624,7 +1659,6 @@ class StreamingAPI {
 					}
 				}
 
-				addRule();
 
 			});
 

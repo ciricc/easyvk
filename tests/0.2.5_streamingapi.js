@@ -21,7 +21,7 @@ VK.login("username", "password").then(function(session){
 			'tt2': '1 2 3',
 			'tt3': 'как',
 			'tt4': 'интернет',
-			'tt5': 'почему'
+			'tt5': 'почему',
 		}).then(function(log){
 			console.log(log);
 		});

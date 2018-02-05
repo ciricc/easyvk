@@ -5,7 +5,11 @@ function errHandler (err) {
 	console.log(err);
 }
 
-VK.login("username", "password").then(function(session){
+VK.login({
+	username: "username",
+	password: "password",
+	reauth: true,
+}).then(function(session){
 
 	
 	// New feature: Support Streaming API!!
@@ -65,13 +69,13 @@ VK.login("username", "password").then(function(session){
 	var in_friends_user_id = 356607530;
 	var check_id = 279411716;
 
-	VK.isFirend(in_friends_user_id, check_id).then(function(isfriend){
+	VK.isFriend(in_friends_user_id, check_id).then(function(isfriend){
 		console.log(isfriend);
 	}, errHandler);
 
 	var user_id = 356607530;
 	VK.getAllFriendsList(user_id).then(function(friends){
-		console.log(friends);
+		console.log(friends.length);
 	}, errHandler);
 
 
@@ -81,9 +85,9 @@ VK.login("username", "password").then(function(session){
 	}, errHandler);
 
 
-	//And other:
+	// //And other:
 
-	VK.encodeHtml('I am user &amp; my favorite sign is &lt; and sometimes is &quot;'); //Return I am user & my favorite sign is < and sometimes is "
+	console.log(VK.encodeHtml('I am user &amp; my favorite sign is &lt; and sometimes is &quot;')); //Return I am user & my favorite sign is < and sometimes is "
 
 
 	//Thank you for use this lib. You can help me fix bugs and search them: github.com/ciricc/easyvk
