@@ -6,6 +6,15 @@
 [Changelog]
 ==========
 
+[0.2.81] version:
+	Must have: * * * * * / * * * * *
+	Changes: * / * * * * *
+
+	Fixed video streaming error, when live stream where is not, but porgrammer try get views.
+	In older version it can throw error and stop your script. It was solved.
+
+	Fixed my "UUURAA!!" in log
+
 [0.2.8] version:
 	
 	Must have: * * * / * * * * * * 
@@ -24,3 +33,4 @@
 	Changed VK API version on 5.71
 
 	Added new event type for longpoll - close. (Arises when program closed connection by .close() method)
+

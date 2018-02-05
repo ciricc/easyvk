@@ -1,6 +1,6 @@
 {
   "name": "easyvk",
-  "version": "0.2.8",
+  "version": "0.2.81",
   "description": "Functional SDK for vk.com and VK API",
   "main": "index.js",
   "repository": {
