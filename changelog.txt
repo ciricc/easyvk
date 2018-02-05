@@ -1,5 +1,5 @@
 /*
-	This file is from 0.2.8 version of easyvk. So, In older versions you can see the changes in the commits.
+	This file is from 0.2.8 version of easyvk. So, in older versions you can see the changes in the commits.
 */
 
 
@@ -11,7 +11,7 @@
 	Must have: * * * / * * * * * * 
 	Changes: * / * * * * *
 
-	Fixed StreamingAPI. When you may be ried delete many rules, there was a mistake "vk respnse undefined"
+	Fixed StreamingAPI. When you may be tried delete many rules, there was a mistake "vk response undefined"
 	Now, this problem was fixed and it works normal.
 
 	Fixed api_v parameter. Previously, this parameter could not be changed because of the shortcomings in the code.
