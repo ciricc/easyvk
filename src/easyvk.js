@@ -16,7 +16,7 @@ class VK {
 		this.DEFAULT_2FACODE = ""; //Two factor code
 		this.session = {};
 		this.api_v = "5.71";
-		this.v = "0.2.81";
+		this.v = "0.2.9";
 
 	}
 
