@@ -1033,7 +1033,6 @@ class LongPollConnection {
 		};
 		params = self._vk.urlencode(params);
 		self._lpconnection = request.get(server + params, function(err, res){
-			console.log('UUURAA!!');
 			if (err) {
 				self.emit('error', err);
 			} else {
