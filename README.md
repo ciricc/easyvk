@@ -425,9 +425,4 @@ setInterval(function(){
 }, 3000);
 ```
 
-
-## What's next? (0.3.0?)
-
-I don't know.
-
 Bye.
