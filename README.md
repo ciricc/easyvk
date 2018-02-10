@@ -89,7 +89,7 @@ If you don't put object, you can look at next table.
 | reauth | My SDK save your session if you login first time, but if you login not first, it will try get session from .vksession file. And if you want reauth with new params, you need set reauth param true | false |
 | save_session | But you may be want do not save session in file, then you need set this parameter false | true |
 | session_file | You can save session in your file if do nt want save in .vksession file. But i don't recommend do this | .vksession |
-| api_v | My SDK uses now 5.69 API (2018) version but you can change it | 5.69 |
+| api_v | My SDK uses now 5.71 API (2018) version but you can change it | 5.71 |
 
 And if you use only arguments you need look at it!
 
@@ -398,7 +398,7 @@ VK.login("username", "password").then(function(){
   var user_id = 356607530;
   var friend_id = 279411716;
 
-  VK.isFirend(user_id, friend_id).then(function(isfriend){
+  VK.isFriend(user_id, friend_id).then(function(isfriend){
     console.log(isfriend);
   }, errHandler);
 
