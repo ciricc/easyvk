@@ -2,6 +2,12 @@ var request = require('request');
 var fs = require('fs');
 var encoding = require('encoding');
 var WS = require('ws');
+var http = require('http');
+var https = require('https');
+
+
+var StreamingAPI = require('./utils/streamingapi.js');
+var LongPollConnection = require('./utils/longpollconnection.js');
 
 class VK {
 	constructor() {
@@ -16,7 +22,7 @@ class VK {
 		this.DEFAULT_2FACODE = ""; //Two factor code
 		this.session = {};
 		this.api_v = "5.71";
-		this.v = "0.2.9";
+		this.v = "0.3";
 
 	}
 
@@ -35,7 +41,7 @@ class VK {
 
 	*/
 
-	login (username_arg, password_arg, captcha_sid_arg, captcha_key_arg, reauth_arg, code_arg) {
+	async login (username_arg, password_arg, captcha_sid_arg, captcha_key_arg, reauth_arg, code_arg) {
 		
 
 		var self = this;
@@ -104,7 +110,7 @@ class VK {
 								}
 							} else {
 								if (reauth) throw "User wants to reauth";
-								reject("Undefined access_token in file session!");
+								reject("Undefined access_token in file session! (Because you set reauth false)");
 							}
 
 						} catch (e) {
@@ -231,7 +237,7 @@ class VK {
 
 	*/
 
-	call(method_name, data) {
+	async call(method_name, data) {
 		var self = this;
 
 		return new Promise(function(resolve, reject){
@@ -273,7 +279,7 @@ class VK {
 
 	*/
 
-	uploadPhotoMessages(file_name, peer_id) {
+	async uploadPhotoMessages(file_name, peer_id) {
 		var self = this;
 		return new Promise(function(resolve, reject){
 			var data = {};
@@ -327,7 +333,7 @@ class VK {
 
 	*/
 
-	uploadPhotosMessages(photos, peer_id) {
+	async uploadPhotosMessages(photos, peer_id) {
 		var self = this;
 		return new Promise(function(resolve, reject){
 			try {
@@ -365,7 +371,7 @@ class VK {
 	*/
 
 
-	uploadDoc(doc, peer_id, type) {
+	async uploadDoc(doc, peer_id, type) {
 		var self = this;
 
 		return new Promise(function(resolve, reject){
@@ -430,7 +436,7 @@ class VK {
 	*/
 
 
-	longpoll() {
+	async longpoll() {
 		var self = this;
 		return new Promise(function(resolve, reject){
 			if (!self.longpoll_server) {
@@ -574,7 +580,7 @@ class VK {
 	*/
 
 
-	getAllFriendsList(user_id) {
+	async getAllFriendsList(user_id) {
 		var self = this;
 
 		return new Promise(function(resolve, reject){
@@ -601,7 +607,7 @@ class VK {
 
 	*/
 
-	isFriend(friend_id, check_id) {
+	async isFriend(friend_id, check_id) {
 		var self = this;
 
 		if (!check_id || check_id <= 0) check_id = self.session.user_id;
@@ -626,7 +632,7 @@ class VK {
 	*/
 
 
-	getLiveViews (video_source_id) {
+	async getLiveViews (video_source_id) {
 		var self = this;
 
 
@@ -720,7 +726,7 @@ class VK {
 	*/
 
 
-	userFollowed (user_id, follower_id, maximum) {
+	async userFollowed (user_id, follower_id, maximum) {
 		var self = this;
 		if (!follower_id || follower_id <= 0) follower_id = self.session.user_id;
 		if (!maximum) maximum = -1;
@@ -780,7 +786,7 @@ class VK {
 
 
 
-	streamingAPI (application) {
+	async streamingAPI (application) {
 		var self = this;
 		return new Promise(function(resolve, reject){
 			if (application && application.client_id && application.client_secret) {
@@ -845,822 +851,23 @@ class VK {
 		.replace(/&#039;/g, "'");
 	}
 
-}
 
-class LongPollConnection {
-	constructor(vk) {
-		this._server = vk.longpoll_server;
-		this._ts = vk.longpoll_ts;
-		this._key = vk.longpoll_key;
-		this._vk = vk;
-		this.listeners = {};
-		this.listen();
-
-		this.eventTypes = {
-			4: 'message',
-			8: 'friendOnline',
-			9: 'friendOffline',
-			51: 'editChat',
-			61: 'typeInDialog',
-			62: 'typeInChat',
-		};
-	}
-	
-	/*
-
-		This function create a listener (callback) for eventType
-		If vk.com return an updates array and my sdk have this event in eventTypes object, you can listen it with yours handlers
-		Example:
-			vk.com returned me that user Kirill sended message to user Maksim
-			and you can listen it
-			.on('message', function(msg){console.log(msg)});
-		Ok?
-
-		@param {String} eventType name of event, supported events you can see on github page
-		@param {Function} callback callback-function which get an answer from vk.com
-
-	*/
-
-	on (eventType, callback) {
-		var self = this;
-		if (Object.prototype.toString.call(callback) == "[object Function]") {
-			self.listeners[String(eventType)] = callback;
-		} else {
-			throw "Why are you put to listener not a function?! Why???";
-		}
-	}
-
-
-	/*
-		
-		This function calls to listener which you created with .on or .addEventCodeListener functions
-		I.e if you create csllback function with .on method, this function call to she!
-		.on('message', function(data){console.og(data)}); //Hello, world
-		.emit('message', 'Hello, world!');
-
-		@param {String} eventType name of event, supported events you can see on github page
-		@param {Any} data
-
-	*/
-
-
-	emit(eventType, data) {
+	callbackAPI (params) {
 		var self = this;
 
-		if (self.listeners[eventType]) {
-			try {
-				self.listeners[eventType].call(self, data);
-			} catch (e) {
-				throw e;
-			}
-		}
-	}
 
-	//Only for me
-	check_updates(updates) {
-		var self = this;
-		if (Array.isArray(updates)) {
-			
-			for (var updateIndex = 0; updateIndex < updates.length; updateIndex++) {
-				var typeEvent = updates[updateIndex][0];
-				var typeEventINT = updates[updateIndex][0];
-				if (self.eventTypes[typeEvent]) {
-					typeEvent = self.eventTypes[typeEvent];
-					try {
-						if (self[typeEvent + '__handler']) {
-							self[typeEvent + '__handler'](updates[updateIndex]);
-						} else if (self.listeners[typeEventINT]) {
-							self.listeners[typeEventINT](updates[updateIndex]);
-						}
-					} catch (e) {
-						console.log(e);
-					}
-				}
-			}
+		if (Object.prototype.toString.call(params) !== '[object Object]') params = {};
+		if (!params.port) params.port = 3000;
+		if (!params.host) params.host = '127.0.0.1';
+		if (params.https != true) params.https = false;
+
+		if (params.https) {
 
 		} else {
-			return "Is not array!";
+			self._cbserver = http.createServer(new CallbackAPI(self));
+			self._cbserver.listen(params.port, params.host);
 		}
-	}
-
-	//My handler, you can create yours!
-	message__handler(msg) {
-		var self = this;
-		self._vk.call('messages.getById', {
-			message_ids: msg[1],
-		}).then(function(vkr){
-			var msg_r = (vkr['response'][1] || vkr['response']['items'][0]);
-			msg_r['flags'] = msg[2];
-			self.emit('message', msg_r);
-		}, function(err){
-			console.log(err);
-		});
-	
-	}
-
-	//My handler, you can create yours!
-	typeInDialog__handler(msg) {
-		var self = this;
-	
-		self.emit('typeInDialog', {
-			user_id: msg[1],
-			flags: msg[2],
-		});
-	
-	}
-
-	//My handler, you can create yours!
-	typeInChat__handler(msg) {
-		var self = this;
-
-		self.emit('typeInChat', {
-			user_id: msg[1],
-			chat_id: msg[2],
-		});
-	
-	}
-
-	//My handler, you can create yours!
-	editChat__handler(msg) {
-		var self = this;
-	
-		self.emit('editChat', {
-			chat_id: msg[1],
-			self: msg[2]
-		});
-	
-	}
-	
-	//My handler, you can create yours!
-	friendOnline__handler(msg) {
-		var self = this;
-		var platform = self._vk.platformById(msg[2] % 256);
-		
-		self.emit('friendOnline', {
-			user_id: msg[1],
-			extra: msg[2],
-			timestamp: msg[3],
-			platform: platform,
-		});
-	
-	}
-
-	//My handler, you can create yours!
-	friendOffline__handler(msg) {
-		var self = this;
-		var platform = self._vk.platformById(msg[2] % 256);
-		
-		self.emit('friendOffline', {
-			user_id: msg[1],
-			extra: msg[2],
-			timestamp: msg[3],
-			platform: platform,
-		});
-
-	}
-
-	//This method start listen a long-poll server and do some actions
-	listen() {
-		var self = this;
-		var server = self._vk.PROTOCOL + "://" + self._server + "?";
-		var params = {
-			wait: "15",
-			version: "2",
-			act: "a_check",
-			ts: self._ts,
-			key: self._key,
-			mode: (128 + 32 + 2),
-		};
-		params = self._vk.urlencode(params);
-		self._lpconnection = request.get(server + params, function(err, res){
-			if (err) {
-				self.emit('error', err);
-			} else {
-				try {
-					var vkr = res.body;
-					vkr = JSON.parse(vkr);
-					if (vkr['failed']) {
-						self.emit('failure', vkr);
-					} else {
-						
-						if (vkr['ts']) {
-							self._ts = vkr['ts'];
-						}
-					
-						if (vkr['updates']) {
-							if (vkr['updates'].length > 0) {
-								self.check_updates.call(self, vkr['updates']);
-							}
-						}
-												
-						self.listen();
-					}
-
-				} catch (e) {
-					self.emit('error', e);
-				}
-			}
-		});
-	}
-
-
-	close () {
-		var self = this;
-		
-
-		return new Promise (function(resolve, reject){
-			if (self._lpconnection) {
-
-				self.emit('close', {
-					time: new Date().getTime(),
-				});
-
-				resolve(self._lpconnection.abort());
-			} else {
-				reject("Longpoll not initialized !!");
-			}
-		});
-	}
-
-	/*
-		
-		So hhaaaard!!!
-		Sorry for my english, it was hard for me, describe this function.
-		
-		If you want to create yours handlers or rewrite my handlers (why?) 
-		you can do this with this method.
-		
-		Docs: vk.com/dev/using_longpoll
-
-		So, for example: 
-			My SDK don't support 70 event(calls) (why? Because vk.com no longer support this for users)
-			And you want to listen it (what for?)
-			You can do this!
-			just...
-			.addEventType(70, 'calls', function(data){
-				console.log(this);
-			});
-			..and then you can do this
-			.on('calls', function(){
-	
-			})
-
-			.addEventType... function(data) and .on... function(msg) Is different functions! Do not confuse!
-		
-		@param {Number} eventCode this is eventCode from docs page
-		@param {String} eventType you can create name for your event
-		@param {Function} handler is handler-function (not callback)
-		@param {Boolean} rewrite if you want rewrire my handlers and get clean information from vk.com you can do this,
-		just put for example 4, 'message', function(msg){ }, true in paramaters
-
-	*/
-
-	addEventType(eventCode, eventType, handler, rewrite=false) { //For dev and extend modules
-		var self = this;
-		return new Promise(function(resolve, reject) {
-			if (eventCode && eventType && handler) {
-				if (self.eventTypes[eventCode] && rewrite) {
-					
-					self.eventTypes[eventCode] = eventType;
-					self[eventType + "__handler"] = handler;
-
-				} else {
-					reject("If you want rewrite handler then set rewrite parameter true! (see code on github)");
-				}
-			} else {
-				reject("Please, enter eventCode, eventType and handler function!!!!");
-			}
-		});
-	}
-
-	/*
-	
-		If my SDK not support certain event it doesn't mean that my SDK not support it :D
-		You can add yours listeners with this function.
-		
-		Docs: vk.com/dev/using_longpoll
-
-		@param {Number} eventCode number of event which you can find on the docs page
-		@param {Function} handler is a handler function
-
-	*/
-
-
-	addEventCodeListener(eventCode, handler) { //Only for create new event listeneres (if there are not in default listeners, you can get a code and add it!)
-		var self = this;
-		return new Promise(function(resolve, reject){
-			if (eventCode && handler) {
-				if (!self.eventTypes[eventCode]) {
-					var prefix = eventCode.toString();
-					if (!self.listeners[prefix]) {						
-						self.eventTypes[eventCode] = prefix;
-						self.listeners[prefix] = handler;
-					} else {
-						reject("This callback already have!");
-					}
-				} else {
-					reject("This eventCode already have!");
-				}
-			}
-		});
 	}
 }
 
 module.exports = new VK();
-
-
-class StreamingAPI {
-
-	constructor (vk, wsc) {
-		this._vk = vk;
-		this._wsc = wsc;
-		this.url_http = this._vk.PROTOCOL + '://' + this._vk.streaming_session.server.endpoint;
-		this.key = this._vk.streaming_session.server.key;
-		this.endpoint = this._vk.streaming_session.server.endpoint;
-		this.listeners = {};
-
-		this.__initConnection__();
-	}
-
-	__initConnection__ () {
-		var self = this;
-		
-		self._wsc.on('open', function() {
-			console.log('Streaming API Init successfully!');
-		});	 
-
-		self._wsc.on('error', function(error) {
-		    self.emit('error', error.toString());
-		});
-
-		self._wsc.on('message', function(message) {
-	        self.__initMessage__(message);
-	    });
-
-	    self._wsc.on('close', function() {
-	    	self.emit('failure', 'Connection closed');
-	    });
-
-	}
-
-	close () {
-
-		var self = this;
-
-		return  new Promise( function(resolve, reject) {
-			if (self._wsc) {
-				resolve(self._wsc.close());
-			} else {
-				reject("WebSocket not connected!!");
-			}
-		});
-	}
-
-	/*
-		
-		Read: LongPoll.on
-
-	*/
-
-
-	on (eventType, callback) {
-		var self = this;
-		if (Object.prototype.toString.call(callback) == "[object Function]") {
-			self.listeners[String(eventType)] = callback;
-		} else {
-			throw "Why are you put to listener not a function?! Why???";
-		}
-	}
-
-	/*
-		
-		Read: LongPoll.emit
-
-	*/
-
-	emit(eventType, data) {
-		var self = this;
-
-		if (self.listeners[eventType]) {
-			try {
-				self.listeners[eventType].call(self, data);
-			} catch (e) {
-				throw e;
-			}
-		}
-	}
-
-	__initMessage__ (body) {
-		var self = this;
-
-		try {
-			body = JSON.parse(body);
-			if (body.code == 100) {
-				if (self.listeners[body.event.event_type]) {
-					self.emit(body.event.event_type, body.event);
-				} else {
-					self.emit('pullEvent', body.event);
-				}
-			} else if (body.code == 300) {
-				self.emit('serviceMessage', body.service_message);
-			}
-		} catch (e) {
-			self.emit('error', e);
-		}
-	}
-
-	/*
-		
-		This function add new rule in your stream. Only one!
-		If you want add many rules, you need use rules manager with initRules() method!
-
-		@param {String} rule is string rule, for exmaple: 'кот -собака'
-		@param {String} tag is tag for rule
-
-
-		@return {Promise}
-
-	*/
-
-	addRule (rule, tag) {
-		var self = this;
-
-		return new Promise (function(resolve, reject) {
-			var url__post = self.url_http + '/rules?key=' + self.key;
-
-			request.post({
-				method: 'POST',
-				url: url__post,
-				json: {
-					"rule": {
-						"value": rule,
-						"tag": tag
-					}
-				}
-			}, function(err, res) {
-				
-				var rvk = res.body;
-
-				if (err) {
-					reject(err, null);
-				}
-
-				if (rvk) {
-					try {
-						
-						if (rvk[0] != "{" && Object.prototype.toString.call(rvk) != "[object Object]") reject("Is not JSON!" + rvk); 
-						if (Object.prototype.toString.call(rvk) != "[object Object]") rvk = JSON.parse(rvk);
-
-						var error = self._vk.check_error(rvk);
-
-						if (error) {
-							reject(error, rvk.error.error_code);
-						} else {
-							resolve.call(rvk, true, rvk);
-						}
-
-					} catch (e) {
-						reject(e, null);
-					}
-				} else {
-					console.log("We don't know that error, vk returned us: ", res);
-				}
-
-			});
-		});
-	}
-
-	/*
-		
-		This function delete rule in your stream. Only one!
-		If you want delete many rules, you need use rules manager with initRules() method or deleteAllRules().
-	
-		@param {String} tag is tag for rule, which you want to delete
-
-
-		@return {Promise}
-
-	*/
-
-	deleteRule (tag) {
-		var self = this;
-
-
-		return new Promise (function(resolve, reject) {
-			var url__delete = self.url_http + '/rules?key=' + self.key;
-			tag = tag.toString();
-
-			request.delete({
-				method: 'DELETE',
-				url: url__delete,
-				json: {
-					"tag": tag
-				}
-			}, function(err, res) {
-				
-				var rvk = res.body;
-
-				if (err) {
-					reject(err, null);
-				}
-				
-				if (rvk) {
-					try {
-
-						if (rvk[0] != "{" && Object.prototype.toString.call(rvk) != "[object Object]") reject("Is not JSON!" + rvk); 
-						if (Object.prototype.toString.call(rvk) != "[object Object]") rvk = JSON.parse(rvk);
-
-						var error = self._vk.check_error(rvk);
-
-						if (error) {
-							reject(error, rvk.error.error_code);
-						} else {
-							resolve(tag);
-						}
-					} catch (e) {
-						reject(e, null);
-					}
-				} else {
-					console.log("We don't know that error, vk returned us (Delete Rule): ", rvk);
-				}
-			});
-		});
-	}
-
-	/*
-	
-		This function return in resolve function all your rules from stream
-
-		@return {Promise}
-
-	*/
-
-
-	getRules () {
-		var self = this;
-
-		return new Promise (function(resolve, reject) {
-			var url__get = self.url_http + '/rules?key=' + self.key;
-
-			request.get({
-				method: 'GET',
-				url: url__get
-			}, function(err, res) {
-				var rvk = res.body;
-
-				if (err) {
-					reject(err, null);
-				}
-				
-				if (rvk) {
-					try {
-
-
-						if (rvk[0] != "{" && Object.prototype.toString.call(rvk) != "[object Object]") reject("Is not JSON!" + rvk); 
-						if (Object.prototype.toString.call(rvk) != "[object Object]") rvk = JSON.parse(rvk);
-						
-
-						var error = self._vk.check_error(rvk);
-
-						if (error) {
-							reject(error, rvk.error.error_code);
-						} else {
-							resolve.call(rvk, rvk.rules, true);
-						}
-
-					} catch (e) {
-						reject(e, null);
-					}
-				}  else {
-					console.log("We don't know that error, vk returned us (Get rule): ", rvk);
-				}
-
-			});
-		});
-	}
-
-
-	/*
-		@return {Promise}
-	*/
-
-	deleteAllRules() {
-		var self = this;
-
-		return new Promise (function(resolve, reject){
-			self.getRules().then(function(rules){
-				if (rules && rules.length > 0) {
-					var i = 0;
-
-					function del () {
-						self.deleteRule(rules[i].tag).then(function(){
-							i+= 1;
-
-							if (i === rules.length) {
-								resolve.call(this, [true, i]);
-							} else {
-								setInterval(function(){
-									del();
-								}, 1200);
-							}
-
-						})
-					} 
-
-					del();
-
-				} else {
-					resolve.call(this, [true, 0]);
-				}
-
-			}, reject); 			
-		});
-
-	}
-
-	/*
-		
-		This method can help you create, delete and manage your rules too easy!
-		For example: You need create your rules, cat, dog: 
-			initRules({
-				'cat': 'кошка',
-				'dog': 'собака'
-			});
-
-		And after this, you may want to delete dog. If there was not this function, you would have to use deleteRule('dog'), but...
-		I am created this method and so you can do it:
-			initRules({
-				'cat': 'кошка'
-			});
-		:D
-
-		After this, if you want to replace/change already existing rule, you can do it:
-			initRules({
-				'cat': 'кошка киса'
-			});
-		
-		After all manipulations, you can get changelog and result so:
-			initRules({
-				'cat': 'кошка'
-			}).then(function(log){
-				console.log(log); //{addedRules: {'cat': 'кошка'}, replacedRules: {}, deletedRules: {}}
-			});
-
-		It's very easy!
-
-		@param {Object} rules
-		@param {Function} errorHandler is function, which will be use when is some of actions arise new error. reject and this - is different functions, use 
-		each for their own affairs!
-
-		@return {Promise}
-
-	*/
-
-	initRules (rules, errorHandler) {
-		var self = this;
-		
-
-		return new Promise (function(resolve, reject){
-			
-			if (Object.prototype.toString.call(errorHandler) !== "[object Function]") {
-				errorHandler = function () {};
-			}
-
-			if (Object.prototype.toString.call(rules) !== "[object Object]") {
-				rules = {};
-			}
-
-			self.getRules().then(function(st_rules){
-				var st_rules__obj = {};
-				var deletedRules = {};
-				var replacedRules = {};
-				var addedRules = {};
-				var tagi, rules_tags;
-
-
-				if (st_rules) {
-					for (var i = 0; i < st_rules.length; i++) {
-						st_rules__obj[st_rules[i].tag] = st_rules[i].value;
-					}
-
-					
-					var tags__ = [];
-					for (var tag in st_rules__obj) { tags__.push(tag); }
-					var i__tag = 0;
-
-					function initTag () {
-						var tag = tags__[i__tag];
-						i__tag += 1;
-						if (rules[tag] != undefined) {
-							if (Object.prototype.toString.call(rules[tag]) === "[object String]" && rules[tag] != st_rules__obj[tag]) {
-								
-								self.deleteRule(tag).then(function(t){
-									if (t != false && t != undefined) {
-										self.addRule(rules[t], t).then(function(){
-											replacedRules[tag] = {
-												last_val: st_rules__obj[tag],
-												new_val: rules[tag]
-											};
-											nextTag(); 
-										}, function(error){
-											errorHandler.call(this, error, t, null);
-										});
-									}
-
-								}, reject);
-
-
-							} else if (Object.prototype.toString.call(rules[tag]) === "[object String]" && rules[tag] == st_rules__obj[tag]) {
-								nextTag(); 
-							} else {
-								nextTag();
-								errorHandler.call(this, "Value must be string type, if you want use word undefined, you need use it: \'undefined\' !!!", rules[tag], null);
-							}
-						} else {
-							
-
-							self.deleteRule(tag).then(function(){
-								deletedRules[tag] = {
-									val: st_rules__obj[tag] 
-								};
-								nextTag();
-							}, function(err){
-								errorHandler.call(this, err, tag, "delete_error");
-							});
-
-						}
-					}
-
-					function nextTag () {
-						console.log(tags__);
-						if (i__tag < tags__.length) {
-							initTag();
-						} else {
-							runAdd();
-						}
-					}
-
-					initTag();
-				}
-
-				function runAdd() {
-
-					rules_tags = [];
-					tagi = 0;
-
-					for (var i in rules) rules_tags.push(i);
-
-					addRule();
-
-				}
-
-				function addRule () {
-					if (tagi == rules_tags.length) {
-						return;
-					}
-
-					if (st_rules__obj[rules_tags[tagi]] === undefined) {
-						self.addRule(rules[rules_tags[tagi]], rules_tags[tagi]).then(function(){
-
-
-							addedRules[rules_tags[tagi]] = {
-								tag: rules_tags[tagi],
-								val: rules[rules_tags[tagi]]
-							};
-
-							tagi += 1;
-
-							if (tagi < rules_tags.length) {
-								addRule();
-							} else {
-								resolve.call(this, {
-									added: addedRules,
-									replaced: replacedRules,
-									deleted: deletedRules
-								});
-							}
-						}, function (err) {
-							errorHandler.call(this, err, rules_tags[tagi], null);
-						});
-
-					} else {
-						tagi += 1;
-
-						if (tagi < rules_tags.length) {
-							addRule();
-						} else {
-							resolve.call(this, {
-								added: addedRules,
-								replaced: replacedRules,
-								deleted: deletedRules
-							});
-						}
-					}
-				}
-
-
-			});
-
-		});
-	}
-}

@@ -37,8 +37,8 @@ VK.login(username, password, captcha_sid, captcha_key, reauth).then(function(ses
 	});
 
 	VK.streamingAPI({
-		client_id: '6333355',
-		client_secret: 'zkEZmZjzfpJSh7E20vcv' //Example
+		client_id: '222232332',
+		client_secret: 'MklOppwhHHwmKloADfJ' //Example
 	}).then(function(connection){
 		
 
@@ -65,6 +65,13 @@ VK.login(username, password, captcha_sid, captcha_key, reauth).then(function(ses
 	}, function(err){
 		console.log(err);
 	});
+
+
+	//It will be first, because async
+	//earlier this function interrupts the execution of the next block
+	//In 0.3 version all functions is async
+	
+	console.log(true);
 
 }, function(err){
 	console.log(err);
