@@ -10,15 +10,16 @@ You can use it for know more: vk.com/dev/manuals
 ## What can it do?
 
 1. Longpolling
-2. Call to vk methods
-3. Auth
-4. Upload docs, voices to messages
-5. Upload photos to messages
-6. Two factor authentication
-7. Save session
-8. Captcha
-9. Streaming API
-10. Routine functions like isFriend and others
+2. CallBack API
+3. Call to vk methods
+4. Auth
+5. Upload docs, voices to messages
+6. Upload photos to messages
+7. Two factor authentication
+8. Save session
+9. Captcha
+10. Streaming API
+11. Routine functions like isFriend and others
 
 
 ## What's new? (0.2)
