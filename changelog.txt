@@ -6,6 +6,22 @@
 [Changelog]
 ==========
 
+[0.3] version:
+	Must have: * * * * / * * * * *
+	Changes: * * * * / * * * * *
+
+	Fixed auth with group_access_token, because vk api was updates from uid to user_id
+
+	Added callbackAPI
+	
+	For a long time I wanted to add support for CallbackAPI. Today released a release in which you can already test the support of this extension. It was tested on a heroku web server (of course, not without problems :D)
+	But... For now - you need use 8.x nodejs version, and i am changed it!!
+
+	All functions like StreamingAPI, LongPoll, CallbackAPI, which occupy the flow and stop work, for now became asynchronous
+
+	Fixed readme version vk api and others misprints
+
+
 [0.2.81] version:
 	Must have: * * * * * / * * * * *
 	Changes: * / * * * * *
@@ -14,6 +30,7 @@
 	In older version it can throw error and stop your script. It was solved.
 
 	Fixed my "UUURAA!!" in console's log.
+
 
 [0.2.8] version:
 	

@@ -3,11 +3,11 @@ var fs = require('fs');
 var encoding = require('encoding');
 var WS = require('ws');
 var http = require('http');
-var https = require('https');
 
-
+//Lib utils
 var StreamingAPI = require('./utils/streamingapi.js');
 var LongPollConnection = require('./utils/longpollconnection.js');
+var CallbackAPI = require('./utils/callbackapi.js');
 
 class VK {
 	constructor() {
@@ -206,7 +206,7 @@ class VK {
 							} else {
 								vkr = vkr['response'][0];
 								
-								self.session['user_id'] = vkr['uid'];
+								if (vkr) self.session['user_id'] = vkr['user_id'];
 								self.session['access_token'] = access_token;
 
 								if (save_session) {
@@ -269,6 +269,79 @@ class VK {
 					reject(e);
 				}
 			});
+		});
+	}
+
+	/*
+		
+		Started from 0.3v i am added callbackAPI support.
+		If you want create callback server for listen group's events, learn more here: vk.com/dev/callback_api_2
+
+		@param {Object} params is an object which contents these settings:
+			groups: {Array}[{Group Object}, {Group Object}, ... ] is an array which contents all your groups for this server
+			port **: {Number} is a port for server, but... vk.com not support for now other ports, so, you need use 443 or 8080 port, or take it from process.env.PORT
+			group_id: {String} group's id, if you want controll only one group, use it
+			secret: {String} is a secret from your settings
+			confirmCode: {String} is a code which your server must return to vk when you need to confirm him
+
+		{Group object} - is just an object which contents group_id, secret and confirmCode for certain group,
+		so, you can use many groups on one server and it will be nice working!
+
+	*/
+
+	async callbackAPI(params) {
+		var self = this;
+
+
+		return new Promise(function(resolve, reject){
+
+			if (!params) reject('One of parameters was down (settings)');
+
+			if (params.groups) {
+				if (params.groups.length == 0) reject('You use groups array, send object in it!');
+			} else if (params.group_id) {
+				if (!params.confirmCode) reject('You don\'t puted confirmCode parameter!');
+				
+				params.groups = [{
+					confirmCode: params.confirmCode,
+					group_id: params.group_id
+				}];
+
+				if (params.secret) params.groups[0].secret = params.secret;
+			} else {
+				reject('Select a group and set up it!');
+			}
+
+			if (params.groups) {
+				params.groups.forEach(function(group_settings, index){
+					var where_occured = '(occured in groups[' + index + '])';
+					
+					if (Object.prototype.toString.call(group_settings, index) === '[object Object]') {
+						if (!group_settings.group_id) reject('Input group_id must have! ' + where_occured);
+
+						if (!group_settings.confirmCode) reject('Input confirmCode mush have!' + where_occured);
+
+					} else {
+						reject('Use object in groups settings! ' + where_occured);
+					}
+
+				});
+
+				var gr_temp = params.groups;
+				params.groups = {};
+				
+				gr_temp.forEach(function(group){
+					params.groups[group.group_id.toString()] = group;
+				});
+
+			}
+
+			if (!params.port) reject('Select a server port!! (process.env.PORT || 3000)');
+
+			self._cbparams = params;
+
+			resolve(new CallbackAPI(self));
+
 		});
 	}
 
@@ -852,22 +925,6 @@ class VK {
 	}
 
 
-	callbackAPI (params) {
-		var self = this;
-
-
-		if (Object.prototype.toString.call(params) !== '[object Object]') params = {};
-		if (!params.port) params.port = 3000;
-		if (!params.host) params.host = '127.0.0.1';
-		if (params.https != true) params.https = false;
-
-		if (params.https) {
-
-		} else {
-			self._cbserver = http.createServer(new CallbackAPI(self));
-			self._cbserver.listen(params.port, params.host);
-		}
-	}
 }
 
 module.exports = new VK();

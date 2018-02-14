@@ -1,8 +1,11 @@
 {
   "name": "easyvk",
-  "version": "0.2.9",
+  "version": "0.3",
   "description": "Functional SDK for vk.com and VK API",
   "main": "index.js",
+  "engines": {
+    "node": "8.x"
+  },
   "repository": {
     "type": "git",
     "url": "git@github.com:ciricc/easyvk.git"
@@ -18,13 +21,17 @@
     "vksdk",
     "nodevk",
     "vk",
-    "nodejs"
+    "nodejs",
+    "streaming-api",
+    "longpolling"
   ],
   "author": "ciricc",
   "license": "MIT",
   "dependencies": {
     "encoding": "*",
+    "express": "^4.16.2",
     "request": "^2.83.0",
-    "ws": "^4.0.0"
+    "ws": "^4.0.0",
+    "body-parser": "^1.18.2",
   }
 }
