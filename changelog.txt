@@ -21,6 +21,8 @@
 
 	Fixed readme version vk api and others misprints
 
+	Changed VK APi verion to newest - 5.73 
+	Fixed package.json file
 
 [0.2.81] version:
 	Must have: * * * * * / * * * * *

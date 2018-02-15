@@ -1,6 +1,6 @@
 {
   "name": "easyvk",
-  "version": "0.3",
+  "version": "0.3.0",
   "description": "Functional SDK for vk.com and VK API",
   "main": "index.js",
   "engines": {
@@ -32,6 +32,6 @@
     "express": "^4.16.2",
     "request": "^2.83.0",
     "ws": "^4.0.0",
-    "body-parser": "^1.18.2",
+    "body-parser": "^1.18.2"
   }
 }
