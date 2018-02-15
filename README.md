@@ -90,7 +90,7 @@ If you don't put object, you can look at next table.
 | reauth | My SDK save your session if you login first time, but if you login not first, it will try get session from .vksession file. And if you want reauth with new params, you need set reauth param true | false |
 | save_session | But you may be want do not save session in file, then you need set this parameter false | true |
 | session_file | You can save session in your file if do nt want save in .vksession file. But i don't recommend do this | .vksession |
-| api_v | My SDK uses now 5.71 API (2018) version but you can change it | 5.71 |
+| api_v | My SDK uses now 5.73 API (2018) version but you can change it | 5.73 |
 
 And if you use only arguments you need look at it!
 
@@ -112,9 +112,9 @@ This error may  spread on all queries and so you need always catch it.
 On account of authorization that is all (for now).
 
 
-### CallbacAPI
+### Callback API
 
-I have long time to make support for callbackapi, so from 0.3 version you can use callback api server.
+I have long time to make support for Callback API, so from 0.3 version you can use callback api server.
 
 It built on the express and http modules. And so, you can use it too.
 Callback API can help you  create listening server which will be listen all events from you group.
@@ -129,7 +129,9 @@ var httpPort = (process.env.PORT || 5000);
 VK.callbackAPI({
   group_id: 'your_group_id',
   confirmCode: 'confirmation_code',
-  secret: 'secret_key (password from settings groups)' //Only if your group use it and uniq for one group
+
+  //Only if your group use it and uniq for one group
+  secret: 'secret_key (password from settings groups)'
   port: httpPort
 }).then(function(connection){
   connection.on('message_new', function (messageEvent) {
@@ -163,7 +165,7 @@ VK.callbackAPI({
 
 ```
 
-If you use a secret key from group, you need add a seret parameter. And if POST query will be contents secret otic from your,
+If you use a secret key from group, you need add a secret parameter. And if POST query will be contents secret otic from your,
 you get an error (you can catch it).
 
 So, look at the table. This table show you list of all events which you can listen
