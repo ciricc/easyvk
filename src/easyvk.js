@@ -287,6 +287,8 @@ class VK {
 		{Group object} - is just an object which contents group_id, secret and confirmCode for certain group,
 		so, you can use many groups on one server and it will be nice working!
 
+		@return {Promise}
+
 	*/
 
 	async callbackAPI(params) {

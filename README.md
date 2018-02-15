@@ -10,7 +10,7 @@ You can use it for know more: vk.com/dev/manuals
 ## What can it do?
 
 1. Longpolling
-2. CallBack API
+2. Callback API
 3. Call to vk methods
 4. Auth
 5. Upload docs, voices to messages
@@ -110,6 +110,117 @@ VK.login({
 
 This error may  spread on all queries and so you need always catch it.
 On account of authorization that is all (for now).
+
+
+### CallbacAPI
+
+I have long time to make support for callbackapi, so from 0.3 version you can use callback api server.
+
+It built on the express and http modules. And so, you can use it too.
+Callback API can help you  create listening server which will be listen all events from you group.
+
+My SDK supports multigroup mode. i.e you can create only one server for all groups and receive all calls.
+For use it you need to create your group and setting up it in easyvk so
+
+```javascript
+
+var httpPort = (process.env.PORT || 5000);
+
+VK.callbackAPI({
+  group_id: 'your_group_id',
+  confirmCode: 'confirmation_code',
+  secret: 'secret_key (password from settings groups)' //Only if your group use it and uniq for one group
+  port: httpPort
+}).then(function(connection){
+  connection.on('message_new', function (messageEvent) {
+    console.log(messageEvent.object) //message object
+  });
+}, function (error) {
+  console.log('[CallbackAPI Error]', error);
+});
+
+
+```
+
+My SDK support many groups, so, you can use it
+
+```
+
+VK.callbackAPI({
+  groups: [
+    {
+      group_id: 'wdwd',
+      //....
+    },
+
+    {
+      group_id: 'groups_id',
+      //....
+    }
+  ],
+  port: httpPort
+}).then(/*func....*/);
+
+```
+
+If you use a secret key from group, you need add a seret parameter. And if POST query will be contents secret otic from your,
+you get an error (you can catch it).
+
+So, look at the table. This table show you list of all events which you can listen
+
+| EventType | Description |
+| --------- | ---------- |
+| secretError | Arise when one of request contents a key is different from the specified one or there is none at all |
+| confirmationError | Arises when confirmation process get an error (for example, came a request in which the group_id is specified, which you do not have) |
+| .... all vk events | You can see list of all events here: https://vk.com/dev/callback_api for example: `message_new` |
+
+If you want to do something with your group (for example: reply to messages), you need login with your group_access_token
+
+```javascript
+
+VK.login({
+  access_token: 'group_access_token'
+}).then(function(session){
+  
+  VK.callbackAPI({
+    /*see above*/
+  }).then(function(connection){
+    
+    connection.on('message_new', function(messageEvent) {
+      var msg = messageEvent.object;
+
+      VK.call('messages.send', {
+        peer_id: msg.user_id,
+        message: 'Hello!'
+      });
+
+    });
+
+  }, function (error) {
+    console.log('[CallbackAPI Error]', error);
+  });
+
+}, function (error) {
+  console.log(error);
+});
+
+
+```
+
+#### What i need to do?
+
+If you do not understand how to use it (Callback API), see our instructions
+
+1. Create your public group or... just group, sorry
+2. Get confirmation token, group id, switch all events which you need listen
+3. Download easyvk and npm, nodejs
+4. Initialize callback server (example above)
+5. Run your script on the server with public IP and public access, for example: heroku, or you can buy a server
+6. Profit
+
+If you don't understand, contact me in any convenient way.
+Thank you.
+
 
 ### Streaming API
 
