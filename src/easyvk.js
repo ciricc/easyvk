@@ -22,24 +22,25 @@ class VK {
 		this.DEFAULT_2FACODE = ""; //Two factor code
 		this.session = {};
 		this.api_v = "5.71";
-		this.v = "0.3";
+		this.v = "0.3.01";
 
 	}
 
-	/*
-
-		Authorization and session creation function.
-		Use it to create a session for an windows application.
-
-		@param {String} {Object} username_arg if you put username_arg as object then all arguments will be use from it else it is just a username string (email, phone and what else?)
-		@param {String} password_arg if you puted an username_arg as a string then you must put this parameter
-		@param {Number} {String} captcha_sid_arg if you got an error from last query, you must put a captcha_sid from error info and captcha_key (just a text on image) parameter
-		@param {String} captcha_key text on captcha
-		@param {Number} {String} code_arg is code from two factor message. It may be sms code or app code (for example, Google Authenticator)
-		
-		@return {Promise}
-
-	*/
+	/**
+	 *
+	 *
+	 *  Authorization and session creation function.
+	 *  Use it to create a session for an windows application.
+	 *
+	 *  @param {String} {Object} username_arg if you put username_arg as object then all arguments will be use from it else it is just a username string (email, phone and what else?)
+	 *  @param {String} password_arg if you puted an username_arg as a string then you must put this parameter
+	 *  @param {Number} {String} captcha_sid_arg if you got an error from last query, you must put a captcha_sid from error info and captcha_key (just a text on image) parameter
+	 *  @param {String} captcha_key text on captcha
+	 *  @param {Number} {String} code_arg is code from two factor message. It may be sms code or app code (for example, Google Authenticator)
+	 *	
+	 *	@return {Promise}
+     * 
+	 */
 
 	async login (username_arg, password_arg, captcha_sid_arg, captcha_key_arg, reauth_arg, code_arg) {
 		
@@ -225,17 +226,17 @@ class VK {
 		});
 	}
 
-	/*
-		
-		Function for calling to methods and get anything
-		Docs: vk.com/dev/methods
-
-		@param {String} method_name is just a method name :D (messages.get/wall.edit and others)
-		@param {Object} data  if vk.com asks a parameters, you can send they. (Send access_token to this from session is not necessary, but also you can do this)
-		
-		@return {Promise}
-
-	*/
+	/**
+	 *	
+	 *	Function for calling to methods and get anything
+	 *	Docs: vk.com/dev/methods
+     *
+	 *	@param {String} method_name is just a method name :D (messages.get/wall.edit and others)
+	 *	@param {Object} data  if vk.com asks a parameters, you can send they. (Send access_token to this from session is not necessary, but also you can do this)
+	 *	
+	 *	@return {Promise}
+     *
+	 */
 
 	async call(method_name, data) {
 		var self = this;
@@ -272,24 +273,24 @@ class VK {
 		});
 	}
 
-	/*
-		
-		Started from 0.3v i am added callbackAPI support.
-		If you want create callback server for listen group's events, learn more here: vk.com/dev/callback_api_2
-
-		@param {Object} params is an object which contents these settings:
-			groups: {Array}[{Group Object}, {Group Object}, ... ] is an array which contents all your groups for this server
-			port **: {Number} is a port for server, but... vk.com not support for now other ports, so, you need use 443 or 8080 port, or take it from process.env.PORT
-			group_id: {String} group's id, if you want controll only one group, use it
-			secret: {String} is a secret from your settings
-			confirmCode: {String} is a code which your server must return to vk when you need to confirm him
-
-		{Group object} - is just an object which contents group_id, secret and confirmCode for certain group,
-		so, you can use many groups on one server and it will be nice working!
-
-		@return {Promise}
-
-	*/
+	/**
+	 *	
+	 *	Started from 0.3v i am added callbackAPI support.
+	 *	If you want create callback server for listen group's events, learn more here: vk.com/dev/callback_api_2
+     *
+	 *	@param {Object} params is an object which contents these settings:
+	 *		groups: {Array}[{Group Object}, {Group Object}, ... ] is an array which contents all your groups for this server
+	 *		port **: {Number} is a port for server, but... vk.com not support for now other ports, so, you need use 443 or 8080 port, or take it from process.env.PORT
+	 *		group_id: {String} group's id, if you want controll only one group, use it
+	 *		secret: {String} is a secret from your settings
+	 *		confirmCode: {String} is a code which your server must return to vk when you need to confirm him
+	 *
+	 *	{Group object} - is just an object which contents group_id, secret and confirmCode for certain group,
+	 *	so, you can use many groups on one server and it will be nice working!
+	 *
+	 *	@return {Promise}
+     *
+	 */
 
 	async callbackAPI(params) {
 		var self = this;
@@ -347,12 +348,12 @@ class VK {
 		});
 	}
 
-	/*
-		
-		It is first version and will be debug.
-		No docs, no comments (for now)
-
-	*/
+	/**
+	 *	
+	 *	It is first version and will be debug.
+	 *	No docs, no comments (for now)
+     *
+	 */
 
 	async uploadPhotoMessages(file_name, peer_id) {
 		var self = this;
@@ -401,12 +402,12 @@ class VK {
 		});
 	}
 
-	/*
-		
-		It is first version and will be debug.
-		No docs, no comments (for now)
-
-	*/
+	/**
+	 *	
+	 *	It is first version and will be debug.
+	 *	No docs, no comments (for now)
+     *
+	 */
 
 	async uploadPhotosMessages(photos, peer_id) {
 		var self = this;
@@ -438,12 +439,12 @@ class VK {
 		});
 	}
 
-	/*
-		
-		It is first version and will be debug.
-		No docs, no comments (for now)
-
-	*/
+	/**
+	 *	
+	 *	It is first version and will be debug.
+	 *	No docs, no comments (for now)
+	 *
+	 */
 
 
 	async uploadDoc(doc, peer_id, type) {
@@ -502,13 +503,13 @@ class VK {
 
 
 
-	/*
-		
-		This function gets the server, ts and key parameters from api.vk.com for create a long-poll connection.
-
-		@return {Promise}
-
-	*/
+	/**
+	 *	
+	 *	This function gets the server, ts and key parameters from api.vk.com for create a long-poll connection.
+     *
+	 *	@return {Promise}
+	 *
+	 */
 
 
 	async longpoll() {
@@ -528,14 +529,14 @@ class VK {
 		});
 	}
 
-	/*
-		
-		If you need get the platform by id, you can do this with this function
-		
-		Docs: https://vk.com/dev/using_longpoll_2?f=7.+Платформы
-		@param {Number} platformID is a platform_id, which you can find on docs-page
-
-	*/
+	/**
+	 *
+	 *	If you need get the platform by id, you can do this with this function
+	 *	
+	 *	Docs: https://vk.com/dev/using_longpoll_2?f=7.+Платформы
+	 *	@param {Number} platformID is a platform_id, which you can find on docs-page
+	 *
+	 */
 
 
 	platformById(platformID) {
@@ -579,15 +580,15 @@ class VK {
 		}
 	}
 
-	/*
-	
-		This function return a GET url with parameters. If you want get url encoded string from object you can use it.
-
-		@param {Object} object it is clear, man! it just a object.................. :(
-		
-		@return {String}
-
-	*/
+	/**
+	 *
+	 *	This function return a GET url with parameters. If you want get url encoded string from object you can use it.
+	 *
+	 *	@param {Object} object it is clear, man! it just a object.................. :(
+	 *	
+	 *	@return {String}
+     *
+	 */
 
 	urlencode(object = {}) {
 	    
@@ -643,16 +644,16 @@ class VK {
 	}
 
 
-	/*
-		
-		This function return Promise and in resolve method you can get list of all friends user_id's
-		count 10000 - is maximum count of friends for one user. (See also - https://vk.com/page-53003970_46897420)
-
-		@param {Number} user_id this is the user's id,  list of friends whom you want to receive
-			
-		@return {Promise}
-
-	*/
+	/**
+	 *	
+	 *	This function return Promise and in resolve method you can get list of all friends user_id's
+	 *	count 10000 - is maximum count of friends for one user. (See also - https://vk.com/page-53003970_46897420)
+     *
+	 *	@param {Number} user_id this is the user's id,  list of friends whom you want to receive
+	 *		
+	 *	@return {Promise}
+     *
+	 */
 
 
 	async getAllFriendsList(user_id) {
@@ -669,18 +670,18 @@ class VK {
 	}
 
 
-	/*
-		
-		This function return Promise and in resolve method you can get true or false, which means friends whether the user of firend_id's
-
-
-		@param {Number} friend_id this is the user's id,  which presumably a friend of check_id user
-		@param {Number} check_id this is the user'd id, which presumably a friend of friend_id user.
-		If this paramater was down, it will be user_id from vksession i.e your id from auth system.
-
-		@return {Promise}
-
-	*/
+	/**
+	 *
+	 *	This function return Promise and in resolve method you can get true or false, which means friends whether the user of firend_id's
+     *
+	 *
+	 *	@param {Number} friend_id this is the user's id,  which presumably a friend of check_id user
+	 *	@param {Number} check_id this is the user'd id, which presumably a friend of friend_id user.
+	 *	If this paramater was down, it will be user_id from vksession i.e your id from auth system.
+	 *
+	 *	@return {Promise}
+	 *
+	 */
 
 	async isFriend(friend_id, check_id) {
 		var self = this;
@@ -694,17 +695,17 @@ class VK {
 	}
 
 
-	/*
-	
-		This function can help you get number of views live stream!
-		This unofficial function, so she can to break in one of the moments!!! [!!! Warning !!!]
-
-
-		@param {String} video_source_id is source_id from URL of video, for example: In URL (https://vk.com/video?z=video-34884057_456239322) video_id is -34884057_456239322
-	
-
-		@return {Promise}
-	*/
+	/**
+	 *
+	 *	This function can help you get number of views live stream!
+	 *	This unofficial function, so she can to break in one of the moments!!! [!!! Warning !!!]
+	 *
+	 *
+	 *	@param {String} video_source_id is source_id from URL of video, for example: In URL (https://vk.com/video?z=video-34884057_456239322) video_id is -34884057_456239322
+	 *
+	 *
+	 *  @return {Promise}
+	 */
 
 
 	async getLiveViews (video_source_id) {
@@ -785,20 +786,20 @@ class VK {
 	}
 
 
-	/*
-		
-		This function can check if the follower_id user is in the subscribers of the user_id user
-
-
-		@param {Number} user_id is the user who needs to search for a follower_id subscriber
-		@param {Number} follower_id is the follower user, if it was down it will be user_id from current Auth session
-		@param {Number} maximum is number of max value for count subs. For example: if account has 500000 subs, and you put max 100K, then this user 
-		will be skipped to not load the system
-
-
-		@return {Promise}
-
-	*/
+	/**
+	 *	
+	 *	This function can check if the follower_id user is in the subscribers of the user_id user
+     *
+	 *
+	 *  @param {Number} user_id is the user who needs to search for a follower_id subscriber
+	 *  @param {Number} follower_id is the follower user, if it was down it will be user_id from current Auth session
+	 *	@param {Number} maximum is number of max value for count subs. For example: if account has 500000 subs, and you put max 100K, then this user 
+	 *	will be skipped to not load the system
+	 *
+	 *
+	 *	@return {Promise}
+	 *
+	 */
 
 
 	async userFollowed (user_id, follower_id, maximum) {
@@ -840,24 +841,24 @@ class VK {
 		});
 	}
 
-	/*
-		
-		Streaming API was added in 0.2.0 version. This API was documented on man page: https://vk.com/dev/streaming_api,
-		My SDK can help you create rules easy and manage them too easy!
-
-		@param {Object} application This object is your applications settings with two parameters:
-		
-		{
-			client_id: '222222222 (example)',
-			client_secret: 'SKflEUmyZlpgmgyvUS (example)'
-		}, if it was down, you will get an error! Please, don't use Official windows app id and secret, or other, who can do this too, may be delete your settings! 
-
-		Create own applications!! [Warning]
-		
-
-		@return {Promise}
-
-	*/
+	/**
+	 *	
+	 *	Streaming API was added in 0.2.0 version. This API was documented on man page: https://vk.com/dev/streaming_api,
+	 *	My SDK can help you create rules easy and manage them too easy!
+	 *
+	 *	@param {Object} application This object is your applications settings with two parameters:
+	 *	
+	 *	{
+	 *		client_id: '222222222 (example)',
+	 *		client_secret: 'SKflEUmyZlpgmgyvUS (example)'
+	 *	}, if it was down, you will get an error! Please, don't use Official windows app id and secret, or other, who can do this too, may be delete your settings! 
+	 *
+	 *	Create own applications!! [Warning]
+	 *	
+	 *
+	 *	@return {Promise}
+	 *
+	 */
 
 
 

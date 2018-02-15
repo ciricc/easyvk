@@ -100,18 +100,18 @@ class StreamingAPI {
 		}
 	}
 
-	/*
-		
-		This function add new rule in your stream. Only one!
-		If you want add many rules, you need use rules manager with initRules() method!
-
-		@param {String} rule is string rule, for exmaple: 'кот -собака'
-		@param {String} tag is tag for rule
-
-
-		@return {Promise}
-
-	*/
+	/**
+	 *
+	 *	This function add new rule in your stream. Only one!
+	 *	If you want add many rules, you need use rules manager with initRules() method!
+     *
+	 *	@param {String} rule is string rule, for exmaple: 'кот -собака'
+	 *	@param {String} tag is tag for rule
+     *
+     *
+	 *	@return {Promise}
+     *
+	 */
 
 	addRule (rule, tag) {
 		var self = this;
@@ -161,17 +161,17 @@ class StreamingAPI {
 		});
 	}
 
-	/*
-		
-		This function delete rule in your stream. Only one!
-		If you want delete many rules, you need use rules manager with initRules() method or deleteAllRules().
-	
-		@param {String} tag is tag for rule, which you want to delete
-
-
-		@return {Promise}
-
-	*/
+	/**
+	 *
+	 *	This function delete rule in your stream. Only one!
+	 *	If you want delete many rules, you need use rules manager with initRules() method or deleteAllRules().
+	 *
+	 *	@param {String} tag is tag for rule, which you want to delete
+     *
+	 *
+	 *	@return {Promise}
+	 *
+	 */
 
 	deleteRule (tag) {
 		var self = this;
@@ -218,13 +218,13 @@ class StreamingAPI {
 		});
 	}
 
-	/*
-	
-		This function return in resolve function all your rules from stream
-
-		@return {Promise}
-
-	*/
+	/**
+	 *
+	 *	This function return in resolve function all your rules from stream
+	 *
+	 *	@return {Promise}
+	 *
+	 */
 
 
 	getRules () {
@@ -271,9 +271,11 @@ class StreamingAPI {
 	}
 
 
-	/*
-		@return {Promise}
-	*/
+	/**
+	 *
+	 *	@return {Promise}
+	 *
+	 */
 
 	deleteAllRules() {
 		var self = this;
@@ -338,14 +340,16 @@ class StreamingAPI {
 			});
 
 		It's very easy!
-
-		@param {Object} rules
-		@param {Function} errorHandler is function, which will be use when is some of actions arise new error. reject and this - is different functions, use 
-		each for their own affairs!
-
-		@return {Promise}
-
 	*/
+
+	/**
+	 *	@param {Object} rules
+	 *	@param {Function} errorHandler is function, which will be use when is some of actions arise new error. reject and this - is different functions, use 
+	 *	each for their own affairs!
+	 *
+	 *	@return {Promise}
+	 *
+	 */
 
 	initRules (rules, errorHandler) {
 		var self = this;

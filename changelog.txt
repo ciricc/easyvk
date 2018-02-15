@@ -6,7 +6,13 @@
 [Changelog]
 ==========
 
-[0.3] version:
+[0.3.01] version:
+	Must have: * / * * * * *
+	Changes: * / * * * * * 
+
+	Changed comments in scripts and corrected readme / changelog files
+	
+[0.3.0] version:
 	Must have: * * * * / * * * * *
 	Changes: * * * * / * * * * *
 
@@ -52,4 +58,3 @@
 	Changed VK API version on 5.71
 
 	Added new event type for longpoll - close. (Arises when program closed connection by .close() method)
-

@@ -20,20 +20,20 @@ class LongPollConnection {
 		};
 	}
 	
-	/*
-
-		This function create a listener (callback) for eventType
-		If vk.com return an updates array and my sdk have this event in eventTypes object, you can listen it with yours handlers
-		Example:
-			vk.com returned me that user Kirill sended message to user Maksim
-			and you can listen it
-			.on('message', function(msg){console.log(msg)});
-		Ok?
-
-		@param {String} eventType name of event, supported events you can see on github page
-		@param {Function} callback callback-function which get an answer from vk.com
-
-	*/
+	/**
+	 *
+	 *	This function create a listener (callback) for eventType
+	 *	If vk.com return an updates array and my sdk have this event in eventTypes object, you can listen it with yours handlers
+	 *	Example:
+	 *		vk.com returned me that user Kirill sended message to user Maksim
+	 *		and you can listen it
+	 *		.on('message', function(msg){console.log(msg)});
+	 *	Ok?
+	 *
+	 *	@param {String} eventType name of event, supported events you can see on github page
+	 *	@param {Function} callback callback-function which get an answer from vk.com
+	 *
+	 */
 
 	on (eventType, callback) {
 		var self = this;
@@ -45,17 +45,17 @@ class LongPollConnection {
 	}
 
 
-	/*
-		
-		This function calls to listener which you created with .on or .addEventCodeListener functions
-		I.e if you create csllback function with .on method, this function call to she!
-		.on('message', function(data){console.og(data)}); //Hello, world
-		.emit('message', 'Hello, world!');
-
-		@param {String} eventType name of event, supported events you can see on github page
-		@param {Any} data
-
-	*/
+	/**
+	 *	
+	 *	This function calls to listener which you created with .on or .addEventCodeListener functions
+	 *	I.e if you create csllback function with .on method, this function call to she!
+	 *	.on('message', function(data){console.og(data)}); //Hello, world
+	 *	.emit('message', 'Hello, world!');
+	 *
+	 *	@param {String} eventType name of event, supported events you can see on github page
+	 *	@param {Any} data
+	 *
+	 */
 
 
 	emit(eventType, data) {
@@ -260,14 +260,17 @@ class LongPollConnection {
 			})
 
 			.addEventType... function(data) and .on... function(msg) Is different functions! Do not confuse!
-		
-		@param {Number} eventCode this is eventCode from docs page
-		@param {String} eventType you can create name for your event
-		@param {Function} handler is handler-function (not callback)
-		@param {Boolean} rewrite if you want rewrire my handlers and get clean information from vk.com you can do this,
-		just put for example 4, 'message', function(msg){ }, true in paramaters
-
 	*/
+
+	/**
+	 *
+	 *	@param {Number} eventCode this is eventCode from docs page
+	 *	@param {String} eventType you can create name for your event
+	 *	@param {Function} handler is handler-function (not callback)
+	 *	@param {Boolean} rewrite if you want rewrire my handlers and get clean information from vk.com you can do this,
+	 *	just put for example 4, 'message', function(msg){ }, true in paramaters
+	 *
+	 */
 
 	addEventType(eventCode, eventType, handler, rewrite=false) { //For dev and extend modules
 		var self = this;
@@ -287,17 +290,17 @@ class LongPollConnection {
 		});
 	}
 
-	/*
-	
-		If my SDK not support certain event it doesn't mean that my SDK not support it :D
-		You can add yours listeners with this function.
-		
-		Docs: vk.com/dev/using_longpoll
-
-		@param {Number} eventCode number of event which you can find on the docs page
-		@param {Function} handler is a handler function
-
-	*/
+	/**
+	 *
+	 *	If my SDK not support certain event it doesn't mean that my SDK not support it :D
+	 *	You can add yours listeners with this function.
+	 *	
+	 *	Docs: vk.com/dev/using_longpoll
+	 *
+	 *	@param {Number} eventCode number of event which you can find on the docs page
+	 *	@param {Function} handler is a handler function
+	 *
+	 */
 
 
 	addEventCodeListener(eventCode, handler) { //Only for create new event listeneres (if there are not in default listeners, you can get a code and add it!)
