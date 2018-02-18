@@ -1,4 +1,4 @@
-#Changelog
+# Changelog
 
 This file started from 0.2.8 version.
 So, in older versions you need see changes in a commits.
@@ -7,6 +7,14 @@ So, in older versions you need see changes in a commits.
 
 ### Added 
 - Added 2 parameter in callback function for StreamingAPI. Now, you can get access_token before WeSocket connection inited.
+
+```javascript
+  
+  VK.streamingAPI({}).then(function(connection, session){
+    console.log(session.access_token); //This token is not a user token, it's only for one connection
+  });
+  
+```
 
 ## [0.3.11] - 2018-02-18
 
@@ -34,7 +42,7 @@ So, in older versions you need see changes in a commits.
 ### Changed
 
 - Fixed auth with group access token. VK APi was updated from uid to user_id 
-- All functions like longpoll(), StreamingAPI(), CallbackAPI() now is asynchronous
+- All functions like longpoll(), streamingAPI(), callbackAPI() now is asynchronous
 - Changed api_v in README file (5.73)
 - Fixed package.json
 
