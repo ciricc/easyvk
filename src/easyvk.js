@@ -21,8 +21,8 @@ class VK {
 		this.session_file = __dirname + "/.vksession"; //File that stores itself json-session
 		this.DEFAULT_2FACODE = ""; //Two factor code
 		this.session = {};
-		this.api_v = "5.71";
-		this.v = "0.3.01";
+		this.api_v = "5.73";
+		this.v = "0.3.11";
 
 	}
 

@@ -4,8 +4,8 @@
 This app helps you create an apps with vk api easy!
 You can use it for know more: vk.com/dev/manuals
 
-|[All examples](https://github.com/ciricc/easyvk/tree/master/tests) | [Example (bot)](https://github.com/ciricc/easyvk/blob/master/tests/mybot.js) | [Changelog](https://github.com/ciricc/easyvk/tree/master/changelog.txt) |
-|---------------------------------------|---------------------------------------|-------------|
+|[All examples](https://github.com/ciricc/easyvk/tree/master/tests) | [Example (bot)](https://github.com/ciricc/easyvk/blob/master/tests/mybot.js) | [Changelog](https://github.com/ciricc/easyvk/tree/master/changelog.txt) | [Community / News](https://vk.com/npm_easyvk)
+|---------------------------------------|---------------------------------------|-------------|------------|
 
 ## What can it do?
 
@@ -22,21 +22,17 @@ You can use it for know more: vk.com/dev/manuals
 11. Routine functions like isFriend and others
 
 
-## What's new? (0.2)
-I am added new features. The main one is the support of the Streaming API, which will help you collect information from various sources in real time. Also I could not pass by the convenience so I added a new convenient method for developers.
+## What's new? (0.3)
+I am added new features. The main one is the support of the Callback API. All methods like longpoll(), StreamingAPI(), and others... now is async!
+Fixed other mini bugs. 
 
-You can see all changes:
-  
+Created our community group in VK. If you need a help, [join us](https://vk.com/npm_easyvk)!
 
-  * Streaming API
-    * events
-    * add new rules
-    * delete all rules
-    * manage rules easy with manager (auto-add auto-delete auto-change)
-  * isFriend method, which help you check that user is friend for other user
-  * getAllFriendsList method
-  * userFollowed method, which help you check that user is subscribed on other user
-  * encodeHtml method can encode symbols from & amp; to &
+You can see all changes in [changelog](https://github.com/ciricc/easyvk/tree/master/changelog.txt) file.
+
+##Need a help?
+
+You can join us in our community - https://vk.com/npm_easyvk. Or you can create new issue on [github page](https://github.com/ciricc/easyvk/).
 
 
 ### Installation
