@@ -4,7 +4,7 @@
 This app helps you create an apps with vk api easy!
 You can use it for know more: vk.com/dev/manuals
 
-|[All examples](https://github.com/ciricc/easyvk/tree/master/tests) | [Example (bot)](https://github.com/ciricc/easyvk/blob/master/tests/mybot.js) | [Changelog](https://github.com/ciricc/easyvk/tree/master/changelog.txt) | [Community / News](https://vk.com/npm_easyvk)
+|[All examples](https://github.com/ciricc/easyvk/tree/master/tests) | [Example (bot)](https://github.com/ciricc/easyvk/blob/master/tests/mybot.js) | [Changelog](https://github.com/ciricc/easyvk/tree/master/CHANGELOG.md) | [Community / News](https://vk.com/npm_easyvk)
 |---------------------------------------|---------------------------------------|-------------|------------|
 
 ## What can it do?
@@ -41,7 +41,7 @@ in your project core (clear node_modles folder).
 
   `npm install easyvk`
 
-I recommend that you install 0.2.0 version. Then this readme will actual. Or you can got an error(s).
+I recommend that you install 0.3.0 version. Then this readme will actual. Or you can got an error(s).
 But if you install other version, you need read readme for this version not other!
 
 And after this you can import it.

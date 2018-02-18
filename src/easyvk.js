@@ -22,7 +22,7 @@ class VK {
 		this.DEFAULT_2FACODE = ""; //Two factor code
 		this.session = {};
 		this.api_v = "5.73";
-		this.v = "0.3.11";
+		this.v = "0.3.12";
 
 	}
 
@@ -906,7 +906,10 @@ class VK {
 							var wsc = new WS('wss://' + vkr_server.response.endpoint + '/stream?key=' + vkr_server.response.key );
 							var streaming_connection = new StreamingAPI(self, wsc);
 							
-							resolve.call(streaming_connection, streaming_connection);
+							resolve.call(streaming_connection, streaming_connection, {
+								access_token: vkr_client.access_token
+							});
+
 						}, reject);
 
 					} catch (e) {
