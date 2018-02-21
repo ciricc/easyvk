@@ -1,1 +1,1 @@
-module.exports = require('./src/easyvk')
+module.exports = require('./src/easyvk_refactored')
