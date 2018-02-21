@@ -4,9 +4,10 @@ let request = require("request");
 let encoding = require("encoding");
 let fs = require("fs");
 let http = require("http");
+let staticMethods = require("./utils/staticMethods.js");
 
 module.exports = createSession;
-module.exports.static = require("./utils/staticMethods.js");
+module.exports.static = staticMethods;
 module.exports.version = "0.3.2";
 
 let configuration = {};
@@ -66,30 +67,198 @@ async function createSession (params = {}) {
 	});
 }
 
+function checkJSONErrors (data, reject) {
+	try {
+		data = JSON.parse(data);
+		
+		let err = staticMethods.checkErrors(data);
+		
+		if (err) {
+			reject(new Error(err));
+
+			return false;
+		}
+
+		return data;
+
+	} catch (e) {
+		reject(new Error(e));
+	}
+
+	return false;
+
+}
+
 class EasyVK {
 	constructor (params, resolve, reject) {
-		let session = {};
 		
+		let session = {};
+		let self = this;
+
+		self.params = params;
+
 		if (!params.reauth) {
 			let data = fs.readFileSync(params.session_file);
 			if (data) {
 				
 				try {
 					data = JSON.parse(data);
-					 
+
 					if (data.access_token) {
-						session.access_token = resolve;
+						session = data;
+						initToken();
 					} else {
-						if (!(params.username && params.password) || !params.access_token) reject(new Error("Session file is empty, please, put a login data"));
+						if (!(params.username && params.password) && !params.access_token) reject(new Error("Session file is empty, please, put a login data"));
 					}
 
 				} catch (e) {
-
+					if (!(params.username && params.password) && !params.access_token) reject(new Error("JSON from session file is not valid, please, put a login data"));
 				}
 
 			} else {
-				if (!(params.username && params.password) || !params.access_token) reject(new Error("Session file is empty, please, put a login data"));
+				if (!(params.username && params.password) && !params.access_token) reject(new Error("Session file is empty, please, put a login data"));
 			}
 		}
+
+		if (!session.access_token) { //If session file contents access_token, try auth with it
+			if (params.access_token) {
+				session.access_token = params.access_token;
+				initToken();
+			} else if (params.username) {
+				//Try get access_token with auth
+				let getData = {
+					username: params.username,
+					password: params.password,
+					client_id: configuration.WINDOWS_CLIENT_ID,
+					client_secret: configuration.WINDOWS_CLIENT_SECRET,
+					grant_type: "password",
+					v: params.api_v
+				};
+
+				if (params.captcha_key) {
+					getData.captcha_sid = params.captcha_sid;
+					getData.captcha_key = params.captcha_key;
+				}
+
+
+				if (params.code && params.code.toString().length != 0) {
+					getData['2fa_supported'] = 1;
+					getData['code'] = params.code;
+				}
+
+				getData = staticMethods.urlencode(getData);
+
+				request.get(configuration.BASE_OAUTH_URL + "token/?" + getData, (err, res) => {
+					
+					if (err) {
+						reject(new Error(`Server was down or we don't know what happaned [responseCode ${res.statusCode}]`));
+					}
+
+					if (res.statusCode !== 200) reject(new Error(`Server answered with ${res.statusCode} code... Need 200`));
+
+					let vkr = res.body;
+
+					if (vkr) {
+						let json = checkJSONErrors(vkr, reject);						
+						
+						if (json) {
+							self.session = vkr;
+							
+							if (params.save_session) self.saveSession();
+
+							resolve(self);
+						}
+
+					} else {
+						reject(new Error(`VK responsed us with empty string! ${vkr}`));
+					}
+
+				});
+
+			}
+		}
+
+		function initToken() {
+			if (!session.user_id && !session.group_id) {
+				
+				let getData = {
+					access_token: params.access_token,
+					v: params.api_v
+				};
+
+				getData = staticMethods.urlencode(getData);
+
+				request.get(configuration.BASE_CALL_URL + "users.get?" + getData, (err, res) => {
+					if (err) reject(new Error(err));
+					let vkr = res.body;
+					if (vkr) {
+						let json = checkJSONErrors(vkr, reject);
+
+						if (json) {
+							if (Array.isArray(json.response) && json.response.length === 0) {
+								groupToken();
+							} else {
+								session.user_id = json.response[0].id;
+								session.first_name = json.response[0].first_name;
+								session.last_name = json.response[0].last_name;
+								self.session = session;
+								self.saveSession();
+								resolve(self);
+							}
+						}
+
+					} else {
+						reject(new Error(`VK responsed us with empty string (in auth with token (user) ) ${vkr}`));
+					}
+				});
+
+			} else {
+				self.session = session;
+				resolve(self);
+			}
+		}
+
+		function groupToken () {
+			let getData = {
+				access_token: params.access_token,
+				v: params.api_v
+			};
+			
+			getData = staticMethods.urlencode(getData);
+
+			request.get(configuration.BASE_CALL_URL + "groups.getById?" + getData, (err, res) => {
+				if (err) reject(new Error(err));
+				let vkr = res.body;
+				if (vkr) {
+					let json = checkJSONErrors(vkr, reject);
+
+					if (json) {
+						if (Array.isArray(json.response) && json.response.length === 0) {
+							reject(new Error("access_token not valid!"));
+						} else {
+							session.group_id = json.response[0].id,
+							session.group_name = json.response[0].name;
+							session.group_screen =  json.response[0].screen_name;
+							self.session = session;
+							self.saveSession();
+							resolve(self);
+						}
+					}
+
+				} else {
+					reject(new Error(`VK responsed us with empty string (in auth with token (group) ) ${vkr}`));
+				}	
+			});
+		}
+	}
+
+	async call() {
+		let self = this;
+	}
+
+	saveSession () {
+		let self = this;
+		let s = JSON.stringify(self.session);
+		fs.writeFileSync(self.params.session_file, s);
 	}
 }

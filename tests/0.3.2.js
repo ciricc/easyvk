@@ -3,10 +3,9 @@ var easyVK = require('../index');
 
 easyVK({
 	api_v: false,
-	access_token: `wdw`,
 	reauth: true
 }).then((vk) => {
-
+	vk.call();
 }, (error) => {
 	console.log(error);
 });
