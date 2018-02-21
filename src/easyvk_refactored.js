@@ -154,15 +154,13 @@ class EasyVK {
 						reject(new Error(`Server was down or we don't know what happaned [responseCode ${res.statusCode}]`));
 					}
 
-					if (res.statusCode !== 200) reject(new Error(`Server answered with ${res.statusCode} code... Need 200`));
-
 					let vkr = res.body;
 
 					if (vkr) {
 						let json = checkJSONErrors(vkr, reject);						
 						
 						if (json) {
-							self.session = vkr;
+							self.session = json;
 							
 							if (params.save_session) self.saveSession();
 
@@ -180,9 +178,10 @@ class EasyVK {
 
 		function initToken() {
 			if (!session.user_id && !session.group_id) {
-				
+				let token = session.access_token || params.access_token;
+
 				let getData = {
-					access_token: params.access_token,
+					access_token: token,
 					v: params.api_v
 				};
 
@@ -252,8 +251,58 @@ class EasyVK {
 		}
 	}
 
-	async call() {
-		let self = this;
+	/**
+	 *	
+	 *	Function for calling to methods and get anything
+	 *	Docs: vk.com/dev/methods
+     *
+	 *	@param {String} method_name is just a method name :D (messages.get/wall.edit and others)
+	 *	@param {Object} data  if vk.com asks a parameters, you can send they. (Send access_token to this from session is not necessary, but also you can do this)
+	 *	
+	 *	@return {Promise}
+     *
+	 */
+
+	async call(method_name, data = {}) {
+		var self = this;
+
+		return new Promise((resolve, reject) => {
+			
+			if (method_name) method_name = method_name.toString();
+			else reject(new Error("Put method name in your call request!"));
+			if (data) {
+				if (Object.prototype.toString.call(data) !== "[object Object]") {
+					reject(new Error("Data params must be an object"));
+				}
+			}
+
+			if (!data.access_token) data.access_token = self.session.access_token;
+			if (!data.v) data.v = self.params.api_v;
+			if (!data.captcha_sid) data.captcha_sid = self.params.captcha_sid;
+			if (!data.captcha_key) data.captcha_key = self.params.captcha_key;
+
+			data = staticMethods.urlencode(data);
+
+			request.get(configuration.BASE_CALL_URL + method_name + "?" + data, (err, res) => {
+				if (err) reject(new Error(err));
+				let vkr = res.body;
+
+				if (vkr) {
+					let json = checkJSONErrors(vkr, reject);
+					
+					if (json) {
+						resolve(json);
+					} else {
+						reject(new Error("JSON is not valid... oor i don't know"));
+					}
+
+				} else {
+					reject(new Error(`Empty response ${vkr}`));
+				}
+
+			});
+
+		});
 	}
 
 	saveSession () {
