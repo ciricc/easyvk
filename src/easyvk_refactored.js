@@ -5,6 +5,7 @@ let encoding = require("encoding");
 let fs = require("fs");
 let http = require("http");
 let staticMethods = require("./utils/staticMethods.js");
+let easyVKUploader = require("./utils/uploader.js");
 
 module.exports = createSession;
 module.exports.static = staticMethods;
@@ -23,10 +24,6 @@ configuration.BASE_OAUTH_URL = configuration.PROTOCOL + "://" + "oauth." + confi
 configuration.WINDOWS_CLIENT_ID = "2274003";
 configuration.WINDOWS_CLIENT_SECRET = "hHbZxrka2uZ6jB1inYsH";
 
-function isString (n) {
-	if (n === undefined) n = this;
-	return Object.prototype.toString.call(n) === "[object String]";
-}
 
 async function createSession (params = {}) {
 	return new Promise((resolve, reject) => {
@@ -34,7 +31,7 @@ async function createSession (params = {}) {
 		if (params.save_session !== false) params.save_session = configuration.save_session;
 		
 		if (params.session_file) {
-			if (!isString(params.session_file)) reject(new Error("The session_file must be a string"));
+			if (!staticMethods.isString(params.session_file)) reject(new Error("The session_file must be a string"));
 		} else params.session_file = configuration.session_file;
 
 		if (params.api_v && params.api_v !== configuration.api_v) {
@@ -53,7 +50,7 @@ async function createSession (params = {}) {
 			if (!(params.password && params.username) && !params.access_token) reject(new Error("You want reauth, but you don't puted username and pass or only access_token"));
 			if (params.access_token && params.username) reject(new Error("Select only one way auth: access_token XOR username"));
 			if (params.access_token) {
-				if (!isString(params.access_token)) reject(new Error("The access_token must be a string"));
+				if (!staticMethods.isString(params.access_token)) reject(new Error("The access_token must be a string"));
 			}
 
 			if (params.username && !params.password) reject(new Error("Put password if you want aut with username"));
@@ -67,28 +64,6 @@ async function createSession (params = {}) {
 	});
 }
 
-function checkJSONErrors (data, reject) {
-	try {
-		data = JSON.parse(data);
-		
-		let err = staticMethods.checkErrors(data);
-		
-		if (err) {
-			reject(new Error(err));
-
-			return false;
-		}
-
-		return data;
-
-	} catch (e) {
-		reject(new Error(e));
-	}
-
-	return false;
-
-}
-
 class EasyVK {
 	constructor (params, resolve, reject) {
 		
@@ -96,6 +71,7 @@ class EasyVK {
 		let self = this;
 
 		self.params = params;
+
 
 		if (!params.reauth) {
 			let data = fs.readFileSync(params.session_file);
@@ -157,14 +133,14 @@ class EasyVK {
 					let vkr = res.body;
 
 					if (vkr) {
-						let json = checkJSONErrors(vkr, reject);						
+						let json = staticMethods.checkJSONErrors(vkr, reject);						
 						
 						if (json) {
 							self.session = json;
 							
 							if (params.save_session) self.saveSession();
 
-							resolve(self);
+							initResolve(self);
 						}
 
 					} else {
@@ -191,7 +167,7 @@ class EasyVK {
 					if (err) reject(new Error(err));
 					let vkr = res.body;
 					if (vkr) {
-						let json = checkJSONErrors(vkr, reject);
+						let json = staticMethods.checkJSONErrors(vkr, reject);
 
 						if (json) {
 							if (Array.isArray(json.response) && json.response.length === 0) {
@@ -202,7 +178,7 @@ class EasyVK {
 								session.last_name = json.response[0].last_name;
 								self.session = session;
 								self.saveSession();
-								resolve(self);
+								initResolve(self);
 							}
 						}
 
@@ -213,7 +189,7 @@ class EasyVK {
 
 			} else {
 				self.session = session;
-				resolve(self);
+				initResolve(self);
 			}
 		}
 
@@ -229,7 +205,7 @@ class EasyVK {
 				if (err) reject(new Error(err));
 				let vkr = res.body;
 				if (vkr) {
-					let json = checkJSONErrors(vkr, reject);
+					let json = staticMethods.checkJSONErrors(vkr, reject);
 
 					if (json) {
 						if (Array.isArray(json.response) && json.response.length === 0) {
@@ -240,7 +216,7 @@ class EasyVK {
 							session.group_screen =  json.response[0].screen_name;
 							self.session = session;
 							self.saveSession();
-							resolve(self);
+							initResolve(self);
 						}
 					}
 
@@ -248,6 +224,11 @@ class EasyVK {
 					reject(new Error(`VK responsed us with empty string (in auth with token (group) ) ${vkr}`));
 				}	
 			});
+		}
+
+		function initResolve (s) {
+			self.uploader = new easyVKUploader(self);
+			resolve(s);
 		}
 	}
 
@@ -288,7 +269,7 @@ class EasyVK {
 				let vkr = res.body;
 
 				if (vkr) {
-					let json = checkJSONErrors(vkr, reject);
+					let json = staticMethods.checkJSONErrors(vkr, reject);
 					
 					if (json) {
 						resolve(json);

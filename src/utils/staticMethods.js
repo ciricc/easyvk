@@ -1,3 +1,5 @@
+"use strict";
+
 class EasyVK {
 
 	/**
@@ -42,6 +44,40 @@ class EasyVK {
 		} catch (e) {
 			return e;
 		}
+	}
+
+	static encodeHTML (text) {
+		return text.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+		.replace(/&quot;/g, "\"")
+		.replace(/&#039;/g, "'");
+	}
+
+	static isString (n) {
+		if (n === undefined) n = this;
+		return Object.prototype.toString.call(n) === "[object String]";
+	}
+
+	static checkJSONErrors (data, reject) {
+		let self = this;
+
+		try {
+			data = JSON.parse(data);
+			
+			let err = self.checkErrors(data);
+			
+			if (err) {
+				reject(new Error(err));
+
+				return false;
+			}
+
+			return data;
+
+		} catch (e) {
+			reject(new Error(e));
+		}
+
+		return false;
 	}
 }
 
