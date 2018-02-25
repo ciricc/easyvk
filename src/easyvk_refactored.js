@@ -6,6 +6,7 @@ let fs = require("fs");
 let http = require("http");
 let staticMethods = require("./utils/staticMethods.js");
 let easyVKUploader = require("./utils/uploader.js");
+let easyVKLongPoll = require("./utils/longpoll.js");
 
 module.exports = createSession;
 module.exports.static = staticMethods;
@@ -228,6 +229,9 @@ class EasyVK {
 
 		function initResolve (s) {
 			self.uploader = new easyVKUploader(self);
+			self.longpoll = new easyVKLongPoll(self);
+			self.config = configuration;
+			
 			resolve(s);
 		}
 	}

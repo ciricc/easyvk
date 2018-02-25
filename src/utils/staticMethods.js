@@ -57,6 +57,10 @@ class EasyVK {
 		return Object.prototype.toString.call(n) === "[object String]";
 	}
 
+	static isObject (n) {
+		return Object.prototype.toString.call(n) === "[object Object]";
+	}
+
 	static checkJSONErrors (data, reject) {
 		let self = this;
 

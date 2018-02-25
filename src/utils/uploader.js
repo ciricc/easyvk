@@ -19,7 +19,7 @@ class EasyVKUploader {
 		self._vk = vk;
 	}
 
-	async uploadFile (url, filePath, fieldName="") {
+	async uploadFile (url, filePath, fieldName="", paramsUpload = {}) {
 		return new Promise((resolve, reject) => {
 			
 			if (!url) reject(new Error("put website url for upload this file"));
@@ -29,9 +29,12 @@ class EasyVKUploader {
 			else if (!staticMethods.isString(filePath)) reject(new Error("file's path must be a string"));
 
 			if (fieldName) if (!staticMethods.isString(fieldName)) reject(new Error("field name must be a string"));
+			if (!staticMethods.isObject(paramsUpload)) paramsUpload = {};
 
 			let stream = fs.createReadStream(filePath);
 			let data = {};
+
+			Object.keys(paramsUpload).map((param) => {(param !== fieldName) ? data[param] = paramsUpload[param] : null;});
 
 			stream.on("error", (error) => {
 				reject(new Error(error));
@@ -41,12 +44,14 @@ class EasyVKUploader {
 				data[fieldName] = stream;
 				request.post({
 					uri: url,
-					formData: data
+					formData: data,
 				}, (err, response) => {
 					
 					if (err) {
-						reject(new Error(`Server was down or we don't know what happaned [responseCode ${res.statusCode}]`));
+						reject(new Error(`Server was down or we don't know what happaned [error ${err}]`));
 					}
+
+					if (!response) response = {};
 
 					let vkr = response.body;
 
@@ -66,6 +71,21 @@ class EasyVKUploader {
 
 				});
 			});
+		});
+	}
+
+	async getUploadURL (method_name, params = {}) {
+		let self = this;
+		return new Promise((resolve, reject) => {
+			
+			if (!staticMethods.isObject(params)) reject(new Error("Params must be an object"));
+			self._vk.call(method_name, params).then((vkr) => {
+				if (vkr.response.upload_url) {
+					resolve(vkr)
+				} else {
+					reject(new Error("upload_url is not defied in vk response"));
+				}
+			}, reject);
 		});
 	}
 }
