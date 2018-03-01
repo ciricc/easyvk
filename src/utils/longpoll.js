@@ -121,6 +121,21 @@ class LongPollConnection extends EventEmitter {
 			}
 		});
 	}
+
+	
+	async close () {
+		let self = this;
+		return new Promise ((resolve, reject) => {
+			if (self.lpConnection) {
+				self.emit("close", {
+					time: new Date().getTime(),
+				});
+				resolve(self.lpConnection.abort());
+			} else {
+				reject(new Error("LongPoll not connected"));
+			}
+		});
+	}
 }
 
 class LongPollConnector {

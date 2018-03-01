@@ -8,34 +8,35 @@ errHandler = (err) => {
 }
 
 easyVK({
-	// api_v: false,
-	// reauth: true,
+	reauth: true,
+	clean_session_file: true,
+	access_token: "your_token"
 }).then((vk) => {
-	
-	vk.longpoll.connect().then((connection) => {
-		console.log("Success!");
-		
-		connection.on("message", (msg) => {
-			console.log(msg);
-		});
 
-		// console.log(connection);
+	vk.callbackAPI.listen({
+		groups: [
+			{
+				groupId: "11",
+				confirmCode: "112",
+				secret: "wdwd"
+			}
+		],
+		confirmCode: "12322",
+		groupId: "wdwd",
+		port: "8080"
+	}).then((http) => {
+		
+		console.log(http.server, http.app);
+
 	}, errHandler);
 
-	// vk.call("stories.getPhotoUploadServer", {
-	// 	add_to_news: 1
-	// }).then((vkr) => {
-	// 	let url = vkr.response.upload_url;
-	// 	let file_name = "../src/story.jpg";
-	// 	vk.uploader.uploadAvatar(file_name, {
-	// 		forGetURL: {
-	// 			owner_id: "-161172632"
-	// 		},
-	// 		forUpload: {
-	// 			_square_crop: "20,20,120"
-	// 		}
-	// 	}).then((vkr) => {
-	// 	}, errHandler);
-	// }, errHandler);
-
+	vk.uploader.uploadAvatar(file_name, {
+		forGetURL: {
+			owner_id: "-161172632"
+		},
+		forUpload: {
+			_square_crop: "20,20,120"
+		}
+	}).then((vkr) => {}, errHandler);
+	
 }, errHandler);

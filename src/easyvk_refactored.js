@@ -1,12 +1,13 @@
 "use strict";
 
-let request = require("request");
-let encoding = require("encoding");
-let fs = require("fs");
-let http = require("http");
-let staticMethods = require("./utils/staticMethods.js");
-let easyVKUploader = require("./utils/uploader.js");
-let easyVKLongPoll = require("./utils/longpoll.js");
+const request = require("request");
+const encoding = require("encoding");
+const fs = require("fs");
+const http = require("http");
+const staticMethods = require("./utils/staticMethods.js");
+const easyVKUploader = require("./utils/uploader.js");
+const easyVKLongPoll = require("./utils/longpoll.js");
+const easyVKCallbackAPI = require("./utils/callbackapi.js");
 
 module.exports = createSession;
 module.exports.static = staticMethods;
@@ -228,10 +229,16 @@ class EasyVK {
 		}
 
 		function initResolve (s) {
+		
+			if (params.clean_session_file) {
+				fs.writeFileSync(params.session_file, "{}");
+			}
+
 			self.uploader = new easyVKUploader(self);
 			self.longpoll = new easyVKLongPoll(self);
 			self.config = configuration;
-			
+			self.callbackAPI = new easyVKCallbackAPI(self);
+
 			resolve(s);
 		}
 	}

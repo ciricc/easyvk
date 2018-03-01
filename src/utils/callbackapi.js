@@ -1,145 +1,147 @@
-var http = require('http');
-var express = require('express');
-var bodyParser = require('body-parser');
+"use strict";
+
+const http = require("http");
+const express = require("express");
+const staticMethods = require("./staticMethods.js");
+const EventEmitter = require('events');
+const bodyParser = require('body-parser');
 
 
-class CallbackAPI {
-
+class CallbackAPI extends EventEmitter {
 	constructor (vk) {
-		var self = this;
-		
+		super();
+		let self = this;
 		self._vk = vk;
-		self.listeners = {};
-		self.cb_server = self.initServer();
-		
-		return self;
 	}
 
-	initServer () {
-		var self = this;
+	async listen (callbackParams = {}) {
+		let self = this;
+		return new Promise ((resolve, reject) => {
 
-		var app = express();
+			if (callbackParams) if (!staticMethods.isObject(callbackParams)) callbackParams = {};
+			if (!Array.isArray(callbackParams.groups)) callbackParams.groups = [];
 
-		//use body parser for parse post request
-		app.use(bodyParser.json());
-		
-		app.post('/', function (req, res) {
-			self.initPostRequest(req, res);
+			if (callbackParams.groupId) {//If user wants only one group init
+				if (!callbackParams.confirmCode) reject(new Error("You don't puted confirmation code"));
+				
+				callbackParams.groups.push({
+					confirmCode: callbackParams.confirmCode,
+					groupId: callbackParams.groupId
+				});
+
+				if (callbackParams.secret) callbackParams.groups[callbackParams.length - 1].secret = callbackParams.secret;
+			}
+
+			if (callbackParams.groups.length === 0) reject(new Error("Select a group for listen calls"));
+			else {
+				let gr_temp = {};
+
+				callbackParams.groups.forEach((elem, index) => {
+					let group = callbackParams.groups[index];
+					if (!staticMethods.isObject(group)) reject(new Error(`Group settings is not an object (in ${index} index)`));
+					if (!group.groupId) reject(new Error(`Group id must be (groupId in ${index} index)`));
+					if (!group.confirmCode) reject(new Error(`Confirmation code must be (confirmCode in ${index} index)`));
+					else gr_temp[group.groupId.toString()] = group;
+				});
+
+				callbackParams.groups = gr_temp;
+			}
+
+			self._cbparams = callbackParams; 
+			self.__initApp().then(resolve, reject);
 		});
-
-		app.get('/', function(req, res){
-			res.status(404).send('Not Found');
-		});
-
-
-		var server = http.createServer(app);
-		server.listen(self._vk._cbparams.port);
-
-		return server;
 	}
 
-	/*
-		
-		That's only for me
+	__initVKRequest (req, res) {
+		let self = this;
+		let postData = req.body;
+		let params = self._cbparams;
+		let group = self._cbparams.groups[postData.group_id.toString()];
 
-	*/
-
-	initPostRequest (req, res) {
-		var self = this;
-		var post = req.body;
-
-		var group = self._vk._cbparams.groups[post.group_id.toString()];
-
-		if (post.type == 'confirmation') {
-
+		if (postData.type === "confirmation") {
 			if (group) {
-				if (group.secret) {
-					if (post.secret && post.secret == group.secret) {
+				
+				if (group.secret) { //If you use a password fro menage it
+					
+					if (postData.secret && postData.secret.toString() === group.secret.toString()) {
 						res.status(200).send(group.confirmCode);
 					} else {
-						res.status(400).send('secret error');
-						self.emit('secretError', {
-							body: req.body,
-							group: group,
-							info: 'We got the secret key which no uses in your settings! If you want to add secret, set up it in secret parameter!'
+						res.status(400).send("secret error");
+						self.emit("secretError", {
+							postData: postData,
+							description: "We got the secret key which no uses in your settings! If you want to add secret, set up it in secret parameter!"
 						});
 					}
+
 				} else {
 					res.status(200).send(group.confirmCode);
 				}
 
 			} else {
-				self.emit('confirmationError', {
-					body: req.body,
-					group: group,
-					info: 'Occured confirmation error, you haven\'t this group_id in settings!'
+				self.emit("confirmationError", {
+					postData: postData,
+					description: "You don't use this group, becouse we don't know this groupId"
 				});
 			}
-
-		} else if (post.type !== 'confirmation') {
-			
+		} else if (postData.type !== "confirmation" ){
 			if (group.secret) {
-				if (post.secret && post.secret !== group.secret) {
-					self.emit('secretError', {
-						body: req.body,
-						group: group,
-						info: 'We got the secret key which no uses in your settings! If you want to add secret, set up it in secret parameter!'
+				if (postData.secret && postData.secret.toString() !== group.secret.toString()) {
+					res.status(400).send("secret error");
+					self.emit("secretError", {
+						postData: postData,
+						description: "Secret from request and from your settings are not the same"
 					});
-
 					return;
-				} else if (!post.secret) {
-					req.status(400).send('secret error');
-					self.emit('secretError', {
-						body: req.body,
-						group: group,
-						info: 'Server sended us request without secret_key, but you use it! Delete from settings or add in vk.com this key!'
+				} else if (!postData.secret) {
+					res.status(400).send("secret error");
+					self.emit("secretError", {
+						postData: postData,
+						description: "Request has not a secret password, but you use it in this group"
 					});
+					return;
 				}
 			}
-
-			self.emit(post.type, post);
-			res.status(200).send('ok');
-
+			self.emit(postData.type, postData);
+			res.status(200).send("ok");
 		} else {
-			res.status(400).send('only vk requests');
+			res.status(400).send("only vk requests");
 		}
 	}
 
-
-	/*
-		
-		Read: LongPoll.on
-
-	*/
-
-
-	on (eventType, callback) {
-		var self = this;
-		if (Object.prototype.toString.call(callback) == "[object Function]") {
-			self.listeners[String(eventType)] = callback;
-		} else {
-			throw "Why are you put to listener not a function?! Why???";
-		}
+	__init404Error (req, res) {
+		res.status(404).send("Not Found");
 	}
 
-	/*
-		
-		Read: LongPoll.emit
+	async __initApp () {
+		let self = this;
+		let params = self._cbparams;
 
-	*/
+		return new Promise ((resolve, reject) => {
+			if (self._app) { //Only one time
+				reject(new Error("You are listening the server yet!"));	
+			} else {
+				
+				let app, server;
 
-	emit(eventType, data) {
-		var self = this;
+				app = express()
+				app.use(bodyParser.json());
 
-		if (self.listeners[eventType]) {
-			try {
-				self.listeners[eventType].call(self, data);
-			} catch (e) {
-				throw e;
+				app.post("/", (req, res) => {self.__initVKRequest(req, res);});
+				app.get("/", (req, res) => {self.__init404Error(req, res);});
+
+
+				server = http.createServer(app);
+				self._app = app;
+				server.listen(params.port || process.env.PORT || 3000);
+				
+				resolve({
+					app: app,
+					server: server
+				});
 			}
-		}
+		});
+	
 	}
 }
-
 
 module.exports = CallbackAPI;

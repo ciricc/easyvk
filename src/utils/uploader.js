@@ -1,8 +1,8 @@
 "use strict";
 
-let fs = require("fs");
-let request = require("request");
-let staticMethods = require("./staticMethods.js");
+const fs = require("fs");
+const request = require("request");
+const staticMethods = require("./staticMethods.js");
 
 /*
 
