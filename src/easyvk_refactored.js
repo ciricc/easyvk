@@ -8,23 +8,12 @@ const staticMethods = require("./utils/staticMethods.js");
 const easyVKUploader = require("./utils/uploader.js");
 const easyVKLongPoll = require("./utils/longpoll.js");
 const easyVKCallbackAPI = require("./utils/callbackapi.js");
+const configuration = require("./utils/configuration.js");
 
 module.exports = createSession;
 module.exports.static = staticMethods;
 module.exports.version = "0.3.2";
 
-let configuration = {};
-
-configuration.api_v = "5.73";
-configuration.reauth = false;
-configuration.save_session = true;
-configuration.session_file = __dirname + "/.vksession";
-configuration.PROTOCOL = "https";
-configuration.BASE_DOMAIN = "vk.com";
-configuration.BASE_CALL_URL = configuration.PROTOCOL + "://" + "api." + configuration.BASE_DOMAIN + "/method/";
-configuration.BASE_OAUTH_URL = configuration.PROTOCOL + "://" + "oauth." + configuration.BASE_DOMAIN + "/";
-configuration.WINDOWS_CLIENT_ID = "2274003";
-configuration.WINDOWS_CLIENT_SECRET = "hHbZxrka2uZ6jB1inYsH";
 
 
 async function createSession (params = {}) {
@@ -255,45 +244,19 @@ class EasyVK {
      *
 	 */
 
-	async call(method_name, data = {}) {
+	async call(methodName, data = {}) {
 		var self = this;
 
 		return new Promise((resolve, reject) => {
 			
-			if (method_name) method_name = method_name.toString();
-			else reject(new Error("Put method name in your call request!"));
-			if (data) {
-				if (Object.prototype.toString.call(data) !== "[object Object]") {
-					reject(new Error("Data params must be an object"));
-				}
-			}
+			if (!staticMethods.isObject(data)) reject(new Error("Data must be an object"));
 
 			if (!data.access_token) data.access_token = self.session.access_token;
 			if (!data.v) data.v = self.params.api_v;
 			if (!data.captcha_sid) data.captcha_sid = self.params.captcha_sid;
 			if (!data.captcha_key) data.captcha_key = self.params.captcha_key;
 
-			data = staticMethods.urlencode(data);
-
-			request.get(configuration.BASE_CALL_URL + method_name + "?" + data, (err, res) => {
-				if (err) reject(new Error(err));
-				let vkr = res.body;
-
-				if (vkr) {
-					let json = staticMethods.checkJSONErrors(vkr, reject);
-					
-					if (json) {
-						resolve(json);
-					} else {
-						reject(new Error("JSON is not valid... oor i don't know"));
-					}
-
-				} else {
-					reject(new Error(`Empty response ${vkr}`));
-				}
-
-			});
-
+			staticMethods.call(methodName, data, configuration).then(resolve, reject);
 		});
 	}
 

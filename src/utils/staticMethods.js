@@ -1,4 +1,6 @@
 "use strict";
+const configuration = require("./configuration.js");
+const request = require("request");
 
 class EasyVK {
 
@@ -16,6 +18,46 @@ class EasyVK {
 		return Object.keys(object).map(prop=>prop+'='+object[prop]).join('&');
 	}
 
+	static async call (methodName, data) {
+		let self = this;
+		return new Promise ((resolve, reject) => {
+			
+			if (!self.isObject(configuration)) reject(new Error("configuration must be an object"));
+			if (!configuration.BASE_CALL_URL) reject(new Error("BASE_CALL_URL must be declared in configuration parameter"));
+			
+			if (methodName) methodName = methodName.toString();
+			else reject(new Error("Put method name in your call request!"));
+			if (data) {
+				if (!self.isObject(data)) {
+					reject(new Error("Data params must be an object"));
+				}
+			}
+
+			if (!data.v) data.v = configuration.api_v;
+			
+			data = self.urlencode(data);
+
+			request.get(configuration.BASE_CALL_URL + methodName + "?" + data, (err, res) => {
+				if (err) reject(new Error(err));
+				let vkr = res.body;
+
+				if (vkr) {
+					let json = self.checkJSONErrors(vkr, reject);
+					
+					if (json) {
+						resolve(json);
+					} else {
+						reject(new Error("JSON is not valid... oor i don't know"));
+					}
+
+				} else {
+					reject(new Error(`Empty response ${vkr}`));
+				}
+
+			});
+
+		});
+	}
 
 	// Only for me, but you can use it if understand how
 
