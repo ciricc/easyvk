@@ -2,7 +2,7 @@
 
 const request = require("request");
 const staticMethods = require("./staticMethods.js");
-const EventEmitter = require('events');
+const EventEmitter = require("events");
 
 class LongPollConnection extends EventEmitter { 
 	constructor (lpSettings, vk) {

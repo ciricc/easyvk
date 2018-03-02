@@ -1,97 +1,56 @@
-var request = require('request');
+"use strict";
 
-class StreamingAPI {
+const request = require("request");
+const staticMethods = require("./staticMethods.js");
+const EventEmitter = require("events");
+const configuration = require("./configuration.js");
+const WS = require("ws");
 
-	constructor (vk, wsc) {
-		this._vk = vk;
-		this._wsc = wsc;
-		this.url_http = this._vk.PROTOCOL + '://' + this._vk.streaming_session.server.endpoint;
-		this.key = this._vk.streaming_session.server.key;
-		this.endpoint = this._vk.streaming_session.server.endpoint;
-		this.listeners = {};
-
-		this.__initConnection__();
+class StreamingAPIConnection extends EventEmitter {
+	
+	constructor(vk, session, wsc) {
+		
+		super();
+		let self = this;
+		
+		self._vk = vk;
+		self._session = session;
+		self._wsc = wsc;
+		self._urlHttp = `${configuration.PROTOCOL}://${self._session.server.endpoint}`;
+		self._key = self._session.server.key;
+		self.__initWebSocket();
 	}
 
-	__initConnection__ () {
-		var self = this;
-		
-		self._wsc.on('open', function() {
-			console.log('Streaming API Init successfully!');
-		});	 
+	__initWebSocket () {
+		let self = this;
 
-		self._wsc.on('error', function(error) {
-		    self.emit('error', error.toString());
+		self._wsc.on("error", (error) => {
+		    self.emit("error", new Error(error.toString()));
 		});
 
-		self._wsc.on('message', function(message) {
-	        self.__initMessage__(message);
-	    });
-
-	    self._wsc.on('close', function() {
-	    	self.emit('failure', 'Connection closed');
-	    });
-
-	}
-
-	close () {
-
-		var self = this;
-
-		return  new Promise( function(resolve, reject) {
-			if (self._wsc) {
-				resolve(self._wsc.close());
-			} else {
-				reject("WebSocket not connected!!");
-			}
+		self._wsc.on("message", (message) => {
+			self.__initMessage(message);
 		});
+
+	    self._wsc.on("close", () => {
+			self.emit("failure", new Error("Connection closed"));
+		});
+
 	}
 
-	/*
-		
-		Read: LongPoll.on
-
-	*/
-
-
-	on (eventType, callback) {
-		var self = this;
-		if (Object.prototype.toString.call(callback) == "[object Function]") {
-			self.listeners[String(eventType)] = callback;
-		} else {
-			throw "Why are you put to listener not a function?! Why???";
-		}
-	}
-
-	/*
-		
-		Read: LongPoll.emit
-
-	*/
-
-	emit(eventType, data) {
-		var self = this;
-
-		if (self.listeners[eventType]) {
-			try {
-				self.listeners[eventType].call(self, data);
-			} catch (e) {
-				throw e;
-			}
-		}
-	}
-
-	__initMessage__ (body) {
+	__initMessage (msgBody) {
 		var self = this;
 
 		try {
-			body = JSON.parse(body);
-			if (body.code == 100) {
-				if (self.listeners[body.event.event_type]) {
+			let body = JSON.parse(msgBody);
+			if (parseInt(body.code) === 100) {
+
+				if (self.listeners(body.event.event_type).length) {
 					self.emit(body.event.event_type, body.event);
 				} else {
-					self.emit('pullEvent', body.event);
+					self.emit("pullEvent", body.event);
 				}
+
 			} else if (body.code == 300) {
 				self.emit('serviceMessage', body.service_message);
 			}
@@ -100,405 +59,340 @@ class StreamingAPI {
 		}
 	}
 
-	/**
-	 *
-	 *	This function add new rule in your stream. Only one!
-	 *	If you want add many rules, you need use rules manager with initRules() method!
-     *
-	 *	@param {String} rule is string rule, for exmaple: 'кот -собака'
-	 *	@param {String} tag is tag for rule
-     *
-     *
-	 *	@return {Promise}
-     *
-	 */
-
-	addRule (rule, tag) {
-		var self = this;
-
-		return new Promise (function(resolve, reject) {
-			var url__post = self.url_http + '/rules?key=' + self.key;
-
-			request.post({
-				method: 'POST',
-				url: url__post,
-				json: {
-					"rule": {
-						"value": rule,
-						"tag": tag
-					}
-				}
-			}, function(err, res) {
-				
-				var rvk = res.body;
-
-				if (err) {
-					reject(err, null);
-				}
-
-				if (rvk) {
-					try {
-						
-						if (rvk[0] != "{" && Object.prototype.toString.call(rvk) != "[object Object]") reject("Is not JSON!" + rvk); 
-						if (Object.prototype.toString.call(rvk) != "[object Object]") rvk = JSON.parse(rvk);
-
-						var error = self._vk.check_error(rvk);
-
-						if (error) {
-							reject(error, rvk.error.error_code);
-						} else {
-							resolve.call(rvk, true, rvk);
-						}
-
-					} catch (e) {
-						reject(e, null);
-					}
-				} else {
-					console.log("We don't know that error, vk returned us: ", res);
-				}
-
-			});
+	close () {
+		let self = this;
+		return  new Promise((resolve, reject) => {
+			if (self._wsc) {
+				resolve(self._wsc.close());
+			} else {
+				reject(new Error("WebSocket not connected"));
+			}
 		});
 	}
 
-	/**
-	 *
-	 *	This function delete rule in your stream. Only one!
-	 *	If you want delete many rules, you need use rules manager with initRules() method or deleteAllRules().
-	 *
-	 *	@param {String} tag is tag for rule, which you want to delete
-     *
-	 *
-	 *	@return {Promise}
-	 *
-	 */
+	async __MRHTTPURL (method, json) {
+		let self = this;
 
-	deleteRule (tag) {
-		var self = this;
+		return new Promise ((resolve, reject) => {
+			method = method.toString().toLocaleLowerCase();
+			
+			if (request.hasOwnProperty(method)) {
+				
+				request[method]({
+					method: method.toLocaleUpperCase(),
+					uri: `${self._urlHttp}/rules?key=${self._key}`,
+					json: json
+				}, (err, res) => {
+					if (err) reject(new Error(err));
+					let vkr = res.body;
+					if (vkr) {
 
+						if (staticMethods.isObject(vkr)) vkr = JSON.stringify(vkr);
 
-		return new Promise (function(resolve, reject) {
-			var url__delete = self.url_http + '/rules?key=' + self.key;
-			tag = tag.toString();
+						let json = staticMethods.checkJSONErrors(vkr, reject);
+						
+						if (json) {
+							resolve(json);
+						} else {
+							reject(new Error("JSON is not valid... oor i don't know"));
+						}
 
-			request.delete({
-				method: 'DELETE',
-				url: url__delete,
-				json: {
+					} else {
+						reject(new Error(`Empty response ${vkr}`));
+					}
+				})
+
+			} else {
+				reject(new Error("Undefined method type"));
+			}
+		});
+
+	}
+
+	async addRule (tag, rule) {
+		let self = this;
+		return new Promise((resolve, reject) => {
+			self.__MRHTTPURL("POST", {
+				"rule": {
+					"value": rule,
 					"tag": tag
 				}
-			}, function(err, res) {
-				
-				var rvk = res.body;
-
-				if (err) {
-					reject(err, null);
-				}
-				
-				if (rvk) {
-					try {
-
-						if (rvk[0] != "{" && Object.prototype.toString.call(rvk) != "[object Object]") reject("Is not JSON!" + rvk); 
-						if (Object.prototype.toString.call(rvk) != "[object Object]") rvk = JSON.parse(rvk);
-
-						var error = self._vk.check_error(rvk);
-
-						if (error) {
-							reject(error, rvk.error.error_code);
-						} else {
-							resolve(tag);
-						}
-					} catch (e) {
-						reject(e, null);
-					}
-				} else {
-					console.log("We don't know that error, vk returned us (Delete Rule): ", rvk);
-				}
-			});
+			}).then(resolve, reject);
 		});
 	}
 
-	/**
-	 *
-	 *	This function return in resolve function all your rules from stream
-	 *
-	 *	@return {Promise}
-	 *
-	 */
+	async deleteRule (tag) {
+		let self = this;
+		return new Promise((resolve, reject) => {
+			self.__MRHTTPURL("DELETE", {
+				"tag": tag
+			}).then(resolve, reject);
+		});
+	}
 
+	async getRules () {
+		let self = this;
+		return new Promise ((resolve, reject) => {
+			self.__MRHTTPURL("GET", {}).then(resolve, reject);
+		});
+	}
 
-	getRules () {
-		var self = this;
-
-		return new Promise (function(resolve, reject) {
-			var url__get = self.url_http + '/rules?key=' + self.key;
-
-			request.get({
-				method: 'GET',
-				url: url__get
-			}, function(err, res) {
-				var rvk = res.body;
-
-				if (err) {
-					reject(err, null);
+	async deleteAllRules () {
+		let self = this;
+		return new Promise((resolve, reject) => {
+			//For begin - get All rules
+			self.getRules().then((rules) => {
+				rules = rules.rules;
+				let i = 0;
+				function del () {
+					if (i === rules.length) resolve({code:200});
+					let rule = rules[i];
+					self.deleteRule(rule.tag).then(() => {
+						i++;
+						setTimeout(() => {
+							del();
+						}, 600);
+					}, reject);
 				}
 				
-				if (rvk) {
-					try {
+				if (rules) del();
+				else resolve({code:200});
 
-
-						if (rvk[0] != "{" && Object.prototype.toString.call(rvk) != "[object Object]") reject("Is not JSON!" + rvk); 
-						if (Object.prototype.toString.call(rvk) != "[object Object]") rvk = JSON.parse(rvk);
-						
-
-						var error = self._vk.check_error(rvk);
-
-						if (error) {
-							reject(error, rvk.error.error_code);
-						} else {
-							resolve.call(rvk, rvk.rules, true);
-						}
-
-					} catch (e) {
-						reject(e, null);
-					}
-				}  else {
-					console.log("We don't know that error, vk returned us (Get rule): ", rvk);
-				}
-
-			});
+			}, reject);
 		});
 	}
 
+	async initRules (rulesObject = {}, callBackError) {
+		let self = this;
 
-	/**
-	 *
-	 *	@return {Promise}
-	 *
-	 */
-
-	deleteAllRules() {
-		var self = this;
-
-		return new Promise (function(resolve, reject){
-			self.getRules().then(function(rules){
-				if (rules && rules.length > 0) {
-					var i = 0;
-
-					function del () {
-						self.deleteRule(rules[i].tag).then(function(){
-							i+= 1;
-
-							if (i === rules.length) {
-								resolve.call(this, [true, i]);
-							} else {
-								setInterval(function(){
-									del();
-								}, 1200);
-							}
-
-						})
-					} 
-
-					del();
-
-				} else {
-					resolve.call(this, [true, 0]);
-				}
-
-			}, reject); 			
-		});
-
-	}
-
-	/*
-		
-		This method can help you create, delete and manage your rules too easy!
-		For example: You need create your rules, cat, dog: 
-			initRules({
-				'cat': 'кошка',
-				'dog': 'собака'
-			});
-
-		And after this, you may want to delete dog. If there was not this function, you would have to use deleteRule('dog'), but...
-		I am created this method and so you can do it:
-			initRules({
-				'cat': 'кошка'
-			});
-		:D
-
-		After this, if you want to replace/change already existing rule, you can do it:
-			initRules({
-				'cat': 'кошка киса'
-			});
-		
-		After all manipulations, you can get changelog and result so:
-			initRules({
-				'cat': 'кошка'
-			}).then(function(log){
-				console.log(log); //{addedRules: {'cat': 'кошка'}, replacedRules: {}, deletedRules: {}}
-			});
-
-		It's very easy!
-	*/
-
-	/**
-	 *	@param {Object} rules
-	 *	@param {Function} errorHandler is function, which will be use when is some of actions arise new error. reject and this - is different functions, use 
-	 *	each for their own affairs!
-	 *
-	 *	@return {Promise}
-	 *
-	 */
-
-	initRules (rules, errorHandler) {
-		var self = this;
-		
-
-		return new Promise (function(resolve, reject){
-			
-			if (Object.prototype.toString.call(errorHandler) !== "[object Function]") {
-				errorHandler = function () {};
+		return new Promise((resolve, reject) => {
+			if (!staticMethods.isObject(rulesObject)) reject(new Error("rules must be an object"));
+			if (callBackError) {
+				if (Object.prototype.toString.call(callBackError) !== "[object Function]") reject(new Error("callBackError must be function"));
+			} else {
+				callBackError = function (err) {};
 			}
 
-			if (Object.prototype.toString.call(rules) !== "[object Object]") {
-				rules = {};
-			}
-
-			self.getRules().then(function(st_rules){
-				var st_rules__obj = {};
-				var deletedRules = {};
-				var replacedRules = {};
-				var addedRules = {};
-				var tagi, rules_tags;
 
 
-				if (st_rules) {
-					for (var i = 0; i < st_rules.length; i++) {
-						st_rules__obj[st_rules[i].tag] = st_rules[i].value;
-					}
+			//For begin get all rules and then change/add/delete rules
+			self.getRules().then((startedRules) => {
+				startedRules = startedRules.rules;
+				if (!startedRules) startedRules = [];
 
+				let changedRules = [], addedRules = [], deletedRules = [];
+				let stRulesObject = {};
+				let tags = [];
+
+				for (let l = 0; l < startedRules.length; l++) {
+					let rule = startedRules[l];
+					stRulesObject[rule.tag] = rule.value;
+				}
+
+				for (let tag in rulesObject) tags.push(tag);
+
+				let iN = 0;
+
+				let i = 0;
+	
+				function next () {
+					i++;
+					setTimeout(() => {
+						initRule();
+					}, 400);
+				}
+
+				function initRule() {
 					
-					var tags__ = [];
-					for (var tag in st_rules__obj) { tags__.push(tag); }
-					var i__tag = 0;
+					if (i >= startedRules.length) return initAddRule();
 
-					function initTag () {
-						var tag = tags__[i__tag];
-						i__tag += 1;
-						if (rules[tag] != undefined) {
-							if (Object.prototype.toString.call(rules[tag]) === "[object String]" && rules[tag] != st_rules__obj[tag]) {
+					let rule = startedRules[i];
+
+
+					if (rulesObject[rule.tag]) { //Change rule
+						if (rule.value === rulesObject[rule.tag]) { //No need change
+							next();
+						} else {
+							//Need change it. Delete and it and then add
+							self.deleteRule(rule.tag).then(() => {
+								//Add again
+
+								self.addRule(rule.tag, rulesObject[rule.tag]).then(() => {
 								
-								self.deleteRule(tag).then(function(t){
-									if (t != false && t != undefined) {
-										self.addRule(rules[t], t).then(function(){
-											replacedRules[tag] = {
-												last_val: st_rules__obj[tag],
-												new_val: rules[tag]
-											};
-											nextTag(); 
-										}, function(error){
-											errorHandler.call(this, error, t, null);
-										});
-									}
+									//Success changed
+									changedRules.push({
+										tag: rule.tag,
+										lastValue: rule.value,
+										newValue: rulesObject[rule.tag]
+									});
 
-								}, reject);
+									next();
+								}, (err) => {
+									
+									callBackError({
+										where: "add changes",
+										rule: rule,
+										from: "user_rules",
+										description: "Occured error in add method when we tried add rule which was changed",
+										error: err
+									});
 
-
-							} else if (Object.prototype.toString.call(rules[tag]) === "[object String]" && rules[tag] == st_rules__obj[tag]) {
-								nextTag(); 
-							} else {
-								nextTag();
-								errorHandler.call(this, "Value must be string type, if you want use word undefined, you need use it: \'undefined\' !!!", rules[tag], null);
-							}
-						} else {
-							
-
-							self.deleteRule(tag).then(function(){
-								deletedRules[tag] = {
-									val: st_rules__obj[tag] 
-								};
-								nextTag();
-							}, function(err){
-								errorHandler.call(this, err, tag, "delete_error");
-							});
-
-						}
-					}
-
-					function nextTag () {
-						console.log(tags__);
-						if (i__tag < tags__.length) {
-							initTag();
-						} else {
-							runAdd();
-						}
-					}
-
-					initTag();
-				}
-
-				function runAdd() {
-
-					rules_tags = [];
-					tagi = 0;
-
-					for (var i in rules) rules_tags.push(i);
-
-					addRule();
-
-				}
-
-				function addRule () {
-					if (tagi == rules_tags.length) {
-						return;
-					}
-
-					if (st_rules__obj[rules_tags[tagi]] === undefined) {
-						self.addRule(rules[rules_tags[tagi]], rules_tags[tagi]).then(function(){
-
-
-							addedRules[rules_tags[tagi]] = {
-								tag: rules_tags[tagi],
-								val: rules[rules_tags[tagi]]
-							};
-
-							tagi += 1;
-
-							if (tagi < rules_tags.length) {
-								addRule();
-							} else {
-								resolve.call(this, {
-									added: addedRules,
-									replaced: replacedRules,
-									deleted: deletedRules
+									next();
 								});
-							}
-						}, function (err) {
-							errorHandler.call(this, err, rules_tags[tagi], null);
+
+							}, (err) => {
+								callBackError({
+									where: "delete changes",
+									rule: rule,
+									from: "vk_rules",
+									description: "Occured error in delete method when we tried delete rule which was changed",
+									error: err
+								});	
+								next();							
+							});
+						}
+					} else { //Delete rule
+						self.deleteRule(rule.tag).then(()=>{
+							//Success deleted
+							deletedRules.push({
+								tag: rule.tag,
+								value: rule.value
+							});
+							
+							next();
+
+						}, (err) => {
+							callBackError({
+								where: "delete",
+								rule: rule,
+								from: "vk_rules",
+								description: "Occured error in delete method when we tried delete rule which not declared in init object",
+								error: err
+							});
+							next();
+						});
+					}
+				}
+
+				initRule();
+
+	
+				function nextAdd() {
+					iN++;
+					setTimeout(() => {
+						initAddRule();
+					}, 400);
+				}
+
+				function initAddRule () {
+					if (iN >= tags.length) return resolve({
+						changedRules: changedRules,
+						addedRules: addedRules,
+						deletedRules: deletedRules
+					});
+				
+					let rule = tags[iN];
+
+					if (!stRulesObject.hasOwnProperty(tags[iN])) { //Need add new rules
+						self.addRule(tags[iN], rulesObject[tags[iN]]).then(() => {
+							//Success add
+							addedRules.push({
+								tag: tags[iN],
+								value: rulesObject[tags[iN]]
+							});
+							nextAdd();
+						}, (err) => {
+							callBackError({
+								where: "add",
+								rule: rule,
+								from: "user_rules",
+								description: "Occured error in add method when we tried add rule which not declared in vk rules",
+								error: err
+							});
+							next();
 						});
 
 					} else {
-						tagi += 1;
-
-						if (tagi < rules_tags.length) {
-							addRule();
-						} else {
-							resolve.call(this, {
-								added: addedRules,
-								replaced: replacedRules,
-								deleted: deletedRules
-							});
-						}
+						nextAdd();
 					}
 				}
 
-
-			});
+			}, reject);
 
 		});
 	}
 }
 
+class StreamingAPIConnector {
 
-module.exports = StreamingAPI;
+	constructor (vk) {
+		let self = this;
+		self._vk = vk;
+	}
+
+	async connect (applicationParams = {}) {
+		let self = this;
+
+		return new Promise((resolve, reject) => {
+
+			if (applicationParams) {
+				if (!staticMethods.isObject(applicationParams)) reject(new Error("application params must be an objct parameter"));
+			}
+
+			if (applicationParams.clientId && applicationParams.clientSecret) {
+				
+				let getParams = {
+					client_id: applicationParams.clientId,
+					client_secret: applicationParams.clientSecret, 
+					v: self.api_v,
+					grant_type: "client_credentials",
+				};
+
+				getParams = staticMethods.urlencode(getParams);
+
+				request.get(`${configuration.BASE_OAUTH_URL}access_token?${getParams}`, (err, res) => {
+					if (err) reject(new Error(err));
+					let vkr = res.body;
+
+					if (vkr) {
+						let json = staticMethods.checkJSONErrors(vkr, reject);
+						
+						if (json) {
+
+							self._vk.call("streaming.getServerUrl", {
+								access_token: json.access_token
+							}).then((vkrURL) => {
+
+								let streamingSession = {
+									server: vkrURL.response,
+									client: json
+								}
+
+								let wsc = new WS(`wss://${streamingSession.server.endpoint}/stream?key=${streamingSession.server.key}`);
+								
+								wsc.on("open", () => {
+									let _StreamingAPIConnecton = new StreamingAPIConnection(self._vk, streamingSession, wsc);
+									resolve(_StreamingAPIConnecton);
+								});
+
+
+							}, reject);
+
+						} else {
+							reject(new Error("JSON is not valid... oor i don't know"));
+						}
+
+					} else {
+						reject(new Error(`Empty response ${vkr}`));
+					}
+
+				});
+
+			} else {
+				reject(new Error("clientId and clientSecret not declared"));
+			}
+		});
+	}
+}
+
+module.exports = StreamingAPIConnector;

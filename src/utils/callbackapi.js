@@ -3,8 +3,8 @@
 const http = require("http");
 const express = require("express");
 const staticMethods = require("./staticMethods.js");
-const EventEmitter = require('events');
-const bodyParser = require('body-parser');
+const EventEmitter = require("events");
+const bodyParser = require("body-parser");
 
 
 class CallbackAPI extends EventEmitter {
