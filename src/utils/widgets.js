@@ -36,7 +36,7 @@ class Widgets {
 				headers: headers,
 				body: `act=show&al=1&al_ad=0&autoplay=0&list=&module=videocat&video=${video_source_id}`,
 			}, (err, res, vkr) => {
-				if (err) reject(new Error(err));
+				if (err) return reject(new Error(err));
 				//Parsing hash from response body {"action_hash" : "hash"}
 				let matCH = res.body.match(/(\"|\')action_hash(\"|\')(\s)?\:(\s)?(\'|\")(.*?)(\'|\")/i);
 				if (matCH) {

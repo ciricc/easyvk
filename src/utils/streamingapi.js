@@ -83,7 +83,7 @@ class StreamingAPIConnection extends EventEmitter {
 					uri: `${self._urlHttp}/rules?key=${self._key}`,
 					json: json
 				}, (err, res) => {
-					if (err) reject(new Error(err));
+					if (err) return reject(new Error(err));
 					let vkr = res.body;
 					if (vkr) {
 

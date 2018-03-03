@@ -22,7 +22,7 @@ class CallbackAPI extends EventEmitter {
 			if (!Array.isArray(callbackParams.groups)) callbackParams.groups = [];
 
 			if (callbackParams.groupId) {//If user wants only one group init
-				if (!callbackParams.confirmCode) reject(new Error("You don't puted confirmation code"));
+				if (!callbackParams.confirmCode) return reject(new Error("You don't puted confirmation code"));
 				
 				callbackParams.groups.push({
 					confirmCode: callbackParams.confirmCode,
@@ -32,15 +32,15 @@ class CallbackAPI extends EventEmitter {
 				if (callbackParams.secret) callbackParams.groups[callbackParams.length - 1].secret = callbackParams.secret;
 			}
 
-			if (callbackParams.groups.length === 0) reject(new Error("Select a group for listen calls"));
+			if (callbackParams.groups.length === 0) return reject(new Error("Select a group for listen calls"));
 			else {
 				let gr_temp = {};
 
 				callbackParams.groups.forEach((elem, index) => {
 					let group = callbackParams.groups[index];
-					if (!staticMethods.isObject(group)) reject(new Error(`Group settings is not an object (in ${index} index)`));
-					if (!group.groupId) reject(new Error(`Group id must be (groupId in ${index} index)`));
-					if (!group.confirmCode) reject(new Error(`Confirmation code must be (confirmCode in ${index} index)`));
+					if (!staticMethods.isObject(group)) return reject(new Error(`Group settings is not an object (in ${index} index)`));
+					if (!group.groupId) return reject(new Error(`Group id must be (groupId in ${index} index)`));
+					if (!group.confirmCode) return reject(new Error(`Confirmation code must be (confirmCode in ${index} index)`));
 					else gr_temp[group.groupId.toString()] = group;
 				});
 

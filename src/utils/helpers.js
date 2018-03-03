@@ -51,7 +51,7 @@ class Helpers {
 					offset: offset
 				}).then((vkr) => {
 					if ((maximum != -1 && vkr.response.count > maximum)) {
-						reject(new Error(`Maximum followers for user is: ${maximum}, user have ${rvk.response.count} followers`));
+						return reject(new Error(`Maximum followers for user is: ${maximum}, user have ${rvk.response.count} followers`));
 					}
 					if (vkr.response.items.indexOf(follower_id) != -1) {
 						resolve(true);

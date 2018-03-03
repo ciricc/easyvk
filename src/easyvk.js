@@ -12,6 +12,7 @@ const easyVKStreamingAPI = require("./utils/streamingapi.js");
 const easyVKWidgets = require("./utils/widgets.js");
 const configuration = require("./utils/configuration.js");
 const easyVKHelpers = require("./utils/helpers.js");
+const easyVKRequestsDebugger = require("./utils/debugger.js");
 
 module.exports = createSession;
 module.exports.static = staticMethods;
@@ -25,15 +26,15 @@ async function createSession (params = {}) {
 		if (params.save_session !== false) params.save_session = configuration.save_session;
 		
 		if (params.session_file) {
-			if (!staticMethods.isString(params.session_file)) reject(new Error("The session_file must be a string"));
+			if (!staticMethods.isString(params.session_file)) return reject(new Error("The session_file must be a string"));
 		} else params.session_file = configuration.session_file;
 
 		if (params.api_v && params.api_v !== configuration.api_v) {
-			if (isNaN(params.api_v.toString())) reject(new Error("The api_v parameter must be numeric"));
+			if (isNaN(params.api_v.toString())) return reject(new Error("The api_v parameter must be numeric"));
 		} else params.api_v = configuration.api_v;
 
-		if (params.captcha_key && !params.captcha_sid) reject(new Error("You puted captcha_key but not using captcha_sid parameter"));
-		else if (!params.captcha_key && params.captcha_sid) reject(new Error("You puted captcha_sid but not puted captcha_key parameter"));
+		if (params.captcha_key && !params.captcha_sid) return reject(new Error("You puted captcha_key but not using captcha_sid parameter"));
+		else if (!params.captcha_key && params.captcha_sid) return reject(new Error("You puted captcha_sid but not puted captcha_key parameter"));
 		else if (params.captcha_key && params.captcha_sid) {
 			if (isNaN(params.captcha_sid.toString())) reject(new Error("The captcha_sid must be numeric"));
 		}
@@ -41,13 +42,13 @@ async function createSession (params = {}) {
 		if (params.reauth !== true) params.reauth = configuration.reauth;
 		
 		if (params.reauth) {
-			if (!(params.password && params.username) && !params.access_token) reject(new Error("You want reauth, but you don't puted username and pass or only access_token"));
-			if (params.access_token && params.username) reject(new Error("Select only one way auth: access_token XOR username"));
+			if (!(params.password && params.username) && !params.access_token) return reject(new Error("You want reauth, but you don't puted username and pass or only access_token"));
+			if (params.access_token && params.username) return reject(new Error("Select only one way auth: access_token XOR username"));
 			if (params.access_token) {
-				if (!staticMethods.isString(params.access_token)) reject(new Error("The access_token must be a string"));
+				if (!staticMethods.isString(params.access_token)) return reject(new Error("The access_token must be a string"));
 			}
 
-			if (params.username && !params.password) reject(new Error("Put password if you want aut with username"));
+			if (params.username && !params.password) return reject(new Error("Put password if you want aut with username"));
 			if (params.username && params.password) {
 				params.username = params.username.toString();
 				params.password = params.password.toString();
@@ -65,7 +66,7 @@ class EasyVK {
 		let self = this;
 
 		self.params = params;
-
+		self.debugger = new easyVKRequestsDebugger(self);
 
 		if (!params.reauth) {
 			let data = fs.readFileSync(params.session_file);
@@ -120,11 +121,14 @@ class EasyVK {
 
 				request.get(configuration.BASE_OAUTH_URL + "token/?" + getData, (err, res) => {
 					
+
 					if (err) {
-						reject(new Error(`Server was down or we don't know what happaned [responseCode ${res.statusCode}]`));
+						return reject(new Error(`Server was down or we don't know what happaned [responseCode ${res.statusCode}]`));
 					}
 
+
 					let vkr = res.body;
+					self.debugger.push("response", vkr);
 
 					if (vkr) {
 						let json = staticMethods.checkJSONErrors(vkr, reject);						
@@ -158,8 +162,9 @@ class EasyVK {
 				getData = staticMethods.urlencode(getData);
 
 				request.get(configuration.BASE_CALL_URL + "users.get?" + getData, (err, res) => {
-					if (err) reject(new Error(err));
+					if (err) return reject(new Error(err));
 					let vkr = res.body;
+					self.debugger.push("response", vkr);
 					if (vkr) {
 						let json = staticMethods.checkJSONErrors(vkr, reject);
 
@@ -196,8 +201,9 @@ class EasyVK {
 			getData = staticMethods.urlencode(getData);
 
 			request.get(configuration.BASE_CALL_URL + "groups.getById?" + getData, (err, res) => {
-				if (err) reject(new Error(err));
+				if (err) return reject(new Error(err));
 				let vkr = res.body;
+				self.debugger.push("response", vkr);
 				if (vkr) {
 					let json = staticMethods.checkJSONErrors(vkr, reject);
 
@@ -250,19 +256,18 @@ class EasyVK {
      *
 	 */
 
-	async call(methodName, data = {}) {
+	async call(methodName, data = {}, methodType="get") {
 		var self = this;
 
 		return new Promise((resolve, reject) => {
 			
 			if (!staticMethods.isObject(data)) reject(new Error("Data must be an object"));
-
 			if (!data.access_token) data.access_token = self.session.access_token;
 			if (!data.v) data.v = self.params.api_v;
 			if (!data.captcha_sid) data.captcha_sid = self.params.captcha_sid;
 			if (!data.captcha_key) data.captcha_key = self.params.captcha_key;
 
-			staticMethods.call(methodName, data, configuration).then(resolve, reject);
+			staticMethods.call(methodName, data, methodType, self.debugger).then(resolve, reject);
 		});
 	}
 

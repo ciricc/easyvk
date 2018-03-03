@@ -22,13 +22,13 @@ class EasyVKUploader {
 	async uploadFile (url, filePath, fieldName="", paramsUpload = {}) {
 		return new Promise((resolve, reject) => {
 			
-			if (!url) reject(new Error("put website url for upload this file"));
-			else if (!staticMethods.isString(url)) reject(new Error("website url must be a string"));
+			if (!url) return reject(new Error("put website url for upload this file"));
+			else if (!staticMethods.isString(url)) return reject(new Error("website url must be a string"));
 
 			if (!filePath) reject(new Error("put file's path in second argument"));
-			else if (!staticMethods.isString(filePath)) reject(new Error("file's path must be a string"));
+			else if (!staticMethods.isString(filePath)) return reject(new Error("file's path must be a string"));
 
-			if (fieldName) if (!staticMethods.isString(fieldName)) reject(new Error("field name must be a string"));
+			if (fieldName) if (!staticMethods.isString(fieldName))return reject(new Error("field name must be a string"));
 			if (!staticMethods.isObject(paramsUpload)) paramsUpload = {};
 
 			let stream = fs.createReadStream(filePath);
@@ -48,7 +48,7 @@ class EasyVKUploader {
 				}, (err, response) => {
 					
 					if (err) {
-						reject(new Error(`Server was down or we don't know what happaned [error ${err}]`));
+						return reject(new Error(`Server was down or we don't know what happaned [error ${err}]`));
 					}
 
 					if (!response) response = {};
