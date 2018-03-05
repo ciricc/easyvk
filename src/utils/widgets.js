@@ -37,6 +37,7 @@ class Widgets {
 				body: `act=show&al=1&al_ad=0&autoplay=0&list=&module=videocat&video=${video_source_id}`,
 			}, (err, res, vkr) => {
 				if (err) return reject(new Error(err));
+				self._vk.debugger.push("response", res.body);
 				//Parsing hash from response body {"action_hash" : "hash"}
 				let matCH = res.body.match(/(\"|\')action_hash(\"|\')(\s)?\:(\s)?(\'|\")(.*?)(\'|\")/i);
 				if (matCH) {
@@ -50,8 +51,8 @@ class Widgets {
 						encoding: "binary", //Special
 						headers: headers,
 					}, (err, res) => {
-						if (err) reject(new Error(err));
-
+						if (err) return reject(new Error(err));
+						self._vk.debugger.push("response", res.body);
 						let videoInfo = encoding.convert(res.body, "windows-1252");
 						videoInfo = videoInfo.toString();
 						

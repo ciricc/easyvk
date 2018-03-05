@@ -21,6 +21,7 @@ class EasyVK {
 	static async call (methodName, data, methodType, debuggerIS) {
 		let self = this;
 		return new Promise ((resolve, reject) => {
+			if (!methodType) methodType = "get";
 			if (["get", "post", "delete", "put"].indexOf(methodType.toString().toLocaleLowerCase()) === -1) methodType = "get";	
 			if (!self.isObject(configuration)) reject(new Error("configuration must be an object"));
 			if (!configuration.BASE_CALL_URL) reject(new Error("BASE_CALL_URL must be declared in configuration parameter"));
@@ -80,26 +81,26 @@ class EasyVK {
 
 	// Only for me, but you can use it if understand how
 
-	static checkErrors(rvk) {
+	static checkErrors(vkr) {
 
 		try {
-			if (rvk.error) {
+			if (vkr.error) {
 				
 
-				if (rvk.error === "need_captcha" || rvk.error.error_code === 14) {
-					return rvk;
-				} else if (rvk.error === "need_validation") {
+				if (vkr.error === "need_captcha" || vkr.error.error_code === 14) {
+					return vkr;
+				} else if (vkr.error === "need_validation") {
 					var type = "sms";
-					if (rvk.validation_type.match('app')) type = "app";
+					if (vkr.validation_type.match('app')) type = "app";
 					return `Please, enter your ${type} code in code parameter!`;
 				}
 
-				if (rvk.error.error_msg) {
-					return rvk.error.error_msg;
-				} else if (rvk.error.message) {
-					return rvk.error.message;
+				if (vkr.error.error_msg) {
+					return vkr.error.error_msg;
+				} else if (vkr.error.message) {
+					return vkr.error.message;
 				} else {
-					return rvk.error_description;
+					return vkr.error_description;
 				}
 			}
 		} catch (e) {
@@ -108,7 +109,7 @@ class EasyVK {
 	}
 
 	static encodeHTML (text) {
-		return text.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+		return text.toString().replace(/\<br(\/)?\>/g, "\n").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
 		.replace(/&quot;/g, "\"")
 		.replace(/&#039;/g, "'");
 	}
@@ -122,13 +123,13 @@ class EasyVK {
 		return Object.prototype.toString.call(n) === "[object Object]";
 	}
 
-	static checkJSONErrors (data, reject) {
+	static checkJSONErrors (vkr, reject) {
 		let self = this;
 
 		try {
-			data = JSON.parse(data);
+			vkr = JSON.parse(vkr);
 			
-			let err = self.checkErrors(data);
+			let err = self.checkErrors(vkr);
 			
 			if (err) {
 				reject(new Error(err));
@@ -136,7 +137,7 @@ class EasyVK {
 				return false;
 			}
 
-			return data;
+			return vkr;
 
 		} catch (e) {
 			reject(new Error(e));

@@ -85,6 +85,7 @@ class StreamingAPIConnection extends EventEmitter {
 				}, (err, res) => {
 					if (err) return reject(new Error(err));
 					let vkr = res.body;
+					self._vk.debugger.push("response", vkr);
 					if (vkr) {
 
 						if (staticMethods.isObject(vkr)) vkr = JSON.stringify(vkr);
@@ -353,7 +354,7 @@ class StreamingAPIConnector {
 				request.get(`${configuration.BASE_OAUTH_URL}access_token?${getParams}`, (err, res) => {
 					if (err) reject(new Error(err));
 					let vkr = res.body;
-
+					self._vk.debugger.push("response", vkr);
 					if (vkr) {
 						let json = staticMethods.checkJSONErrors(vkr, reject);
 						

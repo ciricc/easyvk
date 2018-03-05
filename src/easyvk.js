@@ -17,7 +17,7 @@ const easyVKRequestsDebugger = require("./utils/debugger.js");
 module.exports = createSession;
 module.exports.static = staticMethods;
 module.exports.version = "0.4";
-
+module.exports.callbackAPI = new easyVKCallbackAPI(null);
 
 
 async function createSession (params = {}) {

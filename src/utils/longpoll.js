@@ -34,20 +34,25 @@ class LongPollConnection extends EventEmitter {
 			forLongPollServer.ts = self.config.longpollTs;
 			forLongPollServer.mode = self.config.userConfig.forLongPollServer.mode;
 			forLongPollServer.version = self.config.userConfig.forLongPollServer.version;
+			forLongPollServer.wait = self.config.userConfig.forLongPollServer.wait;
 
 			if (isNaN(forLongPollServer.mode)) forLongPollServer.mode = (128 + 32 + 2);
 			if (isNaN(forLongPollServer.version)) forLongPollServer.version = "2";
+			if (isNaN(forLongPollServer.wait)) forLongPollServer.wait = "15";
 
 			forLongPollServer = staticMethods.urlencode(forLongPollServer);
 
 			self.lpConnection = request.get(server + forLongPollServer, (err, res) => {
+
 				if (err) {
 					self.emit("error", err);
 				} else {
+					self._vk.debugger.push("response", res.body);
 					let vkr = staticMethods.checkJSONErrors(res.body, (vkrError) => {
 						self.emit("error", vkrError);
 					});
 
+					console.log(vkr);
 					if (vkr) {
 						//Ok
 						if (vkr.failed) {
@@ -70,7 +75,6 @@ class LongPollConnection extends EventEmitter {
 
 	_checkUpdates(updates) {
 		let self = this;
-
 		if (Array.isArray(updates)) {
 			for (let updateIndex = 0; updateIndex < updates.length; updateIndex++) {
 				let typeEvent = updates[updateIndex][0].toString();
@@ -112,7 +116,7 @@ class LongPollConnection extends EventEmitter {
 			else if (Object.prototype.toString.call(handler) !== "[object Function]") reject(new Error("callback function must be function"));
 			else {
 				eventCode = eventCode.toString();
-				if (!self.eventTypes[eventCode]) {
+				if (!self.supportEventTypes[eventCode]) {
 					self.supportEventTypes[eventCode] = eventCode;
 					self.userListeners[eventCode] = handler;
 				} else {
@@ -163,15 +167,18 @@ class LongPollConnector {
 					if (!staticMethods.isObject(params.forLongPollServer)) params.forLongPollServer = {};
 				} else params.forLongPollServer = {};
 
-				if (isNaN(params.forGetLongPollServer)) {
+				if (isNaN(params.forGetLongPollServer.lp_version)) {
 					params.forGetLongPollServer.lp_version = "2";
 				}
+
+				if (isNaN(params.forLongPollServer.wait)) params.forLongPollServer.wait = "15";
 
 				self._vk.call("messages.getLongPollServer", params.forGetLongPollServer).then((vkr) => {
 					let forLongPoll = {
 						longpollServer: vkr.response.server,
 						longpollTs: vkr.response.ts,
 						longpollKey: vkr.response.key,
+						responseGetServer: vkr,
 						userConfig: params
 					};
 					resolve(new LongPollConnection(forLongPoll, self._vk));
