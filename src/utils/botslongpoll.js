@@ -12,21 +12,13 @@ class LongPollConnection extends EventEmitter {
 		self.config = lpSettings;
 		self._vk = vk;
 		self.userListeners = {};
-		
-		self.supportEventTypes = {
-			"4": "message",
-			"8": "friendOnline",
-			"9": "friendOffline",
-			"51": "editChat",
-			"61": "typeInDialog",
-			"62": "typeInChat",
-		};
 
 		init();
 
 		function init () {
 
-			let server = `${self._vk.config.PROTOCOL}://${self.config.longpollServer}?`;
+
+			let server = `${self.config.longpollServer}?`;
 			let forLongPollServer = {};
 			
 			forLongPollServer.act = "a_check";
@@ -42,7 +34,6 @@ class LongPollConnection extends EventEmitter {
 			forLongPollServer = staticMethods.urlencode(forLongPollServer);
 
 			self.lpConnection = request.get(server + forLongPollServer, (err, res) => {
-
 				if (err) {
 					self.emit("error", err);
 				} else {
@@ -89,57 +80,13 @@ class LongPollConnection extends EventEmitter {
 		let self = this;
 		if (Array.isArray(updates)) {
 			for (let updateIndex = 0; updateIndex < updates.length; updateIndex++) {
-				let typeEvent = updates[updateIndex][0].toString();
-				if (self.supportEventTypes[typeEvent]) {
-					typeEvent = self.supportEventTypes[typeEvent];
-					try {
-						if (self.userListeners[typeEvent]) {
-							self.userListeners[typeEvent](updates[updateIndex]);
-						} else {
-							self.emit(typeEvent, updates[updateIndex]);
-						}
-					} catch (e) {
-						self.emit("error", e);
-					}
-				} else {
-					self.emit("update", updates[updateIndex]);
-				}
+				let typeEvent = updates[updateIndex].type.toString();
+				self.emit(typeEvent, updates[updateIndex].object);
 			}
 		} else {
 			return "Is not array!";
 		}
 	}
-
-	/**
-	 *
-	 *	If my SDK not support certain event it doesn't mean that my SDK not support it :D
-	 *	You can add yours listeners with this function.
-	 *	
-	 *	Docs: vk.com/dev/using_longpoll
-	 *
-	 *	@param {Number} eventCode number of event which you can find on the docs page
-	 *	@param {Function} handler is a handler function
-	 *
-	 */
-
-
-	async addEventCodeListener (eventCode, handler) { //Only for create new event listeneres (if there are not in default listeners, you can get a code and add it!)
-		let self = this;
-		return new Promise((resolve, reject) => {
-			if (isNaN(eventCode)) reject(new Error("eventCode must be numeric"));
-			else if (Object.prototype.toString.call(handler) !== "[object Function]") reject(new Error("callback function must be function"));
-			else {
-				eventCode = eventCode.toString();
-				if (!self.supportEventTypes[eventCode]) {
-					self.supportEventTypes[eventCode] = eventCode;
-					self.userListeners[eventCode] = handler;
-				} else {
-					reject(new Error("This eventCode already have"));
-				}
-			}
-		});
-	}
-
 	
 	async close () {
 		let self = this;
@@ -199,7 +146,7 @@ class LongPollConnector {
 
 				if (isNaN(params.forLongPollServer.wait)) params.forLongPollServer.wait = "25";
 
-				self._vk.call("messages.getLongPollServer", params.forGetLongPollServer).then((vkr) => {
+				self._vk.call("groups.getLongPollServer", params.forGetLongPollServer).then((vkr) => {
 					let forLongPoll = {
 						longpollServer: vkr.response.server,
 						longpollTs: vkr.response.ts,

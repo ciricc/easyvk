@@ -13,12 +13,13 @@ const easyVKWidgets = require("./utils/widgets.js");
 const configuration = require("./utils/configuration.js");
 const easyVKHelpers = require("./utils/helpers.js");
 const easyVKRequestsDebugger = require("./utils/debugger.js");
+const easyVKBotsLongPoll = require("./utils/botslongpoll.js");
 
 module.exports = createSession;
 module.exports.static = staticMethods;
 module.exports.version = "0.4";
-module.exports.callbackAPI = new easyVKCallbackAPI(null);
-
+module.exports.callbackAPI = new easyVKCallbackAPI({});
+module.exports.streamingAPI = new easyVKStreamingAPI({});
 
 async function createSession (params = {}) {
 	return new Promise((resolve, reject) => {
@@ -239,6 +240,8 @@ class EasyVK {
 			self.streamingAPI = new easyVKStreamingAPI(self);
 			self.widgets = new easyVKWidgets(self);
 			self.helpers = new easyVKHelpers(self);
+			self.bots = {};
+			self.bots.longpoll = new easyVKBotsLongPoll(self);
 
 			resolve(s);
 		}

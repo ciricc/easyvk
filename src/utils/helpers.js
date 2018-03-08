@@ -32,25 +32,24 @@ class Helpers {
 		});
 	}
 
-	async userFollowed (user_id, follower_id, maximum) {
+	async userFollowed (follower_id, user_id, maximum) {
 		var self = this;
 		if (user_id) user_id = parseInt(user_id);
 		if (follower_id) follower_id = parseInt(follower_id);
 		if (!follower_id || follower_id <= 0) follower_id = self._vk.session.user_id;
 		if (!maximum) maximum = -1;
-
 		return new Promise((resolve, reject) => {
 			let offset = 0;
 			let followers = [];
 			let breakon = false;
 
-			function getFollowers () {
+			async function getFollowers () {
 				self._vk.call("users.getFollowers", {
 					user_id: user_id,
 					offset: offset
 				}).then((vkr) => {
 					if ((maximum != -1 && vkr.response.count > maximum)) {
-						return reject(new Error(`Maximum followers for user is: ${maximum}, user have ${rvk.response.count} followers`));
+						return reject(new Error(`Maximum followers for user is: ${maximum}, user have ${vkr.response.count} followers`));
 					}
 					if (vkr.response.items.indexOf(follower_id) != -1) {
 						resolve(true);
@@ -63,7 +62,7 @@ class Helpers {
 					} else {
 						resolve(false);
 					}
-				});
+				}, reject);
 			}
 			getFollowers();
 		});

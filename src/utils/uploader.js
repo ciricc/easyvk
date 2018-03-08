@@ -74,14 +74,15 @@ class EasyVKUploader {
 		});
 	}
 
-	async getUploadURL (method_name, params = {}) {
+	async getUploadURL (method_name, params = {}, returnAll=false) {
 		let self = this;
 		return new Promise((resolve, reject) => {
 			
 			if (!staticMethods.isObject(params)) reject(new Error("Params must be an object"));
 			self._vk.call(method_name, params).then((vkr) => {
 				if (vkr.response.upload_url) {
-					resolve(vkr)
+					if (returnAll) resolve(vkr);
+					else resolve(vkr.response.upload_url);
 				} else {
 					reject(new Error("upload_url is not defied in vk response"));
 				}

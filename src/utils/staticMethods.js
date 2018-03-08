@@ -88,7 +88,7 @@ class EasyVK {
 				
 
 				if (vkr.error === "need_captcha" || vkr.error.error_code === 14) {
-					return vkr;
+					return JSON.stringify(vkr);
 				} else if (vkr.error === "need_validation") {
 					var type = "sms";
 					if (vkr.validation_type.match('app')) type = "app";
