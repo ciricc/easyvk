@@ -1,7 +1,7 @@
 {
   "name": "easyvk",
-  "version": "0.3.12",
-  "description": "Functional SDK for vk.com and VK API",
+  "version": "0.4",
+  "description": "Functional SDK for vk.com and VKontake API (ВКонтакт API)",
   "main": "index.js",
   "engines": {
     "node": "8.x"
@@ -23,7 +23,11 @@
     "vk",
     "nodejs",
     "streaming-api",
-    "longpolling"
+    "longpolling",
+    "vkontake",
+    "api",
+    "library",
+    "lib"
   ],
   "author": "ciricc",
   "license": "MIT",
