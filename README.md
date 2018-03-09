@@ -1,6 +1,9 @@
 
 
-![EasyVK Logo](src/logo_200.png?raw=true "EasyVK can help you create applications on VKontakte API easy!")
+<p align="center">
+  <img alt="EasyVK logo" title="EasyVK can help you create applications on VKontakte API easy!" src="src/logo_200.png"/>
+</p>
+
 # EasyVK (VKontakte API Manager)
 
 This app helps you create an apps with vk api easy!
