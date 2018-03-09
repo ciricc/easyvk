@@ -42,4 +42,4 @@ You can use it for know more: [vk.com/dev/manuals](https://vk.com/dev/manuals/)
 * Two factor authentication support
 
 
-You can read documentation of this library <a href="https://ciricc.github.io/en_index.html">here</a> (English) and <a href="https://citicc.github.io/">here</a> (Русская версия документации)
+You can read documentation of this library <a href="https://ciricc.github.io/en_index.html">here</a> (English) and <a href="https://ciricc.github.io/">here</a> (Русская версия документации)
