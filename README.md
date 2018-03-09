@@ -1,19 +1,19 @@
 
 
-![EasyVK Logo](src/logo.png?raw=true "EasyVK can help you create applications on VKontakte API easy!")
+![EasyVK Logo](src/logo_200.png?raw=true "EasyVK can help you create applications on VKontakte API easy!")
 # EasyVK (VKontakte API Manager)
 
 This app helps you create an apps with vk api easy!
 You can use it for know more: [vk.com/dev/manuals](https://vk.com/dev/manuals/)
 
-| [Community](https://vk.com/club162208999) | [Changelog](https://github.com/ciricc/easyvk/tree/master/CHANGELOG.md) | [Документация на русском](https://ciricc.github.com/) | [Documentation](https://ciricc.github.com/en_index.html) |
+| [Community](https://vk.com/club162208999) | [Changelog](https://github.com/ciricc/easyvk/tree/master/CHANGELOG.md) | [Документация на русском](https://ciricc.github.io/) | [Documentation](https://ciricc.github.io/en_index.html) |
 | ------------------------------------------| ---------------------------------------------|-------------|----------|
 
 ## Для русскоязычных
 
 Данная библиотека создана для того, чтобы VKontakte API имел удобную поддержу на node.js.
 С помощью этой библиотеки вы можете делать все, что позволяет официально API ВКонтакте, и не только.
-Так как я предполагаю, что большинство людей, кто скачивает - те, кто владеет русским с рождения, то я написал [документацию](https://ciricc.github.com/) для этого модуля на этом языке. 
+Так как я предполагаю, что большинство людей, кто скачивает - владеют русским с рождения, то я написал [документацию](https://ciricc.github.io/) для этого модуля на этом языке. 
 Если вы хотите помочь в развитии этой библиотеки, вступайте в наше [сообщество](https://vk.com/club162208999) и предлагайте, что можно улучшить и добавить. 
 Если вы хотите помочь нам кодом - делайте это на [github](https://github.com/ciricc/easyvk).
 Ниже написано, что можно делать при помощи EasyVK.
