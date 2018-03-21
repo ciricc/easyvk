@@ -28,7 +28,8 @@ class LongPollConnection extends EventEmitter {
 
 			let server = `${self._vk.config.PROTOCOL}://${self.config.longpollServer}?`;
 			let forLongPollServer = {};
-			
+			let _w = null;
+
 			forLongPollServer.act = "a_check";
 			forLongPollServer.key = self.config.longpollKey;
 			forLongPollServer.ts = self.config.longpollTs;
@@ -38,16 +39,35 @@ class LongPollConnection extends EventEmitter {
 
 			if (isNaN(forLongPollServer.mode)) forLongPollServer.mode = (128 + 32 + 2);
 			if (isNaN(forLongPollServer.version)) forLongPollServer.version = "2";
+			
+			_w = Number(forLongPollServer.wait);
 
 			forLongPollServer = staticMethods.urlencode(forLongPollServer);
+			
+			let params = {
+				url: server + forLongPollServer,
+				timeout: (_w * 1000) + (1000 * 3)
+			}
 
-			self.lpConnection = request.get(server + forLongPollServer, (err, res) => {
+			if (self._debug) {
+				self._debug({
+					type: "longPollParamsQuery",
+					data: params
+				});
+			}
+
+			self.lpConnection = request.get(params, (err, res) => {
 
 				if (err) {
 					self.emit("error", err);
 				} else {
 					self._vk.debugger.push("response", res.body);
-					if (self._debug) self._debug(res.body);
+					
+					if (self._debug) self._debug({
+						type: "pollResponse",
+						data: res.body
+					});
+
 					let vkr = staticMethods.checkJSONErrors(res.body, (vkrError) => {
 						self.emit("error", vkrError);
 					});
@@ -207,7 +227,12 @@ class LongPollConnector {
 						responseGetServer: vkr,
 						userConfig: params
 					};
-					resolve(new LongPollConnection(forLongPoll, self._vk));
+					
+					resolve({
+						connection: new LongPollConnection(forLongPoll, self._vk),
+						vk: self._vk
+					});
+
 				}, reject);
 
 			}

@@ -1,3 +1,14 @@
+
+/*
+	
+	Author: ciricc (Kirill Novak)
+	License: MIT
+	Description : EasyVK is library for creating appliations based on npm and VKontakte API
+	Copyright (c) 2017-2018 Kirill Novak (https://ciricc.github.io/) 
+	ALL UTILITIES OF THIS MODULE ARE DISTRIBUTED UNDER THE SAME LICENSE AND RULES
+	Docs: https://ciricc.github.io/
+*/
+
 "use strict";
 
 const request = require("request");
@@ -241,7 +252,7 @@ class EasyVK {
 			self.widgets = new easyVKWidgets(self);
 			self.helpers = new easyVKHelpers(self);
 			self.bots = {};
-			self.bots.longpoll = new easyVKBotsLongPoll(self);
+			self.bots.longpoll = new easyVKBotsLongPoll(self); 
 
 			resolve(s);
 		}

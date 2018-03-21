@@ -7,7 +7,7 @@
 # EasyVK (VKontakte API Manager)
 
 This app helps you create an apps with vk api easy!
-You can use it for know more: [vk.com/dev/manuals](https://vk.com/dev/manuals/)
+You can use it for know more: [vk.com/dev/](https://vk.com/dev/)
 
 | [Community](https://vk.com/club162208999) | [Changelog](https://github.com/ciricc/easyvk/tree/master/CHANGELOG.md) | [Документация на русском](https://ciricc.github.io/) | [Documentation](https://ciricc.github.io/en_index.html) |
 | ------------------------------------------| ---------------------------------------------|-------------|----------|
