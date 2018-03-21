@@ -195,10 +195,6 @@ class LongPollConnector {
 		self._vk = vk;
 	}
 
-	/*
-	 * wdwd
-	 */
-
 	async connect (params = {}) {
 		let self = this;
 		return new Promise ((resolve, reject) => {

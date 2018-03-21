@@ -20,7 +20,6 @@ function longPollDebugger({type, data}) {
 
 easyVK({
 	api_v: '5.73',
-	reauth: true,
 	save_session: false,
 	session_file: currentSessionFile,
 
@@ -131,4 +130,4 @@ easyVK({
 
 
 //Handle all rejects and errors
-process.on('unhandledRejection', console.error);
+process.on('unhandledRejection', console.error)
