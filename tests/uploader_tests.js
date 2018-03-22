@@ -44,7 +44,7 @@ easyVK({
 
 
 	const Uploader = vk.uploader	
-	const album_id = ( await getMyAlbumId() ).response.items[0].id
+	const album_id = ( await getMyAlbumId() ).vkr.response.items[0].id
 	
 	//Will logged all urls (12)
 	const methods = {
@@ -85,6 +85,7 @@ easyVK({
 
 
 	//Will occured error like `upload_url` not defined
+
 	vk.uploader.getUploadURL('messages.send', {
 		message: 'Error, but it will sended, beacouse this method use .call() method for get URL !',
 		user_id: me
@@ -128,8 +129,8 @@ easyVK({
 
 	//Get response from upload file for save it and then sending
 	let { vkr: fileData } = await ( Uploader.uploadFile(url, filePath, field, {}) )
-		fileData = await ( vk.call('photos.saveMessagesPhoto', fileData) )
-		fileData = fileData.response[0]
+		fileData = await ( vk.call('photos.saveMessagesPhoto', fileData) )	
+		fileData = fileData.vkr.response[0]
 
 
 	//Create attahcments
@@ -151,7 +152,7 @@ easyVK({
 	})
 
 
-}).then(vkr => {
+}).then(({vkr, vk}) => {
 	
 	console.log(vkr)
 

@@ -69,7 +69,7 @@ class LongPollConnection extends EventEmitter {
 								if (vkr.ts) self.config.longpollTs = vkr.ts;
 								init();
 							} else if ([2,3].indexOf(vkr.failed) != -1){ //need reconnect
-								self._vk.call("messages.getLongPollServer", self.config.userConfig.forGetLongPollServer).then(vkr => {
+								self._vk.call("messages.getLongPollServer", self.config.userConfig.forGetLongPollServer).then(({vkr}) => {
 									self.config.longpollServer = vkr.response.server;
 									self.config.longpollTs = vkr.response.ts;
 									self.config.longpollKey =  vkr.response.key;
@@ -166,7 +166,7 @@ class LongPollConnector {
 
 				if (isNaN(params.forLongPollServer.wait)) params.forLongPollServer.wait = "25";
 
-				self._vk.call("groups.getLongPollServer", params.forGetLongPollServer).then((vkr) => {
+				self._vk.call("groups.getLongPollServer", params.forGetLongPollServer).then(({vkr}) => {
 					let forLongPoll = {
 						longpollServer: vkr.response.server,
 						longpollTs: vkr.response.ts,

@@ -1,7 +1,7 @@
 const easyVK = require('../index.js')
 
 
-const currentSessionFile = `${__dirname}/.vksession`;
+const currentSessionFile = `${__dirname}/.vksession`
 
 /*
  *
@@ -22,7 +22,7 @@ easyVK({
 	const Widgets = vk.widgets
 	const interval = 8000
 	const me = 356607530
-	const videoSourceId = '-156373163_456239058' //From url, for example:
+	const videoSourceId = '-932_456239103' //From url, for example:
 	// https://vk.com/video?z=video<!![-156373163_456239058]!!>%2F20f2c18b0457ec2a84%2Fpl_cat_games
 
 	async function sendToMe ({message}) {

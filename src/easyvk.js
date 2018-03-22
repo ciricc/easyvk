@@ -281,7 +281,12 @@ class EasyVK {
 			if (!data.captcha_sid) data.captcha_sid = self.params.captcha_sid;
 			if (!data.captcha_key) data.captcha_key = self.params.captcha_key;
 
-			staticMethods.call(methodName, data, methodType, self.debugger).then(resolve, reject);
+			staticMethods.call(methodName, data, methodType, self.debugger).then((vkr) => {
+				resolve({
+					vkr: vkr,
+					vk: self
+				});
+			}, reject);
 		});
 	}
 
@@ -289,5 +294,8 @@ class EasyVK {
 		let self = this;
 		let s = JSON.stringify(self.session);
 		fs.writeFileSync(self.params.session_file, s);
+
+		return self
+		
 	}
 }

@@ -19,8 +19,8 @@ easyVK({
 	access_token: '{TOKEN_FIELD}',
 }).then((vk) => {
 
-	const myApplicationId = '{APPLICATION_ID}'
-	const myApplicationSecret = '{APPLICATION_SECRET}'
+	const myApplicationId = '{APPLICATION_ID_FIELD}'
+	const myApplicationSecret = '{APPLICATION_SECRET_FIELD}'
 
 	const StreamingAPI = vk.streamingAPI
 

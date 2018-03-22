@@ -85,7 +85,7 @@ class EasyVKUploader {
 		return new Promise((resolve, reject) => {
 			
 			if (!staticMethods.isObject(params)) reject(new Error("Params must be an object"));
-			self._vk.call(method_name, params).then((vkr) => {
+			self._vk.call(method_name, params).then(({vkr, vk}) => {
 				if (vkr.response.upload_url) {
 					
 					if (returnAll) resolve({
@@ -96,8 +96,9 @@ class EasyVKUploader {
 
 					else resolve({
 						url: vkr.response.upload_url,
-						vk: self._vk
+						vk: vk
 					});
+						
 				} else {
 					reject(new Error("upload_url is not defied in vk response"));
 				}

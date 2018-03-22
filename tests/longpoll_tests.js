@@ -104,7 +104,7 @@ easyVK({
 
 		 
 
-		const msg = (await getMessage).response.items[0]
+		const msg = (await getMessage).vkr.response.items[0]
 
 
 		if (!msg.out) {

@@ -128,7 +128,7 @@ class StreamingAPIConnection extends EventEmitter {
 			}).then((d) => {
 				
 				resolve({
-					response: d,
+					vkr: d,
 					vk: self._vk
 				});
 
@@ -144,7 +144,7 @@ class StreamingAPIConnection extends EventEmitter {
 			}).then((d) => {
 				
 				resolve({
-					response: d,
+					vkr: d,
 					vk: self._vk
 				});
 
@@ -159,7 +159,7 @@ class StreamingAPIConnection extends EventEmitter {
 				
 				resolve({
 					vk: self._vk,
-					rules: rules
+					vkr: rules
 				})
 
 			}, reject);
@@ -170,11 +170,11 @@ class StreamingAPIConnection extends EventEmitter {
 		let self = this;
 		return new Promise((resolve, reject) => {
 			//For begin - get All rules
-			self.getRules().then((rules) => {
+			self.getRules().then(({vkr: rules}) => {
 				rules = rules.rules;
 				let i = 0;
 				function del () {
-					if (i === rules.length) resolve({code:200});
+					if (i === rules.length) resolve({code:200, vk: self._vk});
 					let rule = rules[i];
 					self.deleteRule(rule.tag).then(() => {
 						i++;
@@ -205,7 +205,7 @@ class StreamingAPIConnection extends EventEmitter {
 
 
 			//For begin get all rules and then change/add/delete rules
-			self.getRules().then(({rules: startedRules}) => {
+			self.getRules().then(({vkr: startedRules}) => {
 				
 				console.log(startedRules)
 
