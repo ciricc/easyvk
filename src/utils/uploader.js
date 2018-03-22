@@ -20,6 +20,7 @@ class EasyVKUploader {
 	}
 
 	async uploadFile (url, filePath, fieldName="", paramsUpload = {}) {
+		let self = this;
 		return new Promise((resolve, reject) => {
 			
 			if (!url) return reject(new Error("put website url for upload this file"));
@@ -59,7 +60,12 @@ class EasyVKUploader {
 						let json = staticMethods.checkJSONErrors(vkr);
 						
 						if (json) {
-							resolve(json);
+							
+							resolve({
+								vkr: json,
+								vk: self._vk
+							});
+
 						} else {
 							reject(new Error("Response from vk is not a json"));
 						}
@@ -81,8 +87,17 @@ class EasyVKUploader {
 			if (!staticMethods.isObject(params)) reject(new Error("Params must be an object"));
 			self._vk.call(method_name, params).then((vkr) => {
 				if (vkr.response.upload_url) {
-					if (returnAll) resolve(vkr);
-					else resolve(vkr.response.upload_url);
+					
+					if (returnAll) resolve({
+						url: vkr,
+						vkr: vkr,
+						vk: self._vk
+					});
+
+					else resolve({
+						url: vkr.response.upload_url,
+						vk: self._vk
+					});
 				} else {
 					reject(new Error("upload_url is not defied in vk response"));
 				}

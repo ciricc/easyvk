@@ -1,7 +1,7 @@
 const easyVK = require('../index.js')
 
 
-const currentSessionFile = `${__dirname}/.vksession`;
+const currentSessionFile = `${__dirname}/.vksession`
 
 const counters = {
 	shares: 0,

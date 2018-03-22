@@ -2,7 +2,7 @@ const easyVK = require('../index.js')
 
 
 
-const currentSessionFile = `${__dirname}/.vksession`;
+const currentSessionFile = `${__dirname}/.vksession`
 
 /**
  *
@@ -140,6 +140,7 @@ easyVK({
 
 }).catch(console.error)
 
-
 //Handle all rejects and errors
 process.on('unhandledRejection', console.error)
+
+
