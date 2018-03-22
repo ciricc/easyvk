@@ -15,7 +15,7 @@ const currentSessionFile = `${__dirname}/.vksession`;
 
 function longPollDebugger({type, data}) {
 	//Debug all steps on the poll step
-	console.log(`[typeLog] ${type}`, data);
+	console.log(`[typeLog ${type}]`, data);
 }
 
 easyVK({
@@ -75,14 +75,26 @@ easyVK({
 
 	const LPU = vk.longpoll
 
+
 	//Connect to user longpoll for create group bot :D
-	return LPU.connect()
+	return LPU.connect({
+	    forGetLongPollServer: {
+	        lp_version: "2",
+	        need_pts: "1",
+	    }
+	})
 
 }).then(({connection: userLongPollConnection, vk}) => {
+
+	console.log(userLongPollConnection.config.userConfig.forGetLongPollServer.need_pts)
 
 	//Debug useLongPollConnection
 	userLongPollConnection.debug(longPollDebugger)
 	
+	//Test addEventCodeListener method, flags message
+	userLongPollConnection.addEventCodeListener(3, (event) => { 
+	    console.info('[Message flags changes] ========== ', event);
+	}).catch(console.error);
 	
 	async function messageNew (msgEvent) {
 		
@@ -106,7 +118,7 @@ easyVK({
 
 			const sendMessage = vk.call('messages.send', { 
 				user_id: msg.user_id,
-				message: 'Replay it from User LongPoll system'
+				message: 'Reply it from User LongPoll system'
 			})
 
 			await sendMessage

@@ -32,8 +32,8 @@ class StreamingAPIConnection extends EventEmitter {
 			self.__initMessage(message);
 		});
 
-	    self._wsc.on("close", () => {
-			self.emit("failure", new Error("Connection closed"));
+	    self._wsc.on("close", (r) => {
+			self.emit("failure", `Connection closed ${(r) ? '(' + r + ')' : ''}`);
 		});
 
 	}
@@ -59,11 +59,16 @@ class StreamingAPIConnection extends EventEmitter {
 		}
 	}
 
-	close () {
+	async close () {
 		let self = this;
 		return  new Promise((resolve, reject) => {
 			if (self._wsc) {
-				resolve(self._wsc.close());
+				
+				resolve({
+					response: self._wsc.close(),
+					vk: self._vk
+				});
+
 			} else {
 				reject(new Error("WebSocket not connected"));
 			}
@@ -85,7 +90,9 @@ class StreamingAPIConnection extends EventEmitter {
 				}, (err, res) => {
 					if (err) return reject(new Error(err));
 					let vkr = res.body;
+					
 					if (self._vk.debugger) self._vk.debugger.push("response", vkr);
+
 					if (vkr) {
 
 						if (staticMethods.isObject(vkr)) vkr = JSON.stringify(vkr);
@@ -118,7 +125,14 @@ class StreamingAPIConnection extends EventEmitter {
 					"value": rule,
 					"tag": tag
 				}
-			}).then(resolve, reject);
+			}).then((d) => {
+				
+				resolve({
+					response: d,
+					vk: self._vk
+				});
+
+			}, reject);
 		});
 	}
 
@@ -127,14 +141,28 @@ class StreamingAPIConnection extends EventEmitter {
 		return new Promise((resolve, reject) => {
 			self.__MRHTTPURL("DELETE", {
 				"tag": tag
-			}).then(resolve, reject);
+			}).then((d) => {
+				
+				resolve({
+					response: d,
+					vk: self._vk
+				});
+
+			}, reject);
 		});
 	}
 
 	async getRules () {
 		let self = this;
 		return new Promise ((resolve, reject) => {
-			self.__MRHTTPURL("GET", {}).then(resolve, reject);
+			self.__MRHTTPURL("GET", {}).then((rules) => {
+				
+				resolve({
+					vk: self._vk,
+					rules: rules
+				})
+
+			}, reject);
 		});
 	}
 
@@ -157,7 +185,7 @@ class StreamingAPIConnection extends EventEmitter {
 				}
 				
 				if (rules) del();
-				else resolve({code:200});
+				else resolve({code:200, vk: self._vk});
 
 			}, reject);
 		});
@@ -177,7 +205,10 @@ class StreamingAPIConnection extends EventEmitter {
 
 
 			//For begin get all rules and then change/add/delete rules
-			self.getRules().then((startedRules) => {
+			self.getRules().then(({rules: startedRules}) => {
+				
+				console.log(startedRules)
+
 				startedRules = startedRules.rules;
 				if (!startedRules) startedRules = [];
 
@@ -242,13 +273,15 @@ class StreamingAPIConnection extends EventEmitter {
 								});
 
 							}, (err) => {
+								
 								callBackError({
 									where: "delete changes",
 									rule: rule,
 									from: "vk_rules",
 									description: "Occured error in delete method when we tried delete rule which was changed",
 									error: err
-								});	
+								});
+
 								next();							
 							});
 						}
@@ -287,9 +320,12 @@ class StreamingAPIConnection extends EventEmitter {
 
 				function initAddRule () {
 					if (iN >= tags.length) return resolve({
-						changedRules: changedRules,
-						addedRules: addedRules,
-						deletedRules: deletedRules
+						log: {
+							changedRules: changedRules,
+							addedRules: addedRules,
+							deletedRules: deletedRules
+						},
+						vk: self._vk
 					});
 				
 					let rule = tags[iN];
@@ -310,7 +346,7 @@ class StreamingAPIConnection extends EventEmitter {
 								description: "Occured error in add method when we tried add rule which not declared in vk rules",
 								error: err
 							});
-							next();
+							nextAdd();
 						});
 
 					} else {
@@ -373,7 +409,10 @@ class StreamingAPIConnector {
 								
 								wsc.on("open", () => {
 									let _StreamingAPIConnecton = new StreamingAPIConnection(self._vk, streamingSession, wsc);
-									resolve(_StreamingAPIConnecton);
+									resolve({
+										connection: _StreamingAPIConnecton,
+										vk: self._vk
+									});
 								});
 
 

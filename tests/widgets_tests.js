@@ -18,13 +18,15 @@ easyVK({
 	//Access token whcch you need get from your group settings
 	access_token: '{TOKEN_FIELD}',
 }).then((vk) => {
+
 	const Widgets = vk.widgets
 	const interval = 8000
 	const me = 356607530
-	const videoSourceId = '-156373163_456239058'
+	const videoSourceId = '-156373163_456239058' //From url, for example:
+	// https://vk.com/video?z=video<!![-156373163_456239058]!!>%2F20f2c18b0457ec2a84%2Fpl_cat_games
 
 	async function sendToMe ({message}) {
-		return vk.call('messages.send', {
+		return vk.call('messages.send', { //Standard method for send message
 			user_id: me,
 			message: message
 		})	
