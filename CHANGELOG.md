@@ -11,18 +11,19 @@ So, in older versions you need see changes in a commits.
 ### in [0.3.12v]
 
 ```javascript
+
 const VK = require('easyvk')
 
 VK.login({
-	access_token: '{TOKEN_FIELD}'
+    access_token: '{TOKEN_FIELD}'
 }).then(function (session) {
-	//need know your id before start script
-	const me = 1
-	
-	return VK.call('messages.send', {
-		user_id: me,
-		message: 'Hello!'
-	})
+    //need know your id before start script
+    const me = 1
+
+    return VK.call('messages.send', {
+        user_id: me,
+        message: 'Hello!'
+    })
 
 }).catch(console.error)
 
@@ -31,15 +32,16 @@ VK.login({
 ### in [1.0v]
 
 ```javascript
-const easyvk = require('easyvk');
+
+const easyvk = require('easyvk')
 
 easyvk({ //Login here
-	access_token: '{TOKEN_FIELD}'
+    access_token: '{TOKEN_FIELD}'
 }).then((vk) => {
-	return vk.call('messages.send', {
-		user_id: vk.session.user_id,
-		message: 'Hello!'
-	})
+        return vk.call('messages.send', {
+        user_id: vk.session.user_id,
+        message: 'Hello!'
+    })
 }).catch(console.error)
 
 
@@ -49,13 +51,14 @@ easyvk({ //Login here
 ### in [0.3.12v]
 
 ```javascript
+
 VK.streamingAPI({
-	client_id: '222222',
+    client_id: '222222',
     client_secret: 'wzkLEmKOlDflwaaWwdWM'
 }).then(function (connection) {
-	connection.on('post', function(post) {
-		console.log(post)
-	})	
+    connection.on('post', function(post) {
+        console.log(post)
+    })	
 })	
 
 ```
@@ -67,17 +70,17 @@ VK.streamingAPI({
 easyVK({
 
 }).then(vk => {
-	return vk.streamingAPI.connect({
-		clientId: '222222',
-		clientSecret: 'wzkLEmKOlDflwaaWwdWM'
-	})
+    return vk.streamingAPI.connect({
+        clientId: '222222',
+         clientSecret: 'wzkLEmKOlDflwaaWwdWM'
+    })
 }).then(({ connection, vk }) => {
-		
-	connection.on('post', (post) => {
-		console.log(post)
-	})
 
-}).catch(console.error);
+    connection.on('post', (post) => {
+        console.log(post)
+    })
+
+}).catch(console.error)
 
 ```
 
