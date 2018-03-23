@@ -8,42 +8,80 @@ So, in older versions you need see changes in a commits.
 
 ## Login
 
-### 0.3
+### in [0.3.12v]
 
 ```javascript
+const VK = require('easyvk')
 
-	VK.login({
-		access_token: '{TOKEN_FIELD}'
-	}).then(session => {
+VK.login({
+	access_token: '{TOKEN_FIELD}'
+}).then(function (session) {
+	//need know your id before start script
+	const me = 1
+	
+	return VK.call('messages.send', {
+		user_id: me,
+		message: 'Hello!'
+	})
 
-		//need know your id before start script
-		const me = 1
-		return VK.call('messages.send', {
-			user_id: me,
-			message: 'Hello!'
-		})
-	}).catch(console.error)
+}).catch(console.error)
 
 ```
 
-### 1.0
+### in [1.0v]
 
 ```javascript
-	
-	const easyvk = require('easyvk');
+const easyvk = require('easyvk');
 
+easyvk({ //Login here
+	access_token: '{TOKEN_FIELD}'
+}).then((vk) => {
+	return vk.call('messages.send', {
+		user_id: vk.session.user_id,
+		message: 'Hello!'
+	})
+}).catch(console.error)
 
-	easyvk({
-		access_token: '{TOKEN_FIELD}'
-	}).then((vk) => {
-		return vk.call('messages.send', {
-			user_id: vk.session.user_id,
-			message: 'Hello!'
-		})
-	}).catch(console.error)
-	
 
 ```
+## Streaming API
+
+### in [0.3.12v]
+
+```javascript
+VK.streamingAPI({
+	client_id: '222222',
+    client_secret: 'wzkLEmKOlDflwaaWwdWM'
+}).then(function (connection) {
+	connection.on('post', function(post) {
+		console.log(post)
+	})	
+})	
+
+```
+
+### in [1.0v]
+
+```javascript
+
+easyVK({
+
+}).then(vk => {
+	return vk.streamingAPI.connect({
+		clientId: '222222',
+		clientSecret: 'wzkLEmKOlDflwaaWwdWM'
+	})
+}).then(({ connection, vk }) => {
+		
+	connection.on('post', (post) => {
+		console.log(post)
+	})
+
+}).catch(console.error);
+
+```
+
+
 
 ## [0.3.12] - 2018-02-18
 
