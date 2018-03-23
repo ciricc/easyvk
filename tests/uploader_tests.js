@@ -101,7 +101,7 @@ easyVK({
 	for (let method in methods) {
 
 		const params = methods[method]
-		const {url} = await (Uploader.getUploadURL(method, params))
+		const { url } = await (Uploader.getUploadURL(method, params))
 		
 		if (url.length > 0) {
 			i++

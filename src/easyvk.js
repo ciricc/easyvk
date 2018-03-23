@@ -28,7 +28,7 @@ const easyVKBotsLongPoll = require("./utils/botslongpoll.js");
 
 module.exports = createSession;
 module.exports.static = staticMethods;
-module.exports.version = "0.4";
+module.exports.version = "1.0";
 module.exports.callbackAPI = new easyVKCallbackAPI({});
 module.exports.streamingAPI = new easyVKStreamingAPI({});
 
@@ -296,6 +296,6 @@ class EasyVK {
 		fs.writeFileSync(self.params.session_file, s);
 
 		return self
-		
+
 	}
 }

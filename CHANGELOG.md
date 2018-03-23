@@ -3,6 +3,48 @@
 This file started from 0.2.8 version.
 So, in older versions you need see changes in a commits.
 
+
+## [1.0] 
+
+## Login
+
+### 0.3
+
+```javascript
+
+	VK.login({
+		access_token: '{TOKEN_FIELD}'
+	}).then(session => {
+
+		//need know your id before start script
+		const me = 1
+		return VK.call('messages.send', {
+			user_id: me,
+			message: 'Hello!'
+		})
+	}).catch(console.error)
+
+```
+
+### 1.0
+
+```javascript
+	
+	const easyvk = require('easyvk');
+
+
+	easyvk({
+		access_token: '{TOKEN_FIELD}'
+	}).then((vk) => {
+		return vk.call('messages.send', {
+			user_id: vk.session.user_id,
+			message: 'Hello!'
+		})
+	}).catch(console.error)
+	
+
+```
+
 ## [0.3.12] - 2018-02-18
 
 ### Added 
