@@ -30,9 +30,16 @@ const captchaHandler = ({captcha_sid, captcha_img, resolve, vk}) => {
 		//When got a key (message from stdin)
 		//Try solve it with resolve method
 		resolve(key).then(() => {
-
 			//If solved correctly
 			vk.captcha_stop = false
+
+			console.log('Captcha solved correctly!')
+
+		}).catch(({err, reCall: tryNewCall}) => {
+
+			//Or if captcha not solved correctly
+			console.log('Captcha not solved correctly!!!\nTry recall')
+			tryNewCall()
 		})
 
 	});
@@ -54,11 +61,16 @@ easyVK({
 	const me = 356607530
 	const interval = 700 //DDOS, catch captcha
 
+	let i = 0;
+
 	setInterval(() => {
 		
 		//If no need solve captche, sending messages ....
 		if (!vk.captcha_stop) {
 			
+			i++;
+
+			console.log(`Sending message [${i}]`)
 			return vk.call('messages.send', {
 				user_id: me,
 				message: 'Test it!'

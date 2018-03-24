@@ -286,7 +286,8 @@ class EasyVK {
 		var self = this;
 
 		return new Promise((resolve, reject) => {
-			function reCall () {
+
+			function reCall (_needSolve, _resolverReCall, _rejecterReCall) {
 				
 				if (!staticMethods.isObject(data)) reject(new Error("Data must be an object"));
 				if (!data.access_token) data.access_token = self.session.access_token;
@@ -295,10 +296,18 @@ class EasyVK {
 				if (!data.captcha_key) data.captcha_key = self.params.captcha_key;
 
 				return staticMethods.call(methodName, data, methodType, self.debugger).then((vkr) => {
+					
+					if (_needSolve) {
+						try {
+							_resolverReCall(true);
+						} catch (e) {}
+					}
+
 					return resolve({
 						vkr: vkr,
 						vk: self
 					});
+
 				}).catch((err) => {
 
 					try {
@@ -306,6 +315,21 @@ class EasyVK {
 						let vkr = JSON.parse(err.message);
 
 						if (vkr.error === "need_captcha" || vkr.error.error_code === 14) {
+
+							if (_needSolve) {
+								
+								try {
+									_rejecterReCall({
+										error: false,
+										reCall: () => {
+											return reCall();
+										}
+									});
+								} catch (e) {}
+
+								return;
+							}
+
 
 							//Captcha error, handle it
 							const captcha_sid = vkr.error.captcha_sid || vkr.captcha_sid;
@@ -316,10 +340,11 @@ class EasyVK {
 								return new Promise((resolvedCaptcha, rejectCaptcha) => {
 									data.captcha_key = captcha_key;
 									data.captcha_sid = captcha_sid;
+									
 									try {
-										let reCalled = reCall();
-										if (reCalled) resolvedCaptcha(true)
+										let reCalled = reCall('NEED SOLVE', resolvedCaptcha, rejectCaptcha);
 									} catch (errorRecall) {/*Need pass it*/}
+
 								});
 							}
 
@@ -328,7 +353,7 @@ class EasyVK {
 						} else {
 							reject(err);
 						}
-
+						
 					} catch (e) {
 						reject(err);
 					}
