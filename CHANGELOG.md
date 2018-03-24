@@ -38,7 +38,7 @@ const easyvk = require('easyvk')
 easyvk({ //Login here
     access_token: '{TOKEN_FIELD}'
 }).then((vk) => {
-        return vk.call('messages.send', {
+    return vk.call('messages.send', {
         user_id: vk.session.user_id,
         message: 'Hello!'
     })

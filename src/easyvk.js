@@ -244,6 +244,18 @@ class EasyVK {
 				fs.writeFileSync(params.session_file, "{}");
 			}
 
+			if (!params.captchaHandler || !Object.prototype.toString.call(params.captchaHandler).match(/Function/)) {
+				params.captchaHandler = ({captcha_sid, captcha_key}) => {
+					throw new Error(`
+						[Captcha error] 
+						You need solve it and then put to params captcha_key, or use captchaHandler for solve it automatic 
+						(captcha_key=${captcha_key}; captcha_sid =${captcha_sid})
+					`);
+				}
+			}
+
+			
+			self.captchaHandler = params.captchaHandler;			
 			self.uploader = new easyVKUploader(self);
 			self.longpoll = new easyVKLongPoll(self);
 			self.config = configuration;
@@ -274,19 +286,58 @@ class EasyVK {
 		var self = this;
 
 		return new Promise((resolve, reject) => {
-			
-			if (!staticMethods.isObject(data)) reject(new Error("Data must be an object"));
-			if (!data.access_token) data.access_token = self.session.access_token;
-			if (!data.v) data.v = self.params.api_v;
-			if (!data.captcha_sid) data.captcha_sid = self.params.captcha_sid;
-			if (!data.captcha_key) data.captcha_key = self.params.captcha_key;
+			function reCall () {
+				
+				if (!staticMethods.isObject(data)) reject(new Error("Data must be an object"));
+				if (!data.access_token) data.access_token = self.session.access_token;
+				if (!data.v) data.v = self.params.api_v;
+				if (!data.captcha_sid) data.captcha_sid = self.params.captcha_sid;
+				if (!data.captcha_key) data.captcha_key = self.params.captcha_key;
 
-			staticMethods.call(methodName, data, methodType, self.debugger).then((vkr) => {
-				resolve({
-					vkr: vkr,
-					vk: self
+				return staticMethods.call(methodName, data, methodType, self.debugger).then((vkr) => {
+					return resolve({
+						vkr: vkr,
+						vk: self
+					});
+				}).catch((err) => {
+
+					try {
+
+						let vkr = JSON.parse(err.message);
+
+						if (vkr.error === "need_captcha" || vkr.error.error_code === 14) {
+
+							//Captcha error, handle it
+							const captcha_sid = vkr.error.captcha_sid || vkr.captcha_sid;
+							const captcha_img = vkr.error.captcha_img || vkr.captcha_img;
+							let paramsForHandler = {captcha_sid, captcha_img, vk: self};
+
+							paramsForHandler.resolve = (captcha_key) => {
+								return new Promise((resolvedCaptcha, rejectCaptcha) => {
+									data.captcha_key = captcha_key;
+									data.captcha_sid = captcha_sid;
+									try {
+										let reCalled = reCall();
+										if (reCalled) resolvedCaptcha(true)
+									} catch (errorRecall) {/*Need pass it*/}
+								});
+							}
+
+							self.captchaHandler(paramsForHandler);
+
+						} else {
+							reject(err);
+						}
+
+					} catch (e) {
+						reject(err);
+					}
+
 				});
-			}, reject);
+			}
+
+			reCall();
+
 		});
 	}
 

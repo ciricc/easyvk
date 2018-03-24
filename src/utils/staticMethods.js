@@ -93,6 +93,12 @@ class EasyVK {
 					var type = "sms";
 					if (vkr.validation_type.match('app')) type = "app";
 					return `Please, enter your ${type} code in code parameter!`;
+				} else if (vkr.error.error_code === 17) {
+					return JSON.stringify({
+						redirect_uri: vkr.error.redirect_uri,
+						error: vkr.error.error_msg,
+						error_code: vkr.error.error_code
+					})
 				}
 
 				if (vkr.error.error_msg) {
