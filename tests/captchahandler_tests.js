@@ -20,16 +20,20 @@ const rl = readline.createInterface({
 const currentSessionFile = `${__dirname}/.vksession`
 
 
-const captchaHandler = ({captcha_sid, captcha_img, resolve, vk}) => {
+const captchaHandler = ({captcha_sid, captcha_img, resolve:solve, vk}) => {
 		
 	//Stop sending messages, vk is EasyVK object
 	vk.captcha_stop = true;
+
+	//You can download image by captcha_img url
+	//Then solve it by ruCaptcha service (not free) or just send it to you for solving
 
 	rl.question(`Enter captcha for ${captcha_img} `, (key) => {
 		
 		//When got a key (message from stdin)
 		//Try solve it with resolve method
-		resolve(key).then(() => {
+		solve(key).then(() => {
+		
 			//If solved correctly
 			vk.captcha_stop = false
 
@@ -40,6 +44,7 @@ const captchaHandler = ({captcha_sid, captcha_img, resolve, vk}) => {
 			//Or if captcha not solved correctly
 			console.log('Captcha not solved correctly!!!\nTry recall')
 			tryNewCall()
+
 		})
 
 	});
@@ -59,7 +64,8 @@ easyVK({
 }).then((vk) => {
 
 	const me = 356607530
-	const interval = 700 //DDOS, catch captcha
+	const interval = 700 //DDOS, catch captcha 
+	//(joke, it's not a DDOS, but many requests per minute call a captcha error)
 
 	let i = 0;
 

@@ -8,6 +8,7 @@ const bodyParser = require("body-parser");
 
 
 class CallbackAPI extends EventEmitter {
+	
 	constructor (vk) {
 		super();
 		let self = this;
@@ -172,7 +173,8 @@ class CallbackAPIConnector {
 			cbserver.__initApp(callbackParams).then((app) => {
 				resolve({
 					connection: cbserver,
-					web: app
+					web: app,
+					vk: self._vk
 				});
 			})
 		});
