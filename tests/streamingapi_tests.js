@@ -19,8 +19,8 @@ easyVK({
 	access_token: '{TOKEN_FIELD}',
 }).then((vk) => {
 
-	const myApplicationId = '{APPLICATION_ID_FIELD}'
-	const myApplicationSecret = '{APPLICATION_SECRET_FIELD}'
+	const myApplicationId = '{MY_APPLICATION_ID_FIELD}'
+	const myApplicationSecret = '{MY_APPLICATION_SECRET_KEY_FIELD}'
 
 	const StreamingAPI = vk.streamingAPI
 
@@ -111,6 +111,10 @@ easyVK({
 		return await connection.close()
 	}
 
+	async function deleteRules () {
+		return await connection.deleteAllRules()
+	}
+
     //Every `interval` milliseconds
 	const intervalId = setInterval(() => {
 		
@@ -128,6 +132,7 @@ easyVK({
 
 			closeConnection()
 			clearInterval(intervalId)
+			deleteRules()
 		}
 
 	}, interval)

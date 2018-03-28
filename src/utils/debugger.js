@@ -14,12 +14,17 @@ class RequestsDebugger extends EventEmitter {
 
 	push (type = "response", data) {
 		let self = this;
+		
 		let logData = {
 			type: type.toString(),
 			data: data
 		};
-		stack.splice(0, 1); stack.push(logData);
+		
+		stack.splice(0, 1); 
+		stack.push(logData);
+		
 		self.emit("push", logData);
+
 		return (stack.length - 1);
 	}
 

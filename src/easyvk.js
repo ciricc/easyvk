@@ -1,20 +1,9 @@
-
-/*
-	
-	Author: ciricc (Kirill Novak)
-	License: MIT
-	Description : EasyVK is library for creating appliations based on npm and VKontakte API
-	Copyright (c) 2017-2018 Kirill Novak (https://ciricc.github.io/) 
-	ALL UTILITIES OF THIS MODULE ARE DISTRIBUTED UNDER THE SAME LICENSE AND RULES
-	Docs: https://ciricc.github.io/
-*/
-
-"use strict";
-
 const request = require("request");
 const encoding = require("encoding");
 const fs = require("fs");
 const http = require("http");
+
+//Modules
 const staticMethods = require("./utils/staticMethods.js");
 const easyVKUploader = require("./utils/uploader.js");
 const easyVKLongPoll = require("./utils/longpoll.js");
@@ -26,62 +15,34 @@ const easyVKHelpers = require("./utils/helpers.js");
 const easyVKRequestsDebugger = require("./utils/debugger.js");
 const easyVKBotsLongPoll = require("./utils/botslongpoll.js");
 
-module.exports = createSession;
-module.exports.static = staticMethods;
+
 module.exports.version = "1.0";
 module.exports.callbackAPI = new easyVKCallbackAPI({});
-module.exports.streamingAPI = new easyVKStreamingAPI({});
+module.exports.streamingAPI = new easyVKStreamingAPI({});;
 
-async function createSession (params = {}) {
-	return new Promise((resolve, reject) => {
-		
-		if (params.save_session !== false) params.save_session = configuration.save_session;
-		
-		if (params.session_file) {
-			if (!staticMethods.isString(params.session_file)) return reject(new Error("The session_file must be a string"));
-		} else params.session_file = configuration.session_file;
+/**
+ *  EasyVK module. In this module creates session by your params
+ *  And then you will get a EasyVK object (Session creates in the easyvkInit.js file)
+ *  Author: @ciricc
+ *  License: MIT
+ *  
+ */
 
-		if (params.api_v && params.api_v !== configuration.api_v) {
-			if (isNaN(params.api_v.toString())) return reject(new Error("The api_v parameter must be numeric"));
-		} else params.api_v = configuration.api_v;
-
-		if (params.captcha_key && !params.captcha_sid) return reject(new Error("You puted captcha_key but not using captcha_sid parameter"));
-		else if (!params.captcha_key && params.captcha_sid) return reject(new Error("You puted captcha_sid but not puted captcha_key parameter"));
-		else if (params.captcha_key && params.captcha_sid) {
-			if (isNaN(params.captcha_sid.toString())) reject(new Error("The captcha_sid must be numeric"));
-		}
-
-		if (params.reauth !== true) params.reauth = configuration.reauth;
-		
-		if (params.reauth) {
-			if (!(params.password && params.username) && !params.access_token) return reject(new Error("You want reauth, but you don't puted username and pass or only access_token"));
-			if (params.access_token && params.username) return reject(new Error("Select only one way auth: access_token XOR username"));
-			if (params.access_token) {
-				if (!staticMethods.isString(params.access_token)) return reject(new Error("The access_token must be a string"));
-			}
-
-			if (params.username && !params.password) return reject(new Error("Put password if you want aut with username"));
-			if (params.username && params.password) {
-				params.username = params.username.toString();
-				params.password = params.password.toString();
-			}
-		}
-
-		let vk = new EasyVK(params, resolve, reject);
-	});
-}
 
 class EasyVK {
+
 	constructor (params, resolve, reject) {
 		
-		let session = {};
-		let self = this;
+		let session = {}, 
+		self = this;
 
 		self.params = params;
 		self.debugger = new easyVKRequestsDebugger(self);
 
 		if (!params.reauth) {
+			
 			let data = fs.readFileSync(params.session_file);
+			
 			if (data) {
 				
 				try {
@@ -91,15 +52,27 @@ class EasyVK {
 						session = data;
 						initToken();
 					} else {
-						if (!(params.username && params.password) && !params.access_token) reject(new Error("Session file is empty, please, put a login data"));
+						
+						if (!(params.username && params.password) && !params.access_token) {
+							return reject(new Error("Session file is empty, please, put a login data"));
+						}
+
 					}
 
 				} catch (e) {
-					if (!(params.username && params.password) && !params.access_token) reject(new Error("JSON from session file is not valid, please, put a login data"));
+					
+					if (!(params.username && params.password) && !params.access_token) {
+						return reject(new Error("JSON from session file is not valid, please, put a login data"));
+					}
+
 				}
 
 			} else {
-				if (!(params.username && params.password) && !params.access_token) reject(new Error("Session file is empty, please, put a login data"));
+				
+				if (!(params.username && params.password) && !params.access_token) {
+					return reject(new Error("Session file is empty, please, put a login data"));
+				}
+
 			}
 		}
 
@@ -108,6 +81,7 @@ class EasyVK {
 				session.access_token = params.access_token;
 				initToken();
 			} else if (params.username) {
+				
 				//Try get access_token with auth
 				let getData = {
 					username: params.username,
@@ -118,6 +92,7 @@ class EasyVK {
 					v: params.api_v
 				};
 
+
 				if (params.captcha_key) {
 					getData.captcha_sid = params.captcha_sid;
 					getData.captcha_key = params.captcha_key;
@@ -126,7 +101,7 @@ class EasyVK {
 
 				if (params.code && params.code.toString().length != 0) {
 					getData["2fa_supported"] = 1;
-					getData["code"] = params.code;
+					getData.code = params.code;
 				}
 
 				getData = staticMethods.urlencode(getData);
@@ -154,7 +129,7 @@ class EasyVK {
 						}
 
 					} else {
-						reject(new Error(`VK responsed us with empty string! ${vkr}`));
+						return reject(new Error(`VK responsed us with empty string! ${vkr}`));
 					}
 
 				});
@@ -164,9 +139,12 @@ class EasyVK {
 
 		function initToken() {
 			if (!session.user_id && !session.group_id) {
-				let token = session.access_token || params.access_token;
+				
+				let token, getData;
 
-				let getData = {
+				token = session.access_token || params.access_token;
+
+				getData = {
 					access_token: token,
 					v: params.api_v
 				};
@@ -174,13 +152,20 @@ class EasyVK {
 				getData = staticMethods.urlencode(getData);
 
 				request.get(configuration.BASE_CALL_URL + "users.get?" + getData, (err, res) => {
-					if (err) return reject(new Error(err));
+					
+					if (err) {
+						return reject(new Error(err));
+					}
+
 					let vkr = res.body;
 					self.debugger.push("response", vkr);
+					
 					if (vkr) {
+
 						let json = staticMethods.checkJSONErrors(vkr, reject);
 
 						if (json) {
+							
 							if (Array.isArray(json.response) && json.response.length === 0) {
 								groupToken();
 							} else {
@@ -191,11 +176,13 @@ class EasyVK {
 								self.saveSession();
 								initResolve(self);
 							}
+
 						}
 
 					} else {
-						reject(new Error(`VK responsed us with empty string (in auth with token (user) ) ${vkr}`));
+						return reject(new Error(`VK responsed us with empty string (in auth with token (user) ) ${vkr}`));
 					}
+
 				});
 
 			} else {
@@ -205,21 +192,31 @@ class EasyVK {
 		}
 
 		function groupToken () {
-			let getData = {
+
+			let getData;
+
+			
+			getData = staticMethods.urlencode({
 				access_token: params.access_token,
 				v: params.api_v
-			};
-			
-			getData = staticMethods.urlencode(getData);
+			});
+
 
 			request.get(configuration.BASE_CALL_URL + "groups.getById?" + getData, (err, res) => {
-				if (err) return reject(new Error(err));
+				
+				if (err) {
+					return reject(new Error(err));
+				}
+
 				let vkr = res.body;
 				self.debugger.push("response", vkr);
+				
 				if (vkr) {
+					
 					let json = staticMethods.checkJSONErrors(vkr, reject);
 
 					if (json) {
+						
 						if (Array.isArray(json.response) && json.response.length === 0) {
 							reject(new Error("access_token not valid!"));
 						} else {
@@ -230,11 +227,13 @@ class EasyVK {
 							self.saveSession();
 							initResolve(self);
 						}
+
 					}
 
 				} else {
-					reject(new Error(`VK responsed us with empty string (in auth with token (group) ) ${vkr}`));
-				}	
+					return reject(new Error(`VK responsed us with empty string (in auth with token (group) ) ${vkr}`));
+				}
+
 			});
 		}
 
@@ -266,7 +265,7 @@ class EasyVK {
 			self.bots = {};
 			self.bots.longpoll = new easyVKBotsLongPoll(self); 
 
-			resolve(s);
+			return resolve(s);
 		}
 	}
 
@@ -283,7 +282,7 @@ class EasyVK {
 	 */
 
 	async call(methodName, data = {}, methodType="get") {
-		var self = this;
+		let self = this;
 
 		return new Promise((resolve, reject) => {
 
@@ -366,12 +365,19 @@ class EasyVK {
 		});
 	}
 
+
+	//Saving session file
 	saveSession () {
-		let self = this;
-		let s = JSON.stringify(self.session);
+		let self, s;
+
+		self = this;
+		s = JSON.stringify(self.session);
+		
 		fs.writeFileSync(self.params.session_file, s);
 
-		return self
 
+		return self;
 	}
 }
+
+module.exports = EasyVK;

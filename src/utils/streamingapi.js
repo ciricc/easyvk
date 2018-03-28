@@ -1,3 +1,13 @@
+
+/**
+ *  Added support Streaming API, module for EasyVK.
+ *  You can use it for listen and collect data from vk, create metrics and other...
+ *  
+ *  Author: @ciricc
+ *  License: MIT
+ *
+ */
+
 "use strict";
 
 const request = require("request");
@@ -11,6 +21,7 @@ class StreamingAPIConnection extends EventEmitter {
 	constructor(vk, session, wsc) {
 		
 		super();
+		
 		let self = this;
 		
 		self._vk = vk;
@@ -19,9 +30,11 @@ class StreamingAPIConnection extends EventEmitter {
 		self._urlHttp = `${configuration.PROTOCOL}://${self._session.server.endpoint}`;
 		self._key = self._session.server.key;
 		self.__initWebSocket();
+
 	}
 
 	__initWebSocket () {
+		
 		let self = this;
 
 		self._wsc.on("error", (error) => {
@@ -43,6 +56,7 @@ class StreamingAPIConnection extends EventEmitter {
 
 		try {
 			let body = JSON.parse(msgBody);
+
 			if (parseInt(body.code) === 100) {
 
 				if (self.listeners(body.event.event_type).length) {
@@ -54,24 +68,29 @@ class StreamingAPIConnection extends EventEmitter {
 			} else if (body.code == 300) {
 				self.emit('serviceMessage', body.service_message);
 			}
+
 		} catch (e) {
 			self.emit('error', e);
 		}
+
 	}
 
 	async close () {
 		let self = this;
+		
 		return  new Promise((resolve, reject) => {
+			
 			if (self._wsc) {
 				
-				resolve({
+				return resolve({
 					response: self._wsc.close(),
 					vk: self._vk
 				});
 
 			} else {
-				reject(new Error("WebSocket not connected"));
+				return reject(new Error("WebSocket not connected"));
 			}
+
 		});
 	}
 
@@ -83,36 +102,46 @@ class StreamingAPIConnection extends EventEmitter {
 			
 			if (request.hasOwnProperty(method)) {
 				
-				request[method]({
+				let queryParams = {
 					method: method.toLocaleUpperCase(),
 					uri: `${self._urlHttp}/rules?key=${self._key}`,
 					json: json
-				}, (err, res) => {
-					if (err) return reject(new Error(err));
+				}
+
+
+				request[method](queryParams, (err, res) => {
+					if (err) {
+						return reject(new Error(err));
+					}
+
 					let vkr = res.body;
 					
 					if (self._vk.debugger) self._vk.debugger.push("response", vkr);
 
 					if (vkr) {
 
-						if (staticMethods.isObject(vkr)) vkr = JSON.stringify(vkr);
+						if (staticMethods.isObject(vkr)) {
+							vkr = JSON.stringify(vkr);
+						}
 
 						let json = staticMethods.checkJSONErrors(vkr, reject);
 						
 						if (json) {
-							resolve(json);
+							return resolve(json);
 						} else {
-							reject(new Error("JSON is not valid... oor i don't know"));
+							return reject(new Error("JSON is not valid... oor i don't know"));
 						}
 
 					} else {
 						reject(new Error(`Empty response ${vkr}`));
 					}
-				})
+
+				});
 
 			} else {
-				reject(new Error("Undefined method type"));
+				return reject(new Error("Undefined method type"));
 			}
+
 		});
 
 	}
@@ -120,35 +149,43 @@ class StreamingAPIConnection extends EventEmitter {
 	async addRule (tag, rule) {
 		let self = this;
 		return new Promise((resolve, reject) => {
-			self.__MRHTTPURL("POST", {
+			
+			let MRHTTPParams = {
 				"rule": {
 					"value": rule,
 					"tag": tag
 				}
-			}).then((d) => {
+			}
+
+			self.__MRHTTPURL("POST", MRHTTPParams).then((d) => {
 				
-				resolve({
+				return resolve({
 					vkr: d,
 					vk: self._vk
 				});
 
 			}, reject);
+
 		});
 	}
 
 	async deleteRule (tag) {
 		let self = this;
 		return new Promise((resolve, reject) => {
-			self.__MRHTTPURL("DELETE", {
+			
+			let MRHTTPParams = {
 				"tag": tag
-			}).then((d) => {
+			}
+
+			self.__MRHTTPURL("DELETE", MRHTTPParams).then((d) => {
 				
-				resolve({
+				return resolve({
 					vkr: d,
 					vk: self._vk
 				});
 
 			}, reject);
+
 		});
 	}
 
@@ -157,7 +194,7 @@ class StreamingAPIConnection extends EventEmitter {
 		return new Promise ((resolve, reject) => {
 			self.__MRHTTPURL("GET", {}).then((rules) => {
 				
-				resolve({
+				return resolve({
 					vk: self._vk,
 					vkr: rules
 				})
@@ -168,24 +205,38 @@ class StreamingAPIConnection extends EventEmitter {
 
 	async deleteAllRules () {
 		let self = this;
+
 		return new Promise((resolve, reject) => {
 			//For begin - get All rules
 			self.getRules().then(({vkr: rules}) => {
 				rules = rules.rules;
 				let i = 0;
+				
 				function del () {
-					if (i === rules.length) resolve({code:200, vk: self._vk});
+					
+					if (i === rules.length) {
+						return resolve({code:200, vk: self._vk});
+					}
+
 					let rule = rules[i];
+					
 					self.deleteRule(rule.tag).then(() => {
+						
 						i++;
+						
 						setTimeout(() => {
 							del();
 						}, 600);
+
 					}, reject);
+
 				}
 				
-				if (rules) del();
-				else resolve({code:200, vk: self._vk});
+				if (rules) {
+					del();
+				} else {
+					return resolve({code:200, vk: self._vk});
+				}
 
 			}, reject);
 		});
@@ -195,48 +246,70 @@ class StreamingAPIConnection extends EventEmitter {
 		let self = this;
 
 		return new Promise((resolve, reject) => {
-			if (!staticMethods.isObject(rulesObject)) reject(new Error("rules must be an object"));
+			
+			if (!staticMethods.isObject(rulesObject)) {
+				return reject(new Error("rules must be an object"));
+			}
+
 			if (callBackError) {
-				if (Object.prototype.toString.call(callBackError) !== "[object Function]") reject(new Error("callBackError must be function"));
+
+				if (Object.prototype.toString.call(callBackError) !== "[object Function]") {
+					return reject(new Error("callBackError must be function"));
+				}
+
 			} else {
-				callBackError = function (err) {};
+				callBackError = function (err) {}
 			}
 
 
 
 			//For begin get all rules and then change/add/delete rules
 			self.getRules().then(({vkr: startedRules}) => {
-				
-				console.log(startedRules)
+
+				let changedRules, stRulesObject, tags, addedRules, deletedRules;
 
 				startedRules = startedRules.rules;
-				if (!startedRules) startedRules = [];
+				
+				if (!startedRules) {
+					startedRules = [];
+				}
 
-				let changedRules = [], addedRules = [], deletedRules = [];
-				let stRulesObject = {};
-				let tags = [];
+
+				changedRules = [], addedRules = [], deletedRules = [];
+				stRulesObject = {};
+				tags = [];
 
 				for (let l = 0; l < startedRules.length; l++) {
 					let rule = startedRules[l];
 					stRulesObject[rule.tag] = rule.value;
 				}
 
-				for (let tag in rulesObject) tags.push(tag);
+				for (let tag in rulesObject) {
+					tags.push(tag);
+				}
 
-				let iN = 0;
 
-				let i = 0;
+				let iN, i;
+
+				iN = 0;
+				i = 0;
 	
 				function next () {
+					
 					i++;
+					
 					setTimeout(() => {
 						initRule();
 					}, 400);
+
 				}
 
 				function initRule() {
 					
-					if (i >= startedRules.length) return initAddRule();
+					if (i >= startedRules.length) {
+						return initAddRule();
+					}
+
 
 					let rule = startedRules[i];
 
@@ -259,6 +332,7 @@ class StreamingAPIConnection extends EventEmitter {
 									});
 
 									next();
+
 								}, (err) => {
 									
 									callBackError({
@@ -270,6 +344,7 @@ class StreamingAPIConnection extends EventEmitter {
 									});
 
 									next();
+
 								});
 
 							}, (err) => {
@@ -282,11 +357,13 @@ class StreamingAPIConnection extends EventEmitter {
 									error: err
 								});
 
-								next();							
+								next();
+
 							});
 						}
 					} else { //Delete rule
 						self.deleteRule(rule.tag).then(()=>{
+							
 							//Success deleted
 							deletedRules.push({
 								tag: rule.tag,
@@ -296,6 +373,7 @@ class StreamingAPIConnection extends EventEmitter {
 							next();
 
 						}, (err) => {
+							
 							callBackError({
 								where: "delete",
 								rule: rule,
@@ -303,7 +381,9 @@ class StreamingAPIConnection extends EventEmitter {
 								description: "Occured error in delete method when we tried delete rule which not declared in init object",
 								error: err
 							});
+							
 							next();
+
 						});
 					}
 				}
@@ -312,33 +392,43 @@ class StreamingAPIConnection extends EventEmitter {
 
 	
 				function nextAdd() {
+					
 					iN++;
+					
 					setTimeout(() => {
 						initAddRule();
 					}, 400);
+
 				}
 
 				function initAddRule () {
-					if (iN >= tags.length) return resolve({
-						log: {
-							changedRules: changedRules,
-							addedRules: addedRules,
-							deletedRules: deletedRules
-						},
-						vk: self._vk
-					});
+					
+					if (iN >= tags.length) {
+						return resolve({
+							log: {
+								changedRules: changedRules,
+								addedRules: addedRules,
+								deletedRules: deletedRules
+							},
+							vk: self._vk
+						});
+					}
 				
 					let rule = tags[iN];
 
 					if (!stRulesObject.hasOwnProperty(tags[iN])) { //Need add new rules
 						self.addRule(tags[iN], rulesObject[tags[iN]]).then(() => {
+							
 							//Success add
 							addedRules.push({
 								tag: tags[iN],
 								value: rulesObject[tags[iN]]
 							});
+							
 							nextAdd();
+
 						}, (err) => {
+							
 							callBackError({
 								where: "add",
 								rule: rule,
@@ -346,7 +436,9 @@ class StreamingAPIConnection extends EventEmitter {
 								description: "Occured error in add method when we tried add rule which not declared in vk rules",
 								error: err
 							});
+							
 							nextAdd();
+
 						});
 
 					} else {
@@ -373,7 +465,11 @@ class StreamingAPIConnector {
 		return new Promise((resolve, reject) => {
 
 			if (applicationParams) {
-				if (!staticMethods.isObject(applicationParams)) reject(new Error("application params must be an objct parameter"));
+
+				if (!staticMethods.isObject(applicationParams)) {
+					return reject(new Error("application params must be an objct parameter"));
+				}
+
 			}
 
 			if (applicationParams.clientId && applicationParams.clientSecret) {
@@ -388,9 +484,14 @@ class StreamingAPIConnector {
 				getParams = staticMethods.urlencode(getParams);
 
 				request.get(`${configuration.BASE_OAUTH_URL}access_token?${getParams}`, (err, res) => {
-					if (err) reject(new Error(err));
+					
+					if (err) {
+						return reject(new Error(err));
+					}
+
 					let vkr = res.body;
 					if(self._vk.debugger) self._vk.debugger.push("response", vkr);
+					
 					if (vkr) {
 						let json = staticMethods.checkJSONErrors(vkr, reject);
 						
@@ -399,37 +500,42 @@ class StreamingAPIConnector {
 							staticMethods.call("streaming.getServerUrl", {
 								access_token: json.access_token
 							}).then((vkrURL) => {
+								let streamingSession, wsc;
 
-								let streamingSession = {
+								streamingSession = {
 									server: vkrURL.response,
 									client: json
 								}
 
-								let wsc = new WS(`wss://${streamingSession.server.endpoint}/stream?key=${streamingSession.server.key}`);
+								wsc = new WS(`wss://${streamingSession.server.endpoint}/stream?key=${streamingSession.server.key}`);
 								
 								wsc.on("open", () => {
-									let _StreamingAPIConnecton = new StreamingAPIConnection(self._vk, streamingSession, wsc);
-									resolve({
+									
+									let _StreamingAPIConnecton = 
+									new StreamingAPIConnection(self._vk, streamingSession, wsc);
+									
+									return resolve({
 										connection: _StreamingAPIConnecton,
 										vk: self._vk
 									});
+
 								});
 
 
 							}, reject);
 
 						} else {
-							reject(new Error("JSON is not valid... oor i don't know"));
+							return reject(new Error("JSON is not valid... oor i don't know"));
 						}
 
 					} else {
-						reject(new Error(`Empty response ${vkr}`));
+						return reject(new Error(`Empty response ${vkr}`));
 					}
 
 				});
 
 			} else {
-				reject(new Error("clientId and clientSecret not declared"));
+				return reject(new Error("clientId and clientSecret not declared"));
 			}
 		});
 	}

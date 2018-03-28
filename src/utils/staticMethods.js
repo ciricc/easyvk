@@ -1,4 +1,5 @@
 "use strict";
+
 const configuration = require("./configuration.js");
 const request = require("request");
 
@@ -15,26 +16,56 @@ class EasyVK {
 	 */
 
 	static urlencode(object = {}) { 
-		return Object.keys(object).map(prop=>prop+'='+encodeURIComponent(object[prop])).join('&');
+		
+		return Object.keys(object)
+		.map(prop => 
+			prop + '=' + encodeURIComponent(object[prop])
+		)
+		.join('&');
+
 	}
 
 	static async call (methodName, data, methodType, debuggerIS) {
 		let self = this;
 		return new Promise ((resolve, reject) => {
-			if (!methodType) methodType = "get";
-			if (["get", "post", "delete", "put"].indexOf(methodType.toString().toLocaleLowerCase()) === -1) methodType = "get";	
-			if (!self.isObject(configuration)) reject(new Error("configuration must be an object"));
-			if (!configuration.BASE_CALL_URL) reject(new Error("BASE_CALL_URL must be declared in configuration parameter"));
 			
-			if (methodName) methodName = methodName.toString();
-			else reject(new Error("Put method name in your call request!"));
-			if (data) {
-				if (!self.isObject(data)) {
-					reject(new Error("Data params must be an object"));
-				}
+			if (!methodType) {
+				methodType = "get";
 			}
 
-			if (!data.v) data.v = configuration.api_v;
+			let methodType__lower = methodType.toString().toLocaleLowerCase();
+
+			if (["get", "post", "delete", "put"].indexOf(methodType__lower) === -1) {
+				methodType = "get";
+			}	
+
+			
+			if (!self.isObject(configuration)) {
+				return reject(new Error("configuration must be an object"));
+			}
+
+			if (!configuration.BASE_CALL_URL) {
+				return reject(new Error("BASE_CALL_URL must be declared in configuration parameter"));
+			}
+
+			
+			if (methodName) {
+				methodName = methodName.toString();
+			} else {
+				return reject(new Error("Put method name in your call request!"));
+			}
+
+			if (data) {
+				
+				if (!self.isObject(data)) {
+					return reject(new Error("Data params must be an object"));
+				}
+
+			}
+
+			if (!data.v) {
+				data.v = configuration.api_v;
+			}
 			
 			
 			let callParams = {
@@ -42,16 +73,21 @@ class EasyVK {
 			};
 
 			if (methodType.toLocaleLowerCase() === "post") {
+				
 				callParams.form = data;
 				callParams.headers = {
 					"content-type" : "application/x-www-form-urlencoded",
 				};
+
 			} else {
 				callParams.url += "?" + self.urlencode(data);
 			}
 
 			request[methodType](callParams, (err, res) => {
-				if (err) return reject(new Error(err));
+				if (err) {
+					return reject(new Error(err));
+				}
+
 				let vkr = res.body;
 
 				if (debuggerIS) {
@@ -63,9 +99,10 @@ class EasyVK {
 				} 
 
 				if (vkr) {
+					
 					let json = self.checkJSONErrors(vkr, reject);					
 					if (json) {
-						resolve(json);
+						return resolve(json);
 					} else {
 						return reject(new Error("JSON is not valid... oor i don't know"));
 					}
@@ -90,15 +127,22 @@ class EasyVK {
 				if (vkr.error === "need_captcha" || vkr.error.error_code === 14) {
 					return JSON.stringify(vkr);
 				} else if (vkr.error === "need_validation") {
-					var type = "sms";
-					if (vkr.validation_type.match('app')) type = "app";
+					let type = "sms";
+					
+					if (vkr.validation_type.match('app')) {
+						type = "app";
+					}
+
 					return `Please, enter your ${type} code in code parameter!`;
+
 				} else if (vkr.error.error_code === 17) {
+					
 					return JSON.stringify({
 						redirect_uri: vkr.error.redirect_uri,
 						error: vkr.error.error_msg,
 						error_code: vkr.error.error_code
-					})
+					});
+
 				}
 
 				if (vkr.error.error_msg) {
@@ -108,6 +152,7 @@ class EasyVK {
 				} else {
 					return vkr.error_description;
 				}
+
 			}
 		} catch (e) {
 			return e;
@@ -115,13 +160,23 @@ class EasyVK {
 	}
 
 	static encodeHTML (text) {
-		return text.toString().replace(/\<br(\/)?\>/g, "\n").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+		
+		return text.toString()
+		.replace(/\<br(\/)?\>/g, "\n")
+		.replace(/&amp;/g, "&")
+		.replace(/&lt;/g, "<")
+		.replace(/&gt;/g, ">")
 		.replace(/&quot;/g, "\"")
 		.replace(/&#039;/g, "'");
+
 	}
 
 	static isString (n) {
-		if (n === undefined) n = this;
+		
+		if (n === undefined) {
+			n = this;
+		}
+
 		return Object.prototype.toString.call(n) === "[object String]";
 	}
 
@@ -146,7 +201,7 @@ class EasyVK {
 			return vkr;
 
 		} catch (e) {
-			reject(new Error(e));
+			return reject(new Error(e));
 		}
 
 		return false;

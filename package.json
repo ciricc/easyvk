@@ -1,7 +1,7 @@
 {
   "name": "easyvk",
   "version": "1.0",
-  "description": "Functional SDK for vk.com and VKontake API (ВКонтакт API)",
+  "description": "Functional SDK for vk.com and VKontake API (ВКонтакте API)",
   "main": "index.js",
   "engines": {
     "node": "8.x"
@@ -10,14 +10,12 @@
     "type": "git",
     "url": "git@github.com:ciricc/easyvk.git"
   },
-  "scripts": {
-    "test": ""
-  },
   "keywords": [
     "easyvk",
     "vkapi",
     "vk",
     "sdk",
+    "vkbot"
     "vksdk",
     "nodevk",
     "vk",
@@ -26,8 +24,7 @@
     "longpolling",
     "vkontake",
     "api",
-    "library",
-    "lib"
+    "vkontakte"
   ],
   "author": "ciricc",
   "license": "MIT",
