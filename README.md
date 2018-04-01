@@ -21,6 +21,15 @@ You can use it for know more: [vk.com/dev/](https://vk.com/dev/)
 Если вы хотите помочь нам кодом - делайте это на [github](https://github.com/ciricc/easyvk).
 Ниже написано, что можно делать при помощи EasyVK.
 
+## Usage
+
+You need download Node.js and install it with npm manager. Then you need create your project and install easyvk so.
+
+```
+npm install easyvk --save
+```
+
+
 
 # EasyVK can help you...
 

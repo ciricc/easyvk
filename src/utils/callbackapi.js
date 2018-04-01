@@ -25,7 +25,7 @@ class CallbackAPI extends EventEmitter {
 	}
 
 	__initVKRequest (req, res) {
-		
+
 		let postData, params, self;
 
 		self = this;
@@ -153,6 +153,7 @@ class CallbackAPI extends EventEmitter {
 					self.__initVKRequest(req, res);
 				});
 				
+		
 				app.get("/", (req, res) => {
 					self.__init404Error(req, res);
 				});
