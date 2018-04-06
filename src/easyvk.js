@@ -31,6 +31,7 @@ module.exports.streamingAPI = new easyVKStreamingAPI({});;
 
 class EasyVK {
 
+	//Here will be created session
 	constructor (params, resolve, reject) {
 		
 		let session = {}, 
@@ -271,13 +272,20 @@ class EasyVK {
 
 	/**
 	 *	
-	 *	Function for calling to methods and get anything
-	 *	Docs: vk.com/dev/methods
-     *
-	 *	@param {String} method_name is just a method name :D (messages.get/wall.edit and others)
-	 *	@param {Object} data  if vk.com asks a parameters, you can send they. (Send access_token to this from session is not necessary, but also you can do this)
+	 *	Function for calling to methods and get anything form VKontakte API
+	 *	See more: https://vk.com/dev/methods
+	 *
+	 *	@param {String} methodName - Is just a method name which you need to call and get data,
+	 *  for example: "messages.send", "users.get"
+	 *	@param {Object} [data={}] - Is data object for query params, it will be serialized from object to uri string. 
+	 *  If vk.com asks a parameters, you can send they. 
+	 *  (Send access_token to this from session is not necessary, but also you can do this)
+	 *	@param {String} [methodType=get] - Is type for query, ["post", "delete", "get", "put"]
 	 *	
-	 *	@return {Promise}
+	 *  @return {Promise}
+	 *  @promise Call to a method, send request for VKontakte API
+	 *  @resolve {Object} - Standard object like {vk: EasyVK, vkr: Response}
+	 *  @reject {Error} - vk.com error response or request module error
      *
 	 */
 
@@ -366,7 +374,15 @@ class EasyVK {
 	}
 
 
-	//Saving session file
+	
+	/**
+	 *  
+	 *  This function saves your session chnages to a params.sessionf_file file
+	 * 
+	 *  @return EasyVK
+	 *
+	 */
+
 	saveSession () {
 		let self, s;
 

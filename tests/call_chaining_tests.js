@@ -1,4 +1,13 @@
-const easyVK = require('../index.js')
+
+/**
+ *  In your code you need require easyvk so: require('easyvk')
+ */
+
+const path = require('path')
+
+const _easyvk = path.join(__dirname, 'easyvk.js')
+
+const easyVK = require(`${_easyvk}`)
 
 
 /*
@@ -9,14 +18,14 @@ const easyVK = require('../index.js')
  *
  */
 
-const currentSessionFile = `${__dirname}/.vksession`
+const currentSessionFile = path.join(__dirname, '.vksession')
 
 easyVK({
 	api_v: '5.73',
 	save_session: false,
 	session_file: currentSessionFile,
 
-	//Access token whcch you need get from your group settings
+	//Access token which you need get from your group settings
 	access_token: '{TOKEN_FIELD}',
 }).then((vk) => {
 

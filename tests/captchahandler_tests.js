@@ -1,4 +1,13 @@
-const easyVK = require('../index.js')
+/**
+ *  In your code you need require easyvk so: require('easyvk')
+ */
+
+const path = require('path')
+
+const _easyvk = path.join(__dirname, 'easyvk.js')
+
+const easyVK = require(`${_easyvk}`)
+
 const readline = require('readline');
 
 
@@ -17,7 +26,7 @@ const rl = readline.createInterface({
   output: process.stdout
 });
 
-const currentSessionFile = `${__dirname}/.vksession`
+const currentSessionFile = path.join(__dirname, '.vksession')
 
 
 const captchaHandler = ({captcha_sid, captcha_img, resolve:solve, vk}) => {

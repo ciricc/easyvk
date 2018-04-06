@@ -1,6 +1,14 @@
-const easyVK = require('../index.js')
+/**
+ *  In your code you need require easyvk so: require('easyvk')
+ */
 
-const currentSessionFile = `${__dirname}/.vksession`
+const path = require('path')
+
+const _easyvk = path.join(__dirname, 'easyvk.js')
+
+const easyVK = require(`${_easyvk}`)
+
+const currentSessionFile = path.join(__dirname, '.vksession')
 
 /*
  *

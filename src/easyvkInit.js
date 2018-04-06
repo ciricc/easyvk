@@ -1,13 +1,14 @@
 
 /*
-	
-	Author: ciricc (Kirill Novak)
-	License: MIT
-	Description : EasyVK is library for creating appliations based on npm and VKontakte API
-	Copyright (c) 2017-2018 Kirill Novak (https://ciricc.github.io/) 
-	ALL UTILITIES OF THIS MODULE ARE DISTRIBUTED UNDER THE SAME LICENSE AND RULES
-	Docs: https://ciricc.github.io/
-*/
+ *	@author: ciricc (Kirill Novak)
+ *	@license: MIT
+ * 	@description : EasyVK is library for creating appliations based on VKontakte API
+ *	
+ *	Copyright (c) 2017-2018 Kirill Novak (https://ciricc.github.io/) 	
+ *	ALL UTILITIES OF THIS MODULE ARE DISTRIBUTED UNDER THE SAME LICENSE AND RULES
+ *	Docs: https://ciricc.github.io/
+ */
+
 
 "use strict";
 
@@ -24,6 +25,22 @@ module.exports.version = EasyVK.version;
 module.exports.callbackAPI = EasyVK.callbackAPI;
 module.exports.streamingAPI = EasyVK.streamingAPI;
 
+
+
+
+
+
+
+/**
+ *
+ *  This function check all parameters
+ *  @see createSession()
+ *  @return {Promise} 
+ *  @promise Check errors
+ *  @resolve {Object} changed user parameters for create session
+ *  @reject {Error} auth error or just an error from responses
+ *
+ */
 
 async function checkInitParams (params = {}) {
 	return new Promise((resolve, reject) => {
@@ -109,6 +126,35 @@ async function checkInitParams (params = {}) {
 
 	});
 }
+
+/*
+ *  This function check you easyVK(params) parameters
+ *  @param {Object} params - Settings for authentication, for create session
+ *  @param {Boolean} [params.save_session=true] - If is true then session will be saved in params.session_file file
+ *  @param {(String|Number)} [params.api_v=5.73] - API version for all requests, I am
+ *  recommend you use API version >= 5
+ *  @param {String} [params.access_token=] - Your access token, group or user. If is user token then
+ *  easyVK will get user_id for you, else [group_id, screen_name, group_name] for session file
+ *  @param {String|Number} [params.username] - Your login for authenticate, your_email@example.com or +7(916)7888886 (example)
+ *  It need only if you puted params.password and not puted params.access_token parameter
+ *  @param {String|Number} [params.password] - Your password for user account, it will be authenticated
+ *  from windows app_id, from official client. I am not saving your data for hack, all is opened for you
+ *  @param {Boolean} [params.reauth=false] - Need ignore session file and log in with newest parameters?
+ *  @param {String} [params.session_file=.vksession] - Path for your session file, i am recommend you to use the path module
+ *  for create path.join(__dirname, '.session-vk')
+ *  @param {String|Number} [params.code] - Is your code from application which generate your 2-factor-auth
+ *  code
+ *  @param {String} [params.captcha_key] - Is your code from captcha, only if you got an error and not solved it 
+ *  before
+ *  @param {String|Number} [params.captcha_sid] - Is a captcha id from captcha error, if you got it and not solved before
+ *  @param {Function|Async Function} [params.captchaHandler] - Is a captcha Handler function for
+ *  handle all captcha errors
+ *
+ *  @promise Authenticate you and create session
+ *  @resolve {Object} EasyVK object, which contents session and all methods
+ *  for work with VKontakte API
+ *  
+ */
 
 async function createSession (params = {}) {
 	return new Promise((resolve, reject) => {

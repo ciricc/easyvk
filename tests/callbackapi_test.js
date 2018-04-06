@@ -1,5 +1,12 @@
+/**
+ *  In your code you need require easyvk so: require('easyvk')
+ */
 
-const easyVK = require('../index.js')
+const path = require('path')
+
+const _easyvk = path.join(__dirname, 'easyvk.js')
+
+const easyVK = require(`${_easyvk}`)
 
 
 const serverPort = (process.env.PORT || 80)

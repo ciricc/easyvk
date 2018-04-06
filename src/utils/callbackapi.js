@@ -180,10 +180,38 @@ class CallbackAPI extends EventEmitter {
 
 class CallbackAPIConnector {
 	
+	//Auto constructed by EasyVK
 	constructor (vk) {
 		let self = this;
 		self._vk = vk;
 	}
+
+
+	/*
+	 *  This function is up your server for listen group events
+	 *
+	 *  @param {Object} callbackParams - Object for setup your server
+	 *  @param {Object[]} [callbackParams.groups] - Array of your groups which you want listen
+	 *  @param {String|Number} [callbackParams.groupId] - Group id which you want listen, if you use groups[] then it will be added too
+	 *  but you can't no input neither callbackParams.groups nor groupId and etc.
+	 *  You need select your group at least one way
+	 *  @param {String|Number} [callbackParams.confirmCode] - Your confirmation code. This code will be sended for confirmation query
+	 *  @param {String|Number} [callbackParams.secret] - Your secret code for one group, I am recommend you to use it for secure
+	 *  @param {String|Number} [callbackParams.port=(process.env.PORT || 3000)] - Port for http server, default is process.env.PORT || 3000
+	 *  
+	 *  If you use many groups, you need separate (spread) groupId, secret and condirmCode parameters on objects in array of groups
+	 *  like { groups: [{groupId: ..., secret: ..., confirmCode: ...}, ...] }
+	 * 
+	 *  @return {Promise}
+	 *  @promise up your server for listen group events
+	 *  @resolve {Object} - Object with web application, CallbackAPI connection object 
+	 *  and EasyVK parameter:
+	 *  {vk: EasyVK, connection: CallbackAPI, web: expressApplication}
+	 *  @reject {Error} - express run and up server error
+	 * 
+	 */
+
+
 
 	async listen (callbackParams = {}) {
 		let self = this;

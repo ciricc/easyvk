@@ -1,10 +1,22 @@
+
+/*
+ *  This is LongPoll for Bots (groups longpoll) Object.
+ *  Here you can create your bots and listen group events
+ *
+ */
+
 "use strict";
 
 const request = require("request");
 const staticMethods = require("./staticMethods.js");
 const EventEmitter = require("events");
 
-class LongPollConnection extends EventEmitter { 
+
+
+//LongPollConnection initing automatically by me
+class LongPollConnection extends EventEmitter {
+
+
 	constructor (lpSettings, vk) {
 		super();
 		let self = this;
@@ -129,7 +141,7 @@ class LongPollConnection extends EventEmitter {
 		}
 
 	}
-
+    
 	_checkUpdates(updates) {
 		let self = this;
 
@@ -150,6 +162,16 @@ class LongPollConnection extends EventEmitter {
 
 	}
 	
+	/*
+	 *  This function closes connection and stop it
+	 *  
+	 *  @return {Promise}
+	 *  @promise Close connection
+	 *  @resolve {*} response from abort() method
+	 *  @rejet {Error} - Eror if connection not inited
+	 * 
+	 */
+
 	async close () {
 		let self = this;
 		
@@ -171,6 +193,18 @@ class LongPollConnection extends EventEmitter {
 
 	}
 
+	/*
+	 *  This function enables (adds) your debugger for each query
+	 *  For example: you can see error if it occured and log it with debugger function
+	 * 
+	 *  @param {Function|Async Function} [debugg] - Function for debugg all queries
+	 *  In this function will sending all responses from vk, you can log this object in console for know more
+	 *  
+	 *  @return {Boolean|Object} - If your function is not a function, then will be returned false,
+	 *  else LongPollConnection object for chain it
+	 * 
+	 */
+
 	debug (debugg) {
 		let self = this;
 
@@ -186,10 +220,31 @@ class LongPollConnection extends EventEmitter {
 
 class LongPollConnector {
 
+	//From EasyVK contructed
 	constructor (vk) {
 		let self = this; //For the future
 		self._vk = vk;
 	}
+
+	/*
+	 *
+	 *  This function create LongPollConnection and then re-calls to a server for
+	 *  get new events
+	 *  
+	 *  @param {Object} [params] - Is your settings for LongPoll connection
+	 *  @param {Object} [params.forGetLongPollServer] - Is object for firs query 
+	 *  when LongPollConnector getting url for connect. This parameters will be sended with
+	 *  query uri, and you can see them here https://vk.com/dev/bots_longpoll
+	 *  @param {Object} [params.forLongPollServer] - Is object with params for each query on longpoll server.
+	 *  For example: { "wait": 10 } //wait 10seconds for new call
+	 * 
+	 *  @return {Promise}
+	 *  @promise Conneto to longpoll server
+	 *  @resolve {Object} - Is object which content this parameters: 
+	 *   { vk: EasyVK, connection: LongPollConnection }
+	 *  @reject {Error} - vk.com error or just an error from request module
+	 *
+	 */
 
 	async connect (params = {}) {
 		let self = this;
