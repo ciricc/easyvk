@@ -29,6 +29,34 @@ You need download Node.js and install it with npm manager. Then you need create 
 npm install easyvk --save
 ```
 
+## Test in browser code (Example usage)
+
+You can test library in the browser of npm runkit.
+You need copy this code and paste it in the area code, changed your parameters
+
+```javascript
+
+var easyvk = require("easyvk")
+
+//Authenticate user
+easyvk({
+   username: 'your_login',
+   password: 'your_password',
+   save_session: false
+}).then(vk => {
+
+   const me = 356607530 //Or your account id
+   
+   vk.call('messages.send', {
+      message: 'Hi',
+      user_id: me
+   }).then(vkr=>{})
+   
+}).catch(console.error)
+
+
+```
+
 
 
 # EasyVK can help you...
