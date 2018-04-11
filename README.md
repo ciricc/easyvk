@@ -1,7 +1,7 @@
 
 
 <p align="center">
-  <img alt="EasyVK logo" title="EasyVK can help you create applications on VKontakte API easy!" src="src/logo_200.png"/>
+  <img alt="EasyVK logo" title="EasyVK can help you create applications on VKontakte API easy!" src="https://i.imgur.com/COiRjJL.png"/>
 </p>
 
 # EasyVK (VKontakte API Manager)
@@ -9,13 +9,13 @@
 This app helps you create an apps with vk api easy!
 You can use it for know more: [vk.com/dev/](https://vk.com/dev/)
 
-| [Community](https://vk.com/club162208999) | [Changelog](https://github.com/ciricc/easyvk/tree/master/CHANGELOG.md) | [Документация на русском](https://ciricc.github.io/) | [Documentation](https://ciricc.github.io/en_index.html) |
-| ------------------------------------------| ---------------------------------------------|-------------|----------|
+| [Community](https://vk.com/club162208999) | [Changelog](https://github.com/ciricc/easyvk/tree/master/CHANGELOG.md) | [Документация на русском](https://ciricc.github.io/) |
+| ------------------------------------------| ---------------------------------------------|-------------|
 
 ## Для русскоязычных
 
 Данная библиотека создана для того, чтобы VKontakte API имел удобную поддержу на node.js.
-С помощью этой библиотеки вы можете делать все, что позволяет официально API ВКонтакте, и не только.
+С помощью этой библиотеки вы можете делать все, что позволяет официально ВКонтакте API, и не только.
 Так как я предполагаю, что большинство людей, кто скачивает - владеют русским с рождения, то я написал [документацию](https://ciricc.github.io/) для этого модуля на этом языке. 
 Если вы хотите помочь в развитии этой библиотеки, вступайте в наше [сообщество](https://vk.com/club162208999) и предлагайте, что можно улучшить и добавить. 
 Если вы хотите помочь нам кодом - делайте это на [github](https://github.com/ciricc/easyvk).
@@ -26,12 +26,12 @@ You can use it for know more: [vk.com/dev/](https://vk.com/dev/)
 You need download Node.js and install it with npm manager. Then you need create your project and install easyvk so.
 
 ```
-npm install easyvk --save
+npm i easyvk --save
 ```
 
 ## Test in browser code (Example usage)
 
-You can test library in the browser of npm runkit.
+You can test library in the browser of [npm runkit](https://npm.runkit.com/easyvk).
 You need copy this code and paste it in the area code, changed your parameters
 
 ```javascript
@@ -75,7 +75,7 @@ easyvk({
 * Catching errors like Captcha error and others
 * <b>Promises, async / await based library</b>
 * Authentication suport: groups, users, aplications, password / username
-* Informative documentation with translation into English and Russian
+* Informative documentation
 * Regulary updates and support for the newest features
 * Two factor authentication support
 
