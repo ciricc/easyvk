@@ -388,7 +388,10 @@ class EasyVK {
 
 	saveSession () {
 		
-		throw new Error('This method was deprecated from 1.2 version \n You need use vk.session.save() method!');
+		throw new Error(
+			`This method was deprecated from 1.2 version
+			 You need use vk.session.save() method!`
+		);
 
 		return self;
 	}
