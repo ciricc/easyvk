@@ -14,9 +14,10 @@ const configuration = require("./utils/configuration.js");
 const easyVKHelpers = require("./utils/helpers.js");
 const easyVKRequestsDebugger = require("./utils/debugger.js");
 const easyVKBotsLongPoll = require("./utils/botslongpoll.js");
+const easyVKSession = require("./utils/session.js");
 
 
-module.exports.version = "1.0";
+module.exports.version = "1.2";
 module.exports.callbackAPI = new easyVKCallbackAPI({});
 module.exports.streamingAPI = new easyVKStreamingAPI({});;
 
@@ -50,7 +51,7 @@ class EasyVK {
 					data = JSON.parse(data);
 
 					if (data.access_token) {
-						session = data;
+						session = new easyVKSession(self, data);
 						initToken();
 					} else {
 						
@@ -122,10 +123,7 @@ class EasyVK {
 						let json = staticMethods.checkJSONErrors(vkr, reject);						
 						
 						if (json) {
-							self.session = json;
-							
-							if (params.save_session) self.saveSession();
-
+							self.session = new easyVKSession(self, json);
 							initResolve(self);
 						}
 
@@ -174,7 +172,6 @@ class EasyVK {
 								session.first_name = json.response[0].first_name;
 								session.last_name = json.response[0].last_name;
 								self.session = session;
-								self.saveSession();
 								initResolve(self);
 							}
 
@@ -225,7 +222,6 @@ class EasyVK {
 							session.group_name = json.response[0].name;
 							session.group_screen =  json.response[0].screen_name;
 							self.session = session;
-							self.saveSession();
 							initResolve(self);
 						}
 
@@ -239,7 +235,8 @@ class EasyVK {
 		}
 
 		function initResolve (s) {
-		
+			
+
 			if (params.clean_session_file) {
 				fs.writeFileSync(params.session_file, "{}");
 			}
@@ -265,6 +262,11 @@ class EasyVK {
 			self.helpers = new easyVKHelpers(self);
 			self.bots = {};
 			self.bots.longpoll = new easyVKBotsLongPoll(self); 
+			
+			//Re init all cases
+			self.session = new easyVKSession(self, self.session);
+			if (params.save_session) self.session.save();
+
 
 			return resolve(s);
 		}
@@ -378,19 +380,15 @@ class EasyVK {
 	/**
 	 *  
 	 *  This function saves your session chnages to a params.sessionf_file file
-	 * 
+	 * 	
+	 *  @deprecated
 	 *  @return EasyVK
 	 *
 	 */
 
 	saveSession () {
-		let self, s;
-
-		self = this;
-		s = JSON.stringify(self.session);
 		
-		fs.writeFileSync(self.params.session_file, s);
-
+		throw new Error('This method was deprecated from 1.2 version \n You need use vk.session.save() method!');
 
 		return self;
 	}
