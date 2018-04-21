@@ -9,7 +9,7 @@ const currentSessionFile = path.join(__dirname, '.vksession')
 
 
 easyVK({
-	access_token: '{YOUR_ACCESS_TOKEN}',
+	access_token: '{YOU_ACCESS_TOKEN}',
 	session_file: currentSessionFile,
 	save_session: true
 }).then((vk) => {
@@ -32,6 +32,14 @@ easyVK({
 		return vk.session.save()
 	})
 	.then(() => console.log(JSON.stringify(vk.session))) //Object with tokenChanged array
+
+
+	//Test deprecated method
+	try {
+		vk.saveSession();
+	} catch (err) {
+		console.log(err)
+	}
 
 }).catch(console.error)
 
