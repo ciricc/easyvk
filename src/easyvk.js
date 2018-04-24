@@ -11,7 +11,6 @@ const easyVKCallbackAPI = require("./utils/callbackapi.js");
 const easyVKStreamingAPI = require("./utils/streamingapi.js");
 const easyVKWidgets = require("./utils/widgets.js");
 const configuration = require("./utils/configuration.js");
-const easyVKHelpers = require("./utils/helpers.js");
 const easyVKRequestsDebugger = require("./utils/debugger.js");
 const easyVKBotsLongPoll = require("./utils/botslongpoll.js");
 const easyVKSession = require("./utils/session.js");
@@ -259,12 +258,18 @@ class EasyVK {
 			self.callbackAPI = new easyVKCallbackAPI(self);
 			self.streamingAPI = new easyVKStreamingAPI(self);
 			self.widgets = new easyVKWidgets(self);
-			self.helpers = new easyVKHelpers(self);
 			self.bots = {};
 			self.bots.longpoll = new easyVKBotsLongPoll(self); 
 			
 			//Re init all cases
 			self.session = new easyVKSession(self, self.session);
+
+			Object.defineProperty(self, 'helpers', {
+				get: () => {
+					throw new Error('Helpers was deprecated started from 1.3.0 version!\n(Total deleted)');
+				}
+			});
+
 			if (params.save_session) self.session.save();
 
 
