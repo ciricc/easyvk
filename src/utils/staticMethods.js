@@ -127,12 +127,19 @@ class EasyVK {
 				if (vkr.error === "need_captcha" || vkr.error.error_code === 14) {
 					return JSON.stringify(vkr);
 				} else if (vkr.error === "need_validation") {
-					let type = "sms";
 					
-					if (vkr.validation_type.match('app')) {
-						type = "app";
-					}
+					if (vkr.ban_info) {
+						
+						return vkr.error_description;
 
+					} else {
+						let type = "sms";
+						
+						if (vkr.validation_type.match('app')) {
+							type = "app";
+						}
+					}
+					
 					return `Please, enter your ${type} code in code parameter!`;
 
 				} else if (vkr.error.error_code === 17) {
