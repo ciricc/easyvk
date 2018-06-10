@@ -142,6 +142,7 @@ class LongPollConnection extends EventEmitter {
 
 	}
     
+    
 	_checkUpdates(updates) {
 		let self = this;
 
