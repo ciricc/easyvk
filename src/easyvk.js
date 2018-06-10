@@ -85,8 +85,8 @@ class EasyVK {
 				let getData = {
 					username: params.username,
 					password: params.password,
-					client_id: params.client_id,
-					client_secret: params.client_secret,
+					client_id: params.client_id || configuration.WINDOWS_CLIENT_ID,
+					client_secret: params.client_secret || configuration.WINDOWS_CLIENT_SECRET,
 					grant_type: "password",
 					v: params.api_v
 				};
