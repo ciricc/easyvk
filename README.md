@@ -44,13 +44,15 @@ easyvk({
    password: 'your_password',
    save_session: false
 }).then(vk => {
-
+  
+   //get user id from authenticated session
    const me = vk.session.user_id || 356607530 //Or your account id
    
+   //The send message by messages.send API method
    vk.call('messages.send', {
       message: 'Hi',
       user_id: me
-   }).then(vkr=>{})
+   }).then(({vkr}) => {})
    
 }).catch(console.error)
 
