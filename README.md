@@ -45,7 +45,7 @@ easyvk({
    save_session: false
 }).then(vk => {
 
-   const me = 356607530 //Or your account id
+   const me = vk.session.user_id || 356607530 //Or your account id
    
    vk.call('messages.send', {
       message: 'Hi',
