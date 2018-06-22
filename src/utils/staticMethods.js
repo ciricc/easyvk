@@ -3,7 +3,7 @@
 const configuration = require("./configuration.js");
 const request = require("request");
 
-class EasyVK {
+class EasyVKStaticMethods {
 
 	/**
 	 *
@@ -17,9 +17,14 @@ class EasyVK {
 
 	static urlencode(object = {}) { 
 		
+		let self = this;
+
 		return Object.keys(object)
 		.map(prop => 
-			prop + '=' + encodeURIComponent(object[prop])
+			prop + '=' + (
+				(self.isObject(object[prop])) ? 
+					(encodeURIComponent(JSON.stringify(object[prop]))) : encodeURIComponent(object[prop])
+			)
 		)
 		.join('&');
 
@@ -79,9 +84,27 @@ class EasyVK {
 					"content-type" : "application/x-www-form-urlencoded",
 				};
 
+				//Nice request recommendtion
+				for (let i in callParams.form) {
+					if (self.isObject(callParams.form[i])) {
+						callParams.form[i] = JSON.stringify(callParams.form[i]);
+					}
+				}
+
 			} else {
-				callParams.url += "?" + self.urlencode(data);
+				
+				let encoded = self.urlencode(data);
+				callParams.url += "?" + encoded;
 			}
+
+			if (debuggerIS) {
+				try {
+					debuggerIS.push("request", callParams.url);
+				} catch (e) {
+					return reject(new Error("Not a normal debugger"));
+				}
+			}
+
 
 			request[methodType](callParams, (err, res) => {
 				if (err) {
@@ -127,12 +150,19 @@ class EasyVK {
 				if (vkr.error === "need_captcha" || vkr.error.error_code === 14) {
 					return JSON.stringify(vkr);
 				} else if (vkr.error === "need_validation") {
-					let type = "sms";
 					
-					if (vkr.validation_type.match('app')) {
-						type = "app";
-					}
+					if (vkr.ban_info) {
+						
+						return vkr.error_description;
 
+					} else {
+						let type = "sms";
+						
+						if (vkr.validation_type.match('app')) {
+							type = "app";
+						}
+					}
+					
 					return `Please, enter your ${type} code in code parameter!`;
 
 				} else if (vkr.error.error_code === 17) {
@@ -208,4 +238,4 @@ class EasyVK {
 	}
 }
 
-module.exports = EasyVK;
+module.exports = EasyVKStaticMethods;

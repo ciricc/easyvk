@@ -14,13 +14,17 @@
 
 const staticMethods = require("./utils/staticMethods.js");
 const configuration = require("./utils/configuration.js");
+const easyVKRequestsDebugger = require("./utils/debugger.js");
 
 const EasyVK = require("./easyvk.js");
 
+let debuggerRun = new easyVKRequestsDebugger(Boolean(false));
+		
 
 module.exports = createSession;
-module.exports.static = staticMethods;
 
+module.exports.static = staticMethods;
+module.exports.debuggerRun = debuggerRun;
 module.exports.version = EasyVK.version;
 module.exports.callbackAPI = EasyVK.callbackAPI;
 module.exports.streamingAPI = EasyVK.streamingAPI;
@@ -120,6 +124,66 @@ async function checkInitParams (params = {}) {
 		}
 
 
+		if (params.platform) {
+			
+			if (!isNaN(Number(params.platform))) {
+				//Get platform by ID
+
+				params.platform = configuration.platformIds[params.platform];
+
+			} else {
+				
+				//Get by matching
+				let hashes = [];
+				let values = [];
+
+				for (let hash in configuration.platformIds) {
+					hashes.push(hash);
+					values.push(configuration.platformIds[hash]);
+				}
+
+				let platform = params.platform;
+				platform = String(platform).toLocaleLowerCase();
+				
+				let resultPlatform = undefined;
+
+				values.forEach((value, index) => {
+					value = value.toLocaleLowerCase();
+					if (value.match(platform)) {
+						//save it
+						resultPlatform = configuration.platformIds[String(hashes[index])];
+					}
+				});
+
+
+				if (resultPlatform) {
+					params.platform = resultPlatform;
+				} else {
+					params.platform = undefined;
+
+				}
+
+				hashes = undefined;
+				values = undefined;
+
+			}
+
+		}
+
+		if (!params.client_id || !params.client_secret) {
+			
+			if (params.platform) {
+				
+				params.client_id = configuration[params.platform + '_CLIENT_ID'];
+				params.client_secret = configuration[params.platform + '_CLIENT_SECRET'];
+
+			} else {
+				params.client_id = configuration["ANDROID_CLIENT_ID"];
+				params.client_secret = configuration["ANDROID_CLIENT_SECRET"];
+			}
+
+		}
+
 		resolve(params)
 
 
@@ -161,7 +225,9 @@ async function createSession (params = {}) {
 		
 		checkInitParams(params).then((p) => {
 			
-			return new EasyVK(p, resolve, reject);
+			
+
+			return new EasyVK(p, resolve, reject, debuggerRun);
 
 		}, reject);
 

@@ -16,9 +16,6 @@ const easyVKBotsLongPoll = require("./utils/botslongpoll.js");
 const easyVKSession = require("./utils/session.js");
 
 
-module.exports.version = "1.2";
-module.exports.callbackAPI = new easyVKCallbackAPI({});
-module.exports.streamingAPI = new easyVKStreamingAPI({});;
 
 /**
  *  EasyVK module. In this module creates session by your params
@@ -32,13 +29,14 @@ module.exports.streamingAPI = new easyVKStreamingAPI({});;
 class EasyVK {
 
 	//Here will be created session
-	constructor (params, resolve, reject) {
+	constructor (params, resolve, reject, debuggerRun) {
 		
 		let session = {}, 
 		self = this;
 
 		self.params = params;
 		self.debugger = new easyVKRequestsDebugger(self);
+		self.debuggerRun = debuggerRun || self.debugger;
 
 		if (!params.reauth) {
 			
@@ -87,8 +85,8 @@ class EasyVK {
 				let getData = {
 					username: params.username,
 					password: params.password,
-					client_id: configuration.WINDOWS_CLIENT_ID,
-					client_secret: configuration.WINDOWS_CLIENT_SECRET,
+					client_id: params.client_id || configuration.WINDOWS_CLIENT_ID,
+					client_secret: params.client_secret || configuration.WINDOWS_CLIENT_SECRET,
 					grant_type: "password",
 					v: params.api_v
 				};
@@ -116,7 +114,7 @@ class EasyVK {
 
 
 					let vkr = res.body;
-					self.debugger.push("response", vkr);
+					self.debuggerRun.push("response", vkr);
 
 					if (vkr) {
 						let json = staticMethods.checkJSONErrors(vkr, reject);						
@@ -156,7 +154,7 @@ class EasyVK {
 					}
 
 					let vkr = res.body;
-					self.debugger.push("response", vkr);
+					self.debuggerRun.push("response", vkr);
 					
 					if (vkr) {
 
@@ -206,7 +204,7 @@ class EasyVK {
 				}
 
 				let vkr = res.body;
-				self.debugger.push("response", vkr);
+				self.debuggerRun.push("response", vkr);
 				
 				if (vkr) {
 					
@@ -403,3 +401,7 @@ class EasyVK {
 }
 
 module.exports = EasyVK;
+
+module.exports.version = "1.5.0";
+module.exports.callbackAPI = new easyVKCallbackAPI({});
+module.exports.streamingAPI = new easyVKStreamingAPI({});
