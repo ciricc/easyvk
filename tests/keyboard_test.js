@@ -14,10 +14,10 @@ const currentSessionFile = path.join(__dirname, '.vksession')
 
 /**
  *
- *  This test run your own bot for group
+ *  This test run your own bot for group with keyboard support
  *  For run it you need enable LongPoll in your group and then get access_token
  *  After this, put your access_token in {acess_token} parameter
- *  And then run it. Send messgeto your bot, he will reply on it!
+ *  And then run it. Send messge to your bot, he will reply on it ith keyboard interface!
  *
  */
 
