@@ -32,7 +32,7 @@ easyVK({
 	session_file: currentSessionFile,
 
 	//Access token whcch you need get from your group settings
-	access_token: '{TOKEN_FIELD}',
+	access_token: '{GROUP_ACCESS_TOKEN}',
 }).then(vk => {
 
 
@@ -53,16 +53,46 @@ easyVK({
 	})
 
 }).then(({connection, vk}) => {
+
 	connection.debug(longPollDebugger);
 
+
+	//Keyboard objet for user interface
+	//For work it you need enable LongPoll version >= 5.80 in group settings
+	const keyboardObject = {
+		one_time: false,
+		buttons: [
+			[
+				{
+					action: {
+						type: 'text',
+						label: 'start',
+						payload: '{"command": "start"}'
+					},
+					color: "default"
+				}
+			]
+
+		]
+	}
+
 	async function messageNew (msgEvent) {
-		
+
 		if (!msgEvent.user_id && msgEvent.from_id) msgEvent.user_id = msgEvent.from_id;
+
+		let payload = msgEvent.payload;
+		
+		try {
+			payload = JSON.parse(payload);
+		} catch (e) {
+			//Ignore
+		}
 
 		await (vk.call('messages.send', {
 			user_id: msgEvent.user_id,
-			message: 'Reply it'
-		}));
+			message: ( (payload) ? "Button started" : 'Reply it'),
+			keyboard: keyboardObject
+		}), "post"); //Only post requests recommend
 	}
 
 
@@ -82,76 +112,9 @@ easyVK({
 	//Sure i am added this featture and if error uccurs on recconect step you will catch it by this method
 	connection.on('reconnectError', console.error)
 
-
-
-	const LPU = vk.longpoll
-
-
-	//Connect to user longpoll for create group bot :D
-	return LPU.connect({
-	    forGetLongPollServer: {
-	        lp_version: "2",
-	        need_pts: "1",
-	    }
-	})
-
-}).then(({connection: userLongPollConnection, vk}) => {
-
-	console.log(userLongPollConnection.config.userConfig.forGetLongPollServer.need_pts)
-
-	//Debug useLongPollConnection
-	userLongPollConnection.debug(longPollDebugger)
-	
-	//Test addEventCodeListener method, flags message
-	userLongPollConnection.addEventCodeListener(3, (event) => { 
-	    console.info('[Message flags changes] ========== ', event);
-	}).catch(console.error);
-	
-	async function messageNew (msgEvent) {
-		
-		const getMessage = vk.call('messages.getById', {
-			message_ids: [msgEvent[1]]
-		})
-
-		 
-
-		const msg = (await getMessage).vkr.response.items[0]
-
-
-		if (!msg.out) {
-
-			/*
-			 *
-			 *  It will be work if you really puted a group token not user token which admins this group
-			 *  If you put this token, it will be sended
-			 *
-			 */
-
-			const sendMessage = vk.call('messages.send', { 
-				user_id: msg.user_id,
-				message: 'Reply it from User LongPoll system'
-			})
-
-			await sendMessage
-		}
-
-
-	}
-
-
-	userLongPollConnection.on('message', messageNew)
-
-
-
-	//Handler errors
-	userLongPollConnection.on('failure', console.error)
-	userLongPollConnection.on('error', console.error)
-	userLongPollConnection.on('reconnectError', console.error)
-
+	return true
 
 }).catch(console.error)
 
 //Handle all rejects and errors
 process.on('unhandledRejection', console.error)
-
-
