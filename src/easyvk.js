@@ -105,6 +105,8 @@ class EasyVK {
 
 				getData = staticMethods.urlencode(getData);
 
+				self.debuggerRun.push("request", configuration.BASE_OAUTH_URL + "token/?" + getData);
+
 				request.get(configuration.BASE_OAUTH_URL + "token/?" + getData, (err, res) => {
 					
 
@@ -196,7 +198,8 @@ class EasyVK {
 				v: params.api_v
 			});
 
-
+			self.debuggerRun.push("request", configuration.BASE_CALL_URL + "groups.getById?" + getData);
+			
 			request.get(configuration.BASE_CALL_URL + "groups.getById?" + getData, (err, res) => {
 				
 				if (err) {
@@ -402,6 +405,6 @@ class EasyVK {
 
 module.exports = EasyVK;
 
-module.exports.version = "1.4.2";
+module.exports.version = "1.5.0";
 module.exports.callbackAPI = new easyVKCallbackAPI({});
 module.exports.streamingAPI = new easyVKStreamingAPI({});

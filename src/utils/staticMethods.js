@@ -3,7 +3,7 @@
 const configuration = require("./configuration.js");
 const request = require("request");
 
-class EasyVK {
+class EasyVKStaticMethods {
 
 	/**
 	 *
@@ -17,9 +17,14 @@ class EasyVK {
 
 	static urlencode(object = {}) { 
 		
+		let self = this;
+
 		return Object.keys(object)
 		.map(prop => 
-			prop + '=' + encodeURIComponent(object[prop])
+			prop + '=' + (
+				(self.isObject(object[prop])) ? 
+					(encodeURIComponent(JSON.stringify(object[prop]))) : encodeURIComponent(object[prop])
+			)
 		)
 		.join('&');
 
@@ -79,10 +84,29 @@ class EasyVK {
 					"content-type" : "application/x-www-form-urlencoded",
 				};
 
+				//Nice request recommendtion
+				for (let i in callParams.form) {
+					if (self.isObject(callParams.form[i])) {
+						callParams.form[i] = JSON.stringify(callParams.form[i]);
+					}
+				}
+
 			} else {
-				callParams.url += "?" + self.urlencode(data);
+				
+				let encoded = self.urlencode(data);
+				callParams.url += "?" + encoded;
 			}
 
+			if (debuggerIS) {
+				try {
+					debuggerIS.push("request", callParams.url);
+				} catch (e) {
+					return reject(new Error("Not a normal debugger"));
+				}
+			}
+
+			debuggerIS.push("fullRequest", callParams);
+			
 			request[methodType](callParams, (err, res) => {
 				if (err) {
 					return reject(new Error(err));
@@ -215,4 +239,4 @@ class EasyVK {
 	}
 }
 
-module.exports = EasyVK;
+module.exports = EasyVKStaticMethods;
