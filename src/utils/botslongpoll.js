@@ -70,7 +70,13 @@ class LongPollConnection extends EventEmitter {
 					self.emit("error", err);
 				} else {
 
-					self._vk.debugger.push("response", res.body);
+					if (self._vk.debugger) {
+						try {
+							self._vk.debugger.push("response", res.body);
+						} catch (e) {
+							//Ignore
+						}
+					}
 					
 					if (self._debug) {
 						
