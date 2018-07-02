@@ -59,8 +59,14 @@ class Widgets {
 				if (err) {
 					return reject(new Error(err));
 				}
-				self._vk.debugger.push("response", res.body);
 
+				if (self._vk.debugger) {
+					try {
+						self._vk.debugger.push("response", res.body);
+					} catch (e) {
+						//ignore
+					}
+				}
 
 				//Parsing hash from response body {"action_hash" : "hash"}
 				let matCH = res.body.match(/(\"|\')action_hash(\"|\')(\s)?\:(\s)?(\'|\")(.*?)(\'|\")/i);

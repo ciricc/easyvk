@@ -11,7 +11,6 @@ const easyVK = require(`${_easyvk}`)
 
 const serverPort = (process.env.PORT || 80)
 
-
 easyVK.callbackAPI.listen({
 	groups: [
 		{

@@ -116,7 +116,13 @@ class StreamingAPIConnection extends EventEmitter {
 
 					let vkr = res.body;
 					
-					if (self._vk.debugger) self._vk.debugger.push("response", vkr);
+					if (self._vk.debugger) {
+						try {
+							self._vk.debugger.push("response", vkr);
+						} catch (e) {
+							//Ignore
+						}
+					}
 
 					if (vkr) {
 
@@ -490,7 +496,13 @@ class StreamingAPIConnector {
 					}
 
 					let vkr = res.body;
-					if(self._vk.debugger) self._vk.debugger.push("response", vkr);
+					if(self._vk.debugger) {
+						try {
+							self._vk.debugger.push("response", vkr);
+						} catch (e) {
+							//Ignore
+						}
+					}
 					
 					if (vkr) {
 						let json = staticMethods.checkJSONErrors(vkr, reject);

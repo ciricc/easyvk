@@ -105,7 +105,13 @@ class EasyVK {
 
 				getData = staticMethods.urlencode(getData);
 
-				self.debuggerRun.push("request", configuration.BASE_OAUTH_URL + "token/?" + getData);
+				if (self.debuggerRun) {
+					try {
+						self.debuggerRun.push("request", configuration.BASE_OAUTH_URL + "token/?" + getData);
+					} catch (e) {
+						//Ignore
+					}
+				}
 
 				request.get(configuration.BASE_OAUTH_URL + "token/?" + getData, (err, res) => {
 					
@@ -116,7 +122,14 @@ class EasyVK {
 
 
 					let vkr = res.body;
-					self.debuggerRun.push("response", vkr);
+
+					if (self.debuggerRun) {
+						try {
+							self.debuggerRun.push("response", vkr);
+						} catch (e) {
+							//Ignore
+						}
+					}
 
 					if (vkr) {
 						let json = staticMethods.checkJSONErrors(vkr, reject);						
@@ -156,8 +169,15 @@ class EasyVK {
 					}
 
 					let vkr = res.body;
-					self.debuggerRun.push("response", vkr);
-					
+
+					if (self.debuggerRun) {
+						try {
+							self.debuggerRun.push("response", vkr);
+						} catch (e) {
+							//Ignore
+						}
+					}
+
 					if (vkr) {
 
 						let json = staticMethods.checkJSONErrors(vkr, reject);
@@ -198,8 +218,14 @@ class EasyVK {
 				v: params.api_v
 			});
 
-			self.debuggerRun.push("request", configuration.BASE_CALL_URL + "groups.getById?" + getData);
-			
+			if (self.debuggerRun) {
+				try {
+					self.debuggerRun.push("request", configuration.BASE_CALL_URL + "groups.getById?" + getData);
+				} catch (e) {
+					//Ignore
+				}
+			}
+
 			request.get(configuration.BASE_CALL_URL + "groups.getById?" + getData, (err, res) => {
 				
 				if (err) {
@@ -207,7 +233,14 @@ class EasyVK {
 				}
 
 				let vkr = res.body;
-				self.debuggerRun.push("response", vkr);
+				
+				if (self.debuggerRun) {
+					try {
+						self.debuggerRun.push("response", vkr);
+					} catch (e) {
+						//Ignore
+					}
+				}
 				
 				if (vkr) {
 					
@@ -405,6 +438,6 @@ class EasyVK {
 
 module.exports = EasyVK;
 
-module.exports.version = "1.5.0";
+module.exports.version = "1.5.1";
 module.exports.callbackAPI = new easyVKCallbackAPI({});
 module.exports.streamingAPI = new easyVKStreamingAPI({});

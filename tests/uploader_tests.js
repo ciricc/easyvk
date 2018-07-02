@@ -12,7 +12,7 @@ const currentSessionFile = path.join(__dirname, '.vksession')
 
 const me = 356607530
 const my_group = 162208999
-const filePath = __dirname + '/../src/logo_200.png'
+const filePath = __dirname + '/../src/logo_200.png' //change on your file
 
 
 easyVK({

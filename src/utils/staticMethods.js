@@ -105,7 +105,13 @@ class EasyVKStaticMethods {
 				}
 			}
 
-			debuggerIS.push("fullRequest", callParams);
+			if (debuggerIS) {
+				try {
+					debuggerIS.push("fullRequest", callParams);
+				} catch (e) {
+					//Ignore
+				}
+			}
 			
 			request[methodType](callParams, (err, res) => {
 				if (err) {
