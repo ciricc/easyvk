@@ -17,6 +17,7 @@ const staticMethods = require("./staticMethods.js");
 const request = require("request");
 const encoding = require("encoding");
 
+
 class Widgets {
     
     //For call to methods an others, standard procedure
@@ -38,24 +39,38 @@ class Widgets {
 
 
 			headers = {
-				"user-agent": "Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36",
-				"content-type": "application/x-www-form-urlencoded",
+				"origin": 'https://vk.com',
+				"referer": `https://vk.com/video?z=video${video_source_id}`,
+				"user-agent": "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.84 Safari/537.36",
+				"x-requested-with": "XMLHttpRequest"
 			};
 
 			alVideoUrl = `${configuration.PROTOCOL}://${configuration.BASE_DOMAIN}/al_video.php`;
 			video = video_source_id.split('_');
 			oid = video[0];
-			vid = video[1];
+			vid = video[1];	
+
+			let form = {
+				'act': 'show',
+				'al': 1,
+				'autoplay': 0,
+				'module': 'videocat',
+				'video': video_source_id
+			}
 
 			//Get specify hash for get permissions to watch
 			queryParams = {
 				url: alVideoUrl,
 				headers: headers,
-				body: `act=show&al=1&al_ad=0&autoplay=0&list=&module=videocat&video=${video_source_id}`,
+				form: form,
+				encoding: 'binary'
 			}
 
 			request.post(queryParams, (err, res, vkr) => {
 				
+
+				res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString();
+
 				if (err) {
 					return reject(new Error(err));
 				}
@@ -67,6 +82,7 @@ class Widgets {
 						//ignore
 					}
 				}
+
 
 				//Parsing hash from response body {"action_hash" : "hash"}
 				let matCH = res.body.match(/(\"|\')action_hash(\"|\')(\s)?\:(\s)?(\'|\")(.*?)(\'|\")/i);
@@ -89,11 +105,13 @@ class Widgets {
 						if (err) {
 							return reject(new Error(err));
 						}
+
 						self._vk.debugger.push("response", res.body);
 
-						let videoInfo = encoding.convert(res.body, "windows-1252");
+						let videoInfo = encoding.convert(res.body, 'utf-8', 'windows-1251').toString();
 						
 						videoInfo = videoInfo.toString();
+
 						
 						if (videoInfo.match("<!int>")) {
 							let countViews = videoInfo.match('<!int>([0-9]+)<!>');

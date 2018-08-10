@@ -67,7 +67,7 @@ easyVK({
 	//Access token whcch you need get from your group settings
 	username: '{LOGIN_FIELD}',
 	password: '{PASSWORD_FIELD}',
-	
+	reauth: true,
 	captchaHandler: captchaHandler
 
 }).then((vk) => {

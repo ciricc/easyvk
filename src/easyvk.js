@@ -14,7 +14,7 @@ const configuration = require("./utils/configuration.js");
 const easyVKRequestsDebugger = require("./utils/debugger.js");
 const easyVKBotsLongPoll = require("./utils/botslongpoll.js");
 const easyVKSession = require("./utils/session.js");
-
+const easyVKHttp = require('./utils/http.js');
 
 
 /**
@@ -41,7 +41,7 @@ class EasyVK {
 		if (!params.reauth) {
 			
 			let data = fs.readFileSync(params.session_file);
-			
+
 			if (data) {
 				
 				try {
@@ -293,7 +293,11 @@ class EasyVK {
 			self.streamingAPI = new easyVKStreamingAPI(self);
 			self.widgets = new easyVKWidgets(self);
 			self.bots = {};
-			self.bots.longpoll = new easyVKBotsLongPoll(self); 
+			self.bots.longpoll = new easyVKBotsLongPoll(self);
+
+			//http module for http requests from cookies and jar session
+			self.http = new easyVKHttp(self);
+
 			
 			//Re init all cases
 			self.session = new easyVKSession(self, self.session);
@@ -438,6 +442,6 @@ class EasyVK {
 
 module.exports = EasyVK;
 
-module.exports.version = "1.5.1";
+module.exports.version = "1.6.0";
 module.exports.callbackAPI = new easyVKCallbackAPI({});
 module.exports.streamingAPI = new easyVKStreamingAPI({});
