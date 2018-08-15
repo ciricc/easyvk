@@ -2,6 +2,7 @@
 
 const configuration = require("./configuration.js");
 const request = require("request");
+const VKResponseError = require('./VKResponseError.js');
 
 class EasyVKStaticMethods {
 
@@ -149,7 +150,7 @@ class EasyVKStaticMethods {
 	// Only for me, but you can use it if understand how
 
 	static checkErrors(vkr) {
-
+		console.log(vkr);
 		try {
 			if (vkr.error) {
 				
@@ -157,37 +158,32 @@ class EasyVKStaticMethods {
 				if (vkr.error === "need_captcha" || vkr.error.error_code === 14) {
 					return JSON.stringify(vkr);
 				} else if (vkr.error === "need_validation") {
-					
-					if (vkr.ban_info) {
-						
-						return vkr.error_description;
 
+					if (vkr.ban_info) {
+						return vkr.error_description;
 					} else {
 						let type = "sms";
-						
 						if (vkr.validation_type.match('app')) {
 							type = "app";
 						}
 					}
-					
+
 					return `Please, enter your ${type} code in code parameter!`;
 
 				} else if (vkr.error.error_code === 17) {
-					
 					return JSON.stringify({
 						redirect_uri: vkr.error.redirect_uri,
 						error: vkr.error.error_msg,
 						error_code: vkr.error.error_code
 					});
-
 				}
 
 				if (vkr.error.error_msg) {
-					return vkr.error.error_msg;
+					return new VKResponseError(vkr.error.error_msg, vkr.error.error_code, vkr.error.request_params);
 				} else if (vkr.error.message) {
-					return vkr.error.message;
+					return new VKResponseError(vkr.error.message, vkr.error.code, vkr.error.params);
 				} else {
-					return vkr.error_description;
+					return new VKResponseError(vkr.error_description, vkr.error);
 				}
 
 			}
@@ -230,7 +226,16 @@ class EasyVKStaticMethods {
 			let err = self.checkErrors(vkr);
 			
 			if (err) {
-				reject(new Error(err));
+
+				if (self.isString(err)) {
+					//new error
+					err = new Error(err);
+				} else if (err instanceof Error) {
+
+					err = err; //ok? :D
+				}
+
+				reject(err);
 
 				return false;
 			}

@@ -23,7 +23,6 @@ easyVK({
 	api_v: '5.73',
 	save_session: false,
 	session_file: currentSessionFile,
-
 	reauth: true,
 }).then(vk => {
 
@@ -51,31 +50,36 @@ easyVK({
 		//This script shows you how to get all user's audios
 		//offset - is offset :D
 
-		let audios = [];
+		function getAllAudios () {
+			let audios = [];
 
-		function newReq (offset = 0) {
-			return new Promise((resolve, reject) => {
-				Client.getAudios({
-					vk_id: vk.session.user_id,
-					offset: offset,
-					playlist_id: -1
-				}).then(({audios: audios_, vkr: json}) => {
-					audios = [...audios, ...audios_];
-					
-					if (json.hasMore) {
-						newReq(json.nextOffset).then(resolve, reject);
-					} else {
-						resolve(audios);
-					}
+			function newReq (offset = 0) {
+				return new Promise((resolve, reject) => {
+					Client.getAudios({
+						vk_id: vk.session.user_id,
+						offset: offset,
+						playlist_id: -1
+					}).then(({audios: audios_, vkr: json}) => {
+						audios = [...audios, ...audios_];
+						
+						if (json.hasMore) {
+							newReq(json.nextOffset).then(resolve, reject);
+						} else {
+							resolve(audios);
+						}
 
-				});
-			})
+					});
+				})
+			}
+
+			return newReq;
 		}
 
-		newReq().then((audios_) => {
+		(getAllAudios())().then((audios_) => {
 			//After all completed calls
 			console.log(audios_.length);
 		});
+		
 
 	});
 

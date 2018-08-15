@@ -46,7 +46,7 @@ easyvk({
 }).then(vk => {
   
    //get user id from authenticated session
-   const me = vk.session.user_id || 356607530 //Or your account id
+   var me = vk.session.user_id || 356607530 //Or your account id
    
    //The send message by messages.send API method
    vk.call('messages.send', {
@@ -76,7 +76,7 @@ easyvk({
 * You can use saver session, use session for cache data
 * Catching errors like Captcha error and others
 * <b>Promises, async / await based library</b>
-* Authentication suport: groups, users, aplications, password / username
+* Authentication support: groups, users, aplications, password / username
 * Informative documentation
 * Regulary updates and support for the newest features
 * Two factor authentication support

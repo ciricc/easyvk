@@ -23,15 +23,16 @@ easyVK({
 	session_file: currentSessionFile,
 	//Access token whcch you need get from your group settings
 	username: '{LOGIN_FIELD}',
-	password: '{PASSWORD_FIELD}'
+	password: '{PASSWORD_FIELD}',
+	reauth: true
 }).then((vk) => {
 
-	const Widgets = vk.widgets
+	const Widgets = vk.http
 	
-	Widgets.loginByForm().then(() => {
+	Widgets.loginByForm().then(({client}) => {
 		//You can get read stories and other
 		
-		Widgets.readAllStories('497395239').then(({vk, count}) => {
+		client.readStories('497395239').then(({vk, count}) => {
 			console.log(count);
 		});
 

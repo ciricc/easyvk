@@ -54,11 +54,6 @@ class HTTPEasyVKClient {
 			}, (err, res, vkr) => {
 				if (err) return reject(new Error(err));
 
-				//parse stories
-				let fs = require('fs');
-
-				fs.writeFileSync('./log_stories.txt', res.body);
-				
 				let stories = self.__getStories(res.body, 'profile');
 				let i = 0;
 
@@ -277,6 +272,14 @@ class HTTPEasyVKClient {
 
 			});
 
+		});
+	}
+
+	getPlaylists (vk_id, playlist_id) {
+		let self = this;
+
+		return new Promise((resolve, reject) => {
+			
 		});
 	}
 

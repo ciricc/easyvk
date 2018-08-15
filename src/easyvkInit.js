@@ -69,6 +69,8 @@ async function checkInitParams (params = {}) {
 			
 			if (isNaN(params.api_v.toString())) {
 				return reject(new Error("The api_v parameter must be numeric"));
+			} else if (Number(params.api_v) < 5) {
+				return reject(new Error("The api_v parameter must be more then 5.0 version, other not support"))
 			}
 
 		} else {

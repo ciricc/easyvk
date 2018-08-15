@@ -33,6 +33,7 @@ easyVK({
 
 	//Access token whcch you need get from your group settings
 	access_token: '{GROUP_ACCESS_TOKEN}',
+	reauth: true
 }).then(vk => {
 
 

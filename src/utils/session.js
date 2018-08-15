@@ -57,8 +57,7 @@ class EasyVKSession {
 	async save () {
 		
 		let self = this;
-
-		console.log(self);
+		
 		return new Promise((resolve, reject) => {
 			
 			let s;	
@@ -66,6 +65,8 @@ class EasyVKSession {
 			if (!(self.path)) {
 				return reject(new Error('You need set path for session file!'));
 			}
+
+			s = JSON.stringify(self);
 
 			let buf = Buffer.from(s, 'utf8');
 			
