@@ -186,6 +186,12 @@ async function checkInitParams (params = {}) {
 
 		}
 
+		params.lang = String(params.lang);
+		
+		if (!params.lang) {
+			params.lang = "ru";
+		}
+
 		resolve(params)
 
 

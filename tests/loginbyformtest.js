@@ -24,7 +24,8 @@ easyVK({
 	//Access token whcch you need get from your group settings
 	username: '{LOGIN_FIELD}',
 	password: '{PASSWORD_FIELD}',
-	reauth: true
+	reauth: true,
+	lang: "ru"
 }).then((vk) => {
 
 	const Widgets = vk.http

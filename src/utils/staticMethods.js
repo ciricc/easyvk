@@ -72,6 +72,7 @@ class EasyVKStaticMethods {
 			if (!data.v) {
 				data.v = configuration.api_v;
 			}
+
 			
 			
 			let callParams = {
@@ -150,7 +151,6 @@ class EasyVKStaticMethods {
 	// Only for me, but you can use it if understand how
 
 	static checkErrors(vkr) {
-		console.log(vkr);
 		try {
 			if (vkr.error) {
 				

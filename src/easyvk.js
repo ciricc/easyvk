@@ -38,6 +38,10 @@ class EasyVK {
 		self.params = params;
 		self.debugger = new easyVKRequestsDebugger(self);
 		self.debuggerRun = debuggerRun || self.debugger;
+		self._errors = easyVKErrors;
+
+
+		self._errors.setLang(params.lang);
 
 		if (!params.reauth) {
 			
@@ -54,7 +58,7 @@ class EasyVK {
 					} else {
 						
 						if (!(params.username && params.password) && !params.access_token) {
-							return reject(easyVKErrors.error("empty_session"));
+							return reject(self._error("empty_session"));
 						}
 
 					}
@@ -62,7 +66,7 @@ class EasyVK {
 				} catch (e) {
 					
 					if (!(params.username && params.password) && !params.access_token) {
-						return reject(easyVKErrors.error("session_not_valid"));
+						return reject(self._error("session_not_valid"));
 					}
 
 				}
@@ -70,7 +74,7 @@ class EasyVK {
 			} else {
 				
 				if (!(params.username && params.password) && !params.access_token) {
-					return reject(easyVKErrors.error("empty_session"));
+					return reject(self._error("empty_session"));
 				}
 
 			}
@@ -89,7 +93,8 @@ class EasyVK {
 					client_id: params.client_id || configuration.WINDOWS_CLIENT_ID,
 					client_secret: params.client_secret || configuration.WINDOWS_CLIENT_SECRET,
 					grant_type: "password",
-					v: params.api_v
+					v: params.api_v,
+					lang: params.lang
 				};
 
 
@@ -142,7 +147,7 @@ class EasyVK {
 
 					} else {
 						
-						return reject(easyVKErrors.error("empty_response", {
+						return reject(self._error("empty_response", {
 							response: vkr
 						}));
 					}
@@ -202,7 +207,7 @@ class EasyVK {
 
 					} else {
 
-						return reject(easyVKErrors.error("empty_response", {
+						return reject(self._error("empty_response", {
 							response: vkr,
 							where: 'in auth with token (user)'
 						}));
@@ -224,7 +229,8 @@ class EasyVK {
 			
 			getData = staticMethods.urlencode({
 				access_token: params.access_token,
-				v: params.api_v
+				v: params.api_v,
+				lang: params.lang
 			});
 
 			if (self.debuggerRun) {
@@ -258,7 +264,7 @@ class EasyVK {
 					if (json) {
 						
 						if (Array.isArray(json.response) && json.response.length === 0) {
-							reject(easyVKErrors.error("access_token_not_valid"));
+							reject(self._error("access_token_not_valid"));
 						} else {
 							session.group_id = json.response[0].id,
 							session.group_name = json.response[0].name;
@@ -270,7 +276,7 @@ class EasyVK {
 					}
 
 				} else {
-					return reject(easyVKErrors.error("empty_response", {
+					return reject(self._error("empty_response", {
 						response: vkr,
 						where: 'in auth with token (group)'
 					}));
@@ -288,7 +294,7 @@ class EasyVK {
 
 			if (!params.captchaHandler || !Object.prototype.toString.call(params.captchaHandler).match(/Function/)) {
 				params.captchaHandler = ({captcha_sid, captcha_key}) => {
-					throw easyVKErrors.error("captcha_error", {
+					throw self._error("captcha_error", {
 						captcha_key: captcha_key,
 						captcha_sid: captcha_sid,
 					});
@@ -315,7 +321,7 @@ class EasyVK {
 
 			Object.defineProperty(self, 'helpers', {
 				get: () => {
-					throw easyVKErrors.error("method_deprecated", {
+					throw self._error("method_deprecated", {
 						from: '1.3.0',
 						method: 'helpers'
 					});
@@ -360,6 +366,9 @@ class EasyVK {
 				if (!data.v) data.v = self.params.api_v;
 				if (!data.captcha_sid) data.captcha_sid = self.params.captcha_sid;
 				if (!data.captcha_key) data.captcha_key = self.params.captcha_key;
+				if (!data.lang) {
+					data.lang = self.params.lang;
+				}
 
 				return staticMethods.call(methodName, data, methodType, self.debugger).then((vkr) => {
 					
@@ -444,14 +453,23 @@ class EasyVK {
 	 */
 
 	saveSession () {
-		
-		throw easyVKErrors.error("method_deprecated", {
+		let self = this;
+
+		throw self._error("method_deprecated", {
 			from: '1.2',
 			method: 'saveSession'
 		});
 
 		return self;
 	}
+
+
+	//Ony for mer
+	_error(...args) {
+		let self = this;
+		return self._errors.error(...args);
+	}
+
 }
 
 module.exports = EasyVK;
