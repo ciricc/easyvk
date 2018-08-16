@@ -32,7 +32,12 @@ class Widgets {
 		return new Promise((resolve, reject) => {
 
 			if (!video_source_id || !staticMethods.isString(video_source_id)) {
-				return reject(new Error("video_source_id must be like -2222_222222222 (String only)"));
+				return reject(self._vk.error('is_not_string', {
+					parameter: 'video_source_id',
+					method: 'widgets.getLiveViews',
+					format: 'need format like -2222_22222 (from url)'
+				}));
+
 			} 
 
 			let headers, alVideoUrl, video, oid, vid, queryParams;
@@ -120,16 +125,22 @@ class Widgets {
 								countViews = parseInt(countViews[1]);
 								return resolve(countViews);
 							} else {
-								return reject(new Error("Maybe VK video page was changed, we can\'t get a number of views from response"));
+								return reject(self._vk.error("live_error", {
+									video: video
+								}));
 							}
 
 						} else {
-							return reject(new Error("Maybe VK video page was changed, we can\'t get a number of views from response"));
+							return reject(self._vk.error("live_error", {
+								video: video
+							}));
 						}
 					});
 
 				} else {
-					reject('The live video (' + video + ') is not streaming now!');
+					reject(self._vk.error('live_not_streaming', {
+						video: video
+					}));
 				}
 			});
 		});

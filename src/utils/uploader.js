@@ -26,24 +26,31 @@ class EasyVKUploader {
 		let self = this;
 		return new Promise((resolve, reject) => {
 			
-			if (!url) {
-				return reject(new Error("put website url for upload this file"));
-			} else if (!staticMethods.isString(url)) {
-				return reject(new Error("website url must be a string"));
+			if (!url || !staticMethods.isString(url)) {
+				return reject(self._vk.error("is_not_string", {
+					parameter: "url",
+					method: "uploadFile",
+					format: "http(s)://www.domain.example.com/path?request=get"
+				}));
 			}
 
-
-			if (!filePath) {
-				return reject(new Error("put file's path in second argument"));
-			} else if (!staticMethods.isString(filePath)) {
-				return reject(new Error("file's path must be a string"));
+			if (!filePath || !staticMethods.isString(filePath)) {
+				return reject(self._vk.error("is_not_string", {
+					parameter: "filePath",
+					method: "uploadFile",
+					format: __dirname + '/../example/path'
+				}));
 			}
 
 
 			if (fieldName) {
 				
 				if (!staticMethods.isString(fieldName)) {
-					return reject(new Error("field name must be a string"));
+					return reject(self._vk.error("is_not_string", {
+						parameter: "fieldName",
+						method: "uploadFile",
+						required: false
+					}));
 				}
 
 			}
@@ -76,7 +83,9 @@ class EasyVKUploader {
 				}, (err, response) => {
 					
 					if (err) {
-						return reject(new Error(`Server was down or we don't know what happaned [error ${err}]`));
+						return reject(self._vk.error("server_error", {
+							error: err
+						}));
 					}
 
 					if (!response) response = {};
@@ -94,11 +103,15 @@ class EasyVKUploader {
 							});
 
 						} else {
-							return reject(new Error("Response from vk is not a json"));
+							return reject(self._vk.error("invalid_response", {
+								response: response
+							}));
 						}
 
 					} else {
-						return reject(new Error("Server responsed with empty string!"));
+						return reject(self._vk.error("empty_response", {
+							response: response
+						}));
 					}
 
 				});
@@ -113,7 +126,10 @@ class EasyVKUploader {
 		return new Promise((resolve, reject) => {
 			
 			if (!staticMethods.isObject(params)) {
-				return reject(new Error("Params must be an object"));
+				return reject(self._vk.error("is_not_object", {
+					parameter: "params",
+					method: "getUploadURL",
+				}));
 			}
 			
 			self._vk.call(method_name, params).then(({vkr, vk}) => {
@@ -134,7 +150,9 @@ class EasyVKUploader {
 					}
 						
 				} else {
-					return reject(new Error("upload_url is not defied in vk response"));
+					return reject(self._vk.error("upload_url_error", {
+						response: vkr
+					}));
 				}
 
 			}, reject);
