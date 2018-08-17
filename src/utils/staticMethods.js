@@ -192,16 +192,13 @@ class EasyVKStaticMethods {
 		}
 	}
 
+	/* 
+	 *	
+	 *  @deprecated
+	 *
+	 */
 	static encodeHTML (text) {
-		
-		return text.toString()
-		.replace(/\<br(\/)?\>/g, "\n")
-		.replace(/&amp;/g, "&")
-		.replace(/&lt;/g, "<")
-		.replace(/&gt;/g, ">")
-		.replace(/&quot;/g, "\"")
-		.replace(/&#039;/g, "'");
-
+		throw new Error('This method was deprecated from 2.0 version!');
 	}
 
 	static isString (n) {
