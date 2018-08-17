@@ -1,1 +1,30 @@
-{}
+npm install easyvk
+
+
+
+code -> 
+
+const easyvk = require('easyvk');
+
+easyvk({
+	password: 'wdwd',
+	username: 'wdwd'
+}).then(vk => {
+	
+
+	return vk.longpoll.connect(({connection}) => {
+		
+		return connection.on('message', (msg) => {
+			
+			return vk.call("messages.send", {
+				user_id: msg.user_id,
+				message: 'Reply!!!'
+			});
+
+		});
+
+	});
+	
+}).catch(console.error);
+
+process.on('unhandledRejection', console.error);

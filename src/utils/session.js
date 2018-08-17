@@ -32,6 +32,7 @@ class EasyVKSession {
 
 		}
 
+
 		//Use session data with methods
 		for (let prop in self.session) {
 			
@@ -56,7 +57,7 @@ class EasyVKSession {
 	async save () {
 		
 		let self = this;
-
+		
 		return new Promise((resolve, reject) => {
 			
 			let s;	
