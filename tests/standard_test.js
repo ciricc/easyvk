@@ -25,7 +25,7 @@ easyVK({
 	}));
 
 	console.log(
-		longPollParams.vkr.getFullResponse()
+		longPollParams.vkr
 	);
 
 	return  vk.call('messages.send', 
@@ -34,7 +34,7 @@ easyVK({
 			user_id: (vk.session.user_id || 356607530)
 		})
 	.then(({vkr}) => {
-		console.log(vkr);
+		console.log(vkr.getFullResponse(), vkr, !isNaN(vkr));
 	})
 
 

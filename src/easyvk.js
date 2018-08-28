@@ -190,7 +190,6 @@ class EasyVK {
 					if (vkr) {
 						let json = staticMethods.checkJSONErrors(vkr, reject);
 						if (json) {
-							
 							if (Array.isArray(json) && json.length === 0) {
 								groupToken();
 							} else {
@@ -261,14 +260,14 @@ class EasyVK {
 
 					if (json) {
 						
+
 						if (Array.isArray(json) && json.length === 0) {
 							reject(self._error("access_token_not_valid"));
 						} else {
-
 							session.group_id = json[0].id,
 							session.group_name = json[0].name;
 							session.group_screen =  json[0].screen_name;
-							
+
 							self.session = session;
 							initResolve(self);
 						}
