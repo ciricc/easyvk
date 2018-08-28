@@ -188,17 +188,15 @@ class EasyVK {
 					}
 
 					if (vkr) {
-
 						let json = staticMethods.checkJSONErrors(vkr, reject);
-
 						if (json) {
 							
-							if (Array.isArray(json.response) && json.response.length === 0) {
+							if (Array.isArray(json) && json.length === 0) {
 								groupToken();
 							} else {
-								session.user_id = json.response[0].id;
-								session.first_name = json.response[0].first_name;
-								session.last_name = json.response[0].last_name;
+								session.user_id = json[0].id;
+								session.first_name = json[0].first_name;
+								session.last_name = json[0].last_name;
 								self.session = session;
 								initResolve(self);
 							}
@@ -263,12 +261,14 @@ class EasyVK {
 
 					if (json) {
 						
-						if (Array.isArray(json.response) && json.response.length === 0) {
+						if (Array.isArray(json) && json.length === 0) {
 							reject(self._error("access_token_not_valid"));
 						} else {
-							session.group_id = json.response[0].id,
-							session.group_name = json.response[0].name;
-							session.group_screen =  json.response[0].screen_name;
+
+							session.group_id = json[0].id,
+							session.group_name = json[0].name;
+							session.group_screen =  json[0].screen_name;
+							
 							self.session = session;
 							initResolve(self);
 						}

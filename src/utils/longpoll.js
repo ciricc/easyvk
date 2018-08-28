@@ -109,9 +109,9 @@ class LongPollConnection extends EventEmitter {
 								
 								self._vk.call("messages.getLongPollServer", self.config.userConfig.forGetLongPollServer).then(({vkr}) => {
 									
-									self.config.longpollServer = vkr.response.server;
-									self.config.longpollTs = vkr.response.ts;
-									self.config.longpollKey =  vkr.response.key;
+									self.config.longpollServer = vkr.server;
+									self.config.longpollTs = vkr.ts;
+									self.config.longpollKey =  vkr.key;
 
 									init(); //reconnect with new parameters
 
@@ -311,9 +311,9 @@ class LongPollConnector {
 				.then(({vkr}) => {
 					
 					let forLongPoll = {
-						longpollServer: vkr.response.server,
-						longpollTs: vkr.response.ts,
-						longpollKey: vkr.response.key,
+						longpollServer: vkr.server,
+						longpollTs: vkr.ts,
+						longpollKey: vkr.key,
 						responseGetServer: vkr,
 						userConfig: params
 					};

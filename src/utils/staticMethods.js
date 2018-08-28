@@ -3,6 +3,8 @@
 const configuration = require("./configuration.js");
 const request = require("request");
 const VKResponseError = require('./VKResponseError.js');
+const VKResponse = require('./VKResponse.js');
+
 
 class EasyVKStaticMethods {
 
@@ -237,7 +239,7 @@ class EasyVKStaticMethods {
 				return false;
 			}
 
-			return vkr;
+			return VKResponse(self, vkr);
 
 		} catch (e) {
 			return reject(new Error(e));

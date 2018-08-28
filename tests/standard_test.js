@@ -10,20 +10,32 @@ const currentSessionFile = path.join(__dirname, '.vksession')
 
 
 easyVK({
-	access_token: '{TOKEN_FIELD}',
+	access_token: '{GROUP_TOKEN}',
 	save_session: false,
 	session_file: currentSessionFile,
 	lang: "ru"
-}).then(vk => {
+}).then(async (vk) => {
 
-	vk.saveSession();
-	
+	let group = await (vk.call('groups.getById'));
+
+	console.log(group.vkr, 'Is you..');
+
+	let longPollParams = await (vk.call('messages.getLongPollServer', {
+		group_id: vk.session.group_id
+	}));
+
+	console.log(
+		longPollParams.vkr.getFullResponse()
+	);
+
 	return  vk.call('messages.send', 
 		{
-			// message: 'Test message!',
-			user_id: (vk.session.user_id || 1)
+			message: 'Test message!',
+			user_id: (vk.session.user_id || 356607530)
 		})
-	.then(console.log)
+	.then(({vkr}) => {
+		console.log(vkr);
+	})
 
 
 }).catch(console.error)
@@ -31,3 +43,5 @@ easyVK({
 
 //Handle all rejects and errors
 process.on('unhandledRejection', console.error)
+
+
