@@ -12,7 +12,7 @@ class RequestsDebugger extends EventEmitter {
 		super();
 	}
 
-	//Push to debugger
+	// Push to debug
 	push (type = "response", data) {
 		let self = this;
 		
@@ -29,7 +29,7 @@ class RequestsDebugger extends EventEmitter {
 		return (stack.length - 1);
 	}
 
-	//Get last log from stack
+	// Get the last log from stack
 	lastLog () {
 		return stack[stack.length - 1];
 	}

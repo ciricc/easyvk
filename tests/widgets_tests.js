@@ -1,5 +1,5 @@
-/**
- *  In your code you need require easyvk so: require('easyvk')
+/*
+ *  Don't forget to require easyvk in your code: require('easyvk')
  */
 
 const path = require('path')
@@ -13,8 +13,8 @@ const currentSessionFile = path.join(__dirname, '.vksession')
 
 /*
  *
- * This test is testing all my wisgets, for example: getLiveViews
- * This example get views from videoSourceId and then send to user with id me
+ * This test is testing all my widgets, for example: getLiveViews
+ * This example gets the views count from videoSourceId and then sends it to the user with id me
  *
  */
 
@@ -23,8 +23,8 @@ easyVK({
 	save_session: false,
 	session_file: currentSessionFile,
 
-	//Access token whcch you need get from your group settings
-	access_token: '{TOKEN_FIELD}',
+	//Access token that you need to get from your group settings
+	access_token: '{TOKEN_HERE}',
 }).then((vk) => {
 
 	console.log('Authenticated!');
@@ -36,7 +36,7 @@ easyVK({
 	// https://vk.com/video?z=video<!![-156373163_456239058]!!>%2F20f2c18b0457ec2a84%2Fpl_cat_games
 
 	async function sendToMe ({message}) {
-		return vk.call('messages.send', { //Standard method for send message
+		return vk.call('messages.send', { //Standard method to send messages
 			user_id: me,
 			message: message
 		})	
@@ -61,5 +61,5 @@ easyVK({
 }).catch(console.error)
 
 
-//Handle all rejects and errors
+//Handler for all rejections and errors
 process.on('unhandledRejection', console.error)

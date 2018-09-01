@@ -1,6 +1,5 @@
 /**
  *   In this file are http widgets for EasyVK
- *   You can use it
  *
  *   Author: @ciricc
  *   License: MIT
@@ -27,7 +26,7 @@ class HTTPEasyVKClient {
 		};
 
 
-		self.LOGIN_ERROR = 'Need login by form, use .loginByForm() method';
+		self.LOGIN_ERROR = 'Need to login by form, use .loginByForm() method';
 		self._vk = vk;
 		self._authjar = _jar;
 	}
@@ -45,7 +44,7 @@ class HTTPEasyVKClient {
 
 			if (isNaN(vk_id)) return reject(new Error('Is not numeric vk_id'));
 
-			//else try get sttories from user
+			// else try to get stories from user
 			if (!self._authjar) return reject(new Error(self.LOGIN_ERROR));
 
 			request.get({
@@ -63,14 +62,14 @@ class HTTPEasyVKClient {
 							
 							if (story_id) {
 									
-								//Only one story
+								// Only one story
 								if (item.raw_id === story_id) {
 									self.__readStory(story.read_hash, item.raw_id, 'profile');
 								}
 
 							} else {
 
-								//All stories
+								// All stories
 								self.__readStory(story.read_hash, item.raw_id, 'profile');
 
 							}
@@ -142,7 +141,7 @@ class HTTPEasyVKClient {
 
 		return new Promise((resolve, reject) => {
 
-			//else try get sttories from user
+			// else tryto  get stories from user
 			if (!self._authjar) return reject(new Error(self.LOGIN_ERROR));
 
 			request.get({
@@ -151,7 +150,7 @@ class HTTPEasyVKClient {
 			}, (err, res, vkr) => {
 				if (err) return reject(new Error(err));
 
-				//parse stories
+				// parse stories
 
 				let stories = self.__getStories(res.body, 'feed');
 				let i = 0;
@@ -201,7 +200,7 @@ class HTTPEasyVKClient {
 				if (!isNaN(params.offset)) offset = params.offset;
 			}
 
-			if (!uid) return reject(new Error('User id not defined in your session, use vk.sesion.user_id = X'));
+			if (!uid) return reject(new Error('User id is not defined in your session, use vk.sesion.user_id = X'));
 
 			request.post({
 				jar: self._authjar,
@@ -223,24 +222,24 @@ class HTTPEasyVKClient {
 				if (err) return reject(err);
 
 				if (!res.body.length) {
-					return reject(new Error('No have access on this audio!'));
+					return reject(new Error('You don\'t have access to this audio!'));
 				}
 
 				let json = res.body.match(/<!json>(.*?)<!>/);
 				
 
 				if (res.body.match(/<\!bool><\!>/)) {
-					return reject(new Error('Blocked access for you'));
+					return reject(new Error('Access is blocked for you'));
 				}
 
 				if (!json) {
-					return reject(new Error('Not founded audios, maybe algorythm changed'));
+					return reject(new Error('No audios found, maybe algorythm changed'));
 				}
 
 				try {
 					json = JSON.parse(json[1]);
 				} catch (e) {
-					return reject(new Error('Not founded sounds, may be algorythm changed or just user blocked access for you'));
+					return reject(new Error('No audios found, maybe algorythm changed or user just blocked access for you'));
 				}
 
 				let audios = [];
@@ -285,8 +284,8 @@ class HTTPEasyVKClient {
 
 	__UnmuskTokenAudio(e, vk_id = 1)
 	{
-		//This code is official algorithm for unmusk audio source
-		//Took from vk.com website, official way, no magic
+		// This code is an official algorithm to unmusk the audio source
+		// 'Stealed' from vk.com website, official way, no magic
 		
 		var n = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN0PQRSTUVWXYZO123456789+/=",
 		    i = {
@@ -383,8 +382,8 @@ class HTTPEasyVK {
 			if (!pass || !login) return reject(new Error('Need authenticate by password and username. This data not saving in session file!'));
 
 			
-			//Make first request, for know url for POST request
-			//parse from m.vk.com page
+			// Make first request, to get the url for POST requests
+			// parse from m.vk.com page
 			let jar = request.jar();
 
 			self._authjar = jar;

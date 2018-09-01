@@ -1,5 +1,5 @@
-/**
- *  In your code you need require easyvk so: require('easyvk')
+/*
+ *  Don't forget to require easyvk in your code: require('easyvk')
  */
 
 const path = require('path')
@@ -13,10 +13,10 @@ const readline = require('readline');
 
 /**
  *
- *  This test shows you how you can handle captcha error
- *  You can use ruCaptcha for solve it
- *  Or just send in messages with image of captcha for solve it by users
- *  Or create you interface for solving captcha in web, like: open browser: input key: send key
+ *  This test shows you how to handle a captcha error
+ *  You can use ruCaptcha to solve it
+ *  Or just send a messages with an image of the captcha so user can solve it
+ *  Or create your own interface for solving captcha
  *
  */
 
@@ -31,11 +31,12 @@ const currentSessionFile = path.join(__dirname, '.vksession')
 
 const captchaHandler = ({captcha_sid, captcha_img, resolve:solve, vk}) => {
 		
-	//Stop sending messages, vk is EasyVK object
+	//Stoping message sending
+	//vk is an instance of EasyVK
 	vk.captcha_stop = true;
 
-	//You can download image by captcha_img url
-	//Then solve it by ruCaptcha service (not free) or just send it to you for solving
+	//You can download the image from captcha_img url
+	//Solve it on ruCaptcha service (not free) or just send it to you for solving
 
 	rl.question(`Enter captcha for ${captcha_img} `, (key) => {
 		
@@ -50,8 +51,8 @@ const captchaHandler = ({captcha_sid, captcha_img, resolve:solve, vk}) => {
 
 		}).catch(({err, reCall: tryNewCall}) => {
 
-			//Or if captcha not solved correctly
-			console.log('Captcha not solved correctly!!!\nTry recall')
+			//Or if not
+			console.log('Captcha not solved correctly!!!\nRetrying')
 			tryNewCall()
 
 		})
@@ -64,23 +65,22 @@ easyVK({
 	// save_session: false,
 	session_file: currentSessionFile,
 
-	//Access token whcch you need get from your group settings
-	username: '{LOGIN_FIELD}',
-	password: '{PASSWORD_FIELD}',
+	username: '{LOGIN_HERE}',
+	password: '{PASSWORD_HERE}',
 	reauth: true,
 	captchaHandler: captchaHandler
 
 }).then((vk) => {
 
 	const me = 356607530
-	const interval = 700 //DDOS, catch captcha 
-	//(joke, it's not a DDOS, but many requests per minute call a captcha error)
+	const interval = 700 //IT'S DDOS! Catch some Captcha! 
+	//(It's a joke of course, it's not DDOS, but many requests per minute call a captcha error :)
 
 	let i = 0;
 
 	setInterval(() => {
 		
-		//If no need solve captche, sending messages ....
+		//If no captcha yet, send messages!
 		if (!vk.captcha_stop) {
 			
 			i++;
@@ -88,7 +88,7 @@ easyVK({
 			console.log(`Sending message [${i}]`)
 			return vk.call('messages.send', {
 				user_id: me,
-				message: 'Test it!'
+				message: 'Very \'Sample\', very \'text\'!'
 			})
 
 		}
@@ -98,5 +98,5 @@ easyVK({
 }).catch(console.error)
 
 
-//Handler all rejects and errors
+//Handler for all rejections and errors
 process.on('unhandledRejection', console.error)

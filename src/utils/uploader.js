@@ -1,7 +1,7 @@
 
 /*
  *
- *  This util contents all upload functions and working with files
+ *  This util contains all upload functions and working with files
  *  (Only for upload)
  *  Author: @ciricc
  *  License: MIT

@@ -1,7 +1,7 @@
 {
   "name": "easyvk",
   "version": "1.6.0",
-  "description": "Functional SDK for support VKontake API (ВКонтакте API) on node.js",
+  "description": "Functional SDK for VKontake API (ВКонтакте API) on node.js",
   "author": "ciricc",
   "license": "MIT",
   "bugs": "https://github.com/ciricc/easyvk/issues",

@@ -2,7 +2,7 @@
 /*
  *	@author: ciricc (Kirill Novak)
  *	@license: MIT
- * 	@description : EasyVK is library for creating appliations based on VKontakte API
+ * 	@description : This library helps you easily create apps with vk api! Official VK API: vk.com/dev/
  *	
  *	Copyright (c) 2017-2018 Kirill Novak (https://ciricc.github.io/) 	
  *	ALL UTILITIES OF THIS MODULE ARE DISTRIBUTED UNDER THE SAME LICENSE AND RULES
@@ -37,12 +37,12 @@ module.exports.streamingAPI = EasyVK.streamingAPI;
 
 /**
  *
- *  This function check all parameters
+ *  This function checks all the parameters
  *  @see createSession()
  *  @return {Promise} 
- *  @promise Check errors
- *  @resolve {Object} changed user parameters for create session
- *  @reject {Error} auth error or just an error from responses
+ *  @promise Cheks errors
+ *  @resolve {Object} changed user parameters so they fit our needs
+ *  @reject {Error} returns auth errors or just response errors
  *
  */
 
@@ -70,7 +70,7 @@ async function checkInitParams (params = {}) {
 			if (isNaN(params.api_v.toString())) {
 				return reject(new Error("The api_v parameter must be numeric"));
 			} else if (Number(params.api_v) < 5) {
-				return reject(new Error("The api_v parameter must be more then 5.0 version, other not support"))
+				return reject(new Error("The api_v parameter must be more then 5.0"))
 			}
 
 		} else {
@@ -80,9 +80,9 @@ async function checkInitParams (params = {}) {
 
 
 		if (params.captcha_key && !params.captcha_sid) {
-			return reject(new Error("You puted captcha_key but not using captcha_sid parameter"));
+			return reject(new Error("You put the captcha_key but didn't use the captcha_sid parameter"));
 		} else if (!params.captcha_key && params.captcha_sid) {
-			return reject(new Error("You puted captcha_sid but not puted captcha_key parameter"));
+			return reject(new Error("You put the captcha_sid but didn't put the captcha_key parameter"));
 		} else if (params.captcha_key && params.captcha_sid) {
 			
 			if (isNaN(params.captcha_sid.toString())) {
@@ -98,12 +98,12 @@ async function checkInitParams (params = {}) {
 		
 		if (params.reauth) {
 			
-			if (!(params.password && params.username) && !params.access_token) {
-				return reject(new Error("You want reauth, but you don't puted username and pass or only access_token"));
+			if (!(params.password && params.username) && !params.access_token) {                                                                       
+				return reject(new Error("You want to reauth, but you didn't put the username and pass or the access_token"));
 			}
 
 			if (params.access_token && params.username) {
-				return reject(new Error("Select only one way auth: access_token XOR username"));
+				return reject(new Error("You can only use one auth method: access_token OR username"));
 			}
 
 			if (params.access_token) {
@@ -115,7 +115,7 @@ async function checkInitParams (params = {}) {
 			}
 
 			if (params.username && !params.password) {
-				return reject(new Error("Put password if you want aut with username"));
+				return reject(new Error("Put the password in if you want to auth using username"));
 			}
 
 			if (params.username && params.password) {
@@ -129,13 +129,13 @@ async function checkInitParams (params = {}) {
 		if (params.platform) {
 			
 			if (!isNaN(Number(params.platform))) {
-				//Get platform by ID
+				// Get platform by ID
 
 				params.platform = configuration.platformIds[params.platform];
 
 			} else {
 				
-				//Get by matching
+				// Get by matching
 				let hashes = [];
 				let values = [];
 
@@ -200,31 +200,26 @@ async function checkInitParams (params = {}) {
 }
 
 /*
- *  This function check you easyVK(params) parameters
- *  @param {Object} params - Settings for authentication, for create session
- *  @param {Boolean} [params.save_session=true] - If is true then session will be saved in params.session_file file
- *  @param {(String|Number)} [params.api_v=5.73] - API version for all requests, I am
- *  recommend you use API version >= 5
- *  @param {String} [params.access_token=] - Your access token, group or user. If is user token then
- *  easyVK will get user_id for you, else [group_id, screen_name, group_name] for session file
- *  @param {String|Number} [params.username] - Your login for authenticate, your_email@example.com or +7(916)7888886 (example)
- *  It need only if you puted params.password and not puted params.access_token parameter
- *  @param {String|Number} [params.password] - Your password for user account, it will be authenticated
- *  from windows app_id, from official client. I am not saving your data for hack, all is opened for you
- *  @param {Boolean} [params.reauth=false] - Need ignore session file and log in with newest parameters?
- *  @param {String} [params.session_file=.vksession] - Path for your session file, i am recommend you to use the path module
- *  for create path.join(__dirname, '.session-vk')
- *  @param {String|Number} [params.code] - Is your code from application which generate your 2-factor-auth
- *  code
- *  @param {String} [params.captcha_key] - Is your code from captcha, only if you got an error and not solved it 
- *  before
- *  @param {String|Number} [params.captcha_sid] - Is a captcha id from captcha error, if you got it and not solved before
- *  @param {Function|Async Function} [params.captchaHandler] - Is a captcha Handler function for
- *  handle all captcha errors
+ *  This function checks your easyVK(params) parameters
+ *  @param {Object} params - Settings for authentication (session params)
+ *  @param {Boolean} [params.save_session=true] - If true then session will be saved in params.session_file file
+ *  @param {(String|Number)} [params.api_v=5.73] - API version for all requests, I recommend using version >= 5
+ *  @param {String} [params.access_token=] - Your access token, group or user. If user token then
+ *  easyVK will get the user_id for you, else [group_id, screen_name, group_name] will be saved
+ *  @param {String|Number} [params.username] - Your login for authentication, your_email@example.com or +7(916)7888886 (example)
+ *  This is needed only if you are using the params.password and not the params.access_token parameter
+ *  @param {String|Number} [params.password] - Your password for the user account, it will be authenticated
+ *  with windows app_id, like official client. I'm not saving your data to hack your account, all is open source
+ *  @param {Boolean} [params.reauth=false] - This will disable session file reading
+ *  @param {String} [params.session_file=.vksession] - Path for your session file, I recommend you use the path module
+ *  to create path.join(__dirname, '.session-vk')
+ *  @param {String|Number} [params.code] - This is for 2-factor-auth, pass the code from message here
+ *  @param {String} [params.captcha_key] - This is only used if you failed to solve captcha
+ *  @param {String|Number} [params.captcha_sid] - This is only used if you failed to solve captcha
+ *  @param {Function|Async Function} [params.captchaHandler] - Captcha Handler function to handle all captcha errors
  *
- *  @promise Authenticate you and create session
- *  @resolve {Object} EasyVK object, which contents session and all methods
- *  for work with VKontakte API
+ *  @promise Authenticates you and creates the session
+ *  @resolve {Object} EasyVK object, contains the session and all the methods for the VK API
  *  
  */
 
