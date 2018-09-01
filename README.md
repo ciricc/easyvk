@@ -78,7 +78,7 @@ easyvk({
 
 ## EasyVK provide:
 * <b>Promises and async / await based library</b>
-* Authentication support: groups, users, aplications, password + username
+* Authentication support: groups, users, applications, password + username
 * Informative documentation
 * Regular updates and support for newest features
 * Two factor authentication support
