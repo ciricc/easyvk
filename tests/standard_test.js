@@ -10,7 +10,7 @@ const currentSessionFile = path.join(__dirname, '.vksession')
 
 
 easyVK({
-	access_token: '{TOKEN_FIELD}',
+	access_token: '{TOKEN_HERE}',
 	save_session: false,
 	session_file: currentSessionFile,
 	lang: "ru"
@@ -29,5 +29,5 @@ easyVK({
 }).catch(console.error)
 
 
-//Handle all rejects and errors
+//Handler for all rejections and errors
 process.on('unhandledRejection', console.error)

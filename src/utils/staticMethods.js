@@ -8,12 +8,12 @@ class EasyVKStaticMethods {
 
 	/**
 	 *
-	 *	This function return a GET url with parameters. If you want get url encoded string from object you can use it.
+	 *	This function return a GET url with parameters. If you want to get url encoded string from object you can use this.
 	 *
-	 *	@param {Object} object it is clear, man! it just a object.................. :(
+	 *	@param {Object} it's clean, man! it just an object.................. :(
 	 *	
 	 *	@return {String}
-     *
+     	 *
 	 */
 
 	static urlencode(object = {}) { 
@@ -86,7 +86,7 @@ class EasyVKStaticMethods {
 					"content-type" : "application/x-www-form-urlencoded",
 				};
 
-				//Nice request recommendtion
+				// Nice request recommendation
 				for (let i in callParams.form) {
 					if (self.isObject(callParams.form[i])) {
 						callParams.form[i] = JSON.stringify(callParams.form[i]);
@@ -111,7 +111,7 @@ class EasyVKStaticMethods {
 				try {
 					debuggerIS.push("fullRequest", callParams);
 				} catch (e) {
-					//Ignore
+					// Ignore
 				}
 			}
 			
@@ -148,7 +148,7 @@ class EasyVKStaticMethods {
 		});
 	}
 
-	// Only for me, but you can use it if understand how
+	// Only for me, but you can use it if you understand how
 
 	static checkErrors(vkr) {
 		try {
@@ -168,7 +168,7 @@ class EasyVKStaticMethods {
 						}
 					}
 
-					return `Please, enter your ${type} code in code parameter!`;
+					return `Please, enter your ${type} code in the code parameter!`;
 
 				} else if (vkr.error.error_code === 17) {
 					return JSON.stringify({
@@ -232,7 +232,7 @@ class EasyVKStaticMethods {
 					err = new Error(err);
 				} else if (err instanceof Error) {
 
-					err = err; //ok? :D
+					err = err; // ok? :D
 				}
 
 				reject(err);
