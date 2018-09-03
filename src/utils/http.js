@@ -14,6 +14,436 @@ const configuration = require("./configuration.js");
 const staticMethods = require("./staticMethods.js");
 const request = require("request");
 const encoding = require("encoding");
+const VKResponse = require("./VKResponse.js");
+
+
+class AudioAPI {
+	constructor (vk, http) {
+		let self = this;
+
+		self._vk = vk;
+		self._http = http;
+		self._authjar = self._http._authjar;
+
+	}
+
+	get (params = {}) {
+		return new Promise((resolve, reject) => {
+			let self = this;
+
+
+			let uid = self._vk.session.user_id,
+				playlist_id = -1, 
+				offset = 0;
+
+			if (params.owner_id) {
+				params.owner_id = Number(params.owner_id);
+			} else if (uid) {
+				params.owner_id = uid;
+			}
+
+			if (params.playlist_id) {
+				params.playlist_id = Number(params.playlist_id);
+				if (!isNaN(params.playlist_id)) playlist_id = params.playlist_id;
+			}
+
+			if (params.offset) {
+				params.offset = Number(params.offset);
+				if (!isNaN(params.offset)) offset = params.offset;
+			}
+
+			if (!params.owner_id) return reject(new Error('User id not defined in your session, use vk.sesion.user_id = X'));
+
+			request.post({
+				jar: self._authjar,
+				url: `${configuration.PROTOCOL}://${configuration.BASE_DOMAIN}/al_audio.php`,
+				form: {
+					act: 'load_section',
+					al: 1,
+					claim: 0,
+					offset: offset,
+					owner_id: params.owner_id,
+					playlist_id: playlist_id,
+					type: 'playlist'
+				},
+				encoding: "binary"
+			}, (err, res, vkr) => {
+
+				res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString();
+
+				if (err) return reject(err);
+
+				if (!res.body.length) {
+					return reject(new Error('No have access on this audio!'));
+				}
+
+				let json = res.body.match(/<!json>(.*?)<!>/);
+				
+
+				if (res.body.match(/<\!bool><\!>/)) {
+					return reject(new Error('Blocked access for you'));
+				}
+
+				if (!json) {
+					return reject(new Error('Not founded audios, maybe algorythm changed'));
+				}
+
+				try {
+					json = JSON.parse(json[1]);
+				} catch (e) {
+					return reject(new Error('Not founded sounds, may be algorythm changed or just user blocked access for you'));
+				}
+
+				let audios = [];
+
+				for (let i = 0; i < json.list.length; i++) {					
+					let audio = json.list[i];
+
+					audios.push(self._getAudioNormal(audio));
+
+				}
+
+
+				if (!params.needAll) {
+					json.list = undefined;
+				}
+
+				resolve({
+					vk: self._vk,
+					json: json,
+					vkr: VKResponse(staticMethods, {
+						response: audios
+					})
+				});
+
+			});
+		})
+	}
+
+	getCount (params = {}) {
+		
+		let self = this;
+
+		return new Promise((resolve, reject) => {
+			self.get({
+				owner_id: params.owner_id
+			}).then(({json}) => {
+				
+				return resolve({
+					vk: self._vk,
+					vkr: VKResponse(staticMethods, {
+						response: json.totalCount
+					})
+				});
+
+			}, reject);
+		});
+
+	}
+
+	getById (params = {}) {
+		let self = this;
+
+		return new Promise((resolve, reject) => {
+
+			request.post({
+				jar: self._authjar,
+				url: `${configuration.PROTOCOL}://${configuration.BASE_DOMAIN}/al_audio.php`,
+				form: {
+					act: 'reload_audio',
+					al: 1,
+					ids: params.ids
+				},
+				encoding: "binary"
+			}, (err, res, vkr) => {
+
+				res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString();
+
+				if (err) return reject(err);
+
+				let json = res.body.match(/<!json>(.*?)<!>/);
+
+				try {
+					json = JSON.parse(json[1]);
+				} catch (e) {
+					return reject(new Error('Not founded sounds, may be algorythm changed or just user blocked access for you'));
+				}
+
+				let audios = json;
+
+				for (let i = 0; i < audios.length; i++) {
+					audios[i] = self._getAudioNormal(audios[i]);
+				}
+
+				return resolve({
+					vkr: VKResponse(staticMethods, {
+						response: audios
+					}),
+					vk: self._vk,
+					json: JSON.parse(res.body.match(/<!json>(.*?)<!>/)[1])
+				});
+
+			});
+
+		});
+
+	}
+
+	getLyrics (params = {}) {
+		let self = this;
+	
+
+		return new Promise((resolve, reject) => {
+			request.post({
+				jar: self._authjar,
+				url: `${configuration.PROTOCOL}://${configuration.BASE_DOMAIN}/al_audio.php`,
+				form: {
+					act: 'get_lyrics',
+					al: 1,
+					lid: params.lyrics_id
+				},
+				encoding: "binary"
+			}, (err, res, vkr) => {
+
+				res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString();
+				
+				if (err) return reject(err);
+						
+				let text = res.body;
+				text = text.split('<!>');
+				text = text[text.length - 1];
+
+				return resolve({
+					vkr: VKResponse(staticMethods, {
+						response: {
+							text: text
+						}
+					}),
+					vk: self._vk
+				});
+
+			});
+		})
+	}
+
+
+	getUploadServer (params = {}) {
+		let self = this;
+	
+
+		if (!params.group_id) {
+			params.group_id = 0;
+		}
+
+		return new Promise((resolve, reject) => {
+			request.post({
+				jar: self._authjar,
+				url: `${configuration.PROTOCOL}://${configuration.BASE_DOMAIN}/al_audio.php`,
+				form: {
+					act: 'new_audio',
+					al: 1,
+					gid: params.group_id
+				},
+				encoding: "binary"
+			}, (err, res, vkr) => {
+
+				res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString();
+				
+				if (err) return reject(err);
+			
+				let matches = res.body.match(/Upload\.init\((.*)/)[0];
+				matches = String(matches).replace(/Upload\.init\(/, "").split(', ');
+				let url = matches[1].replace(/'|"/g, "");
+				let queryString = JSON.parse(matches[2]);
+				queryString = staticMethods.urlencode(queryString);
+
+				resolve({
+					vk: self._vk,
+					vkr: VKResponse(staticMethods, {
+						response: {
+							upload_url: url + '?' + queryString
+						}
+					})
+				});
+
+			});
+		})
+	}
+
+	upload() {
+		let self = this;
+
+
+		return new Promise((resolve, reject) => {
+
+			self._vk.uploader.uploadFile(arguments[0], arguments[1], 'file', {
+				custom: true
+			}).then(({vkr}) => {
+				
+				let matches = vkr.match(/parent\.\((.*)\)\;/);
+				let audio = matches[1].replace(/^'{/, "{").replace(/}'/, "}").replace(/\\/g, "");
+				
+				try {
+					audio = JSON.parse(audio);
+				} catch (e) {
+					return reject(self._vk._error("invalid_response", {
+						where: 'audio.upload',
+						more: e
+					}));
+				}
+				
+				return resolve({
+					vk: self._vk,
+					vkr: VKResponse(staticMethods, {
+						response: audio
+					})
+				});
+
+			});
+
+		});
+
+	}
+
+	save (data = {}) {
+		let self = this;
+
+
+		return new Promise((resolve, reject) => {
+
+			data.act = 'done_add';
+			data.al = 1;
+
+			request.post({
+				jar: self._authjar,
+				url: `${configuration.PROTOCOL}://${configuration.BASE_DOMAIN}/al_audio.php`,
+				form: data,
+				encoding: "binary"
+			}, (err, res, vkr) => {
+
+				res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString();
+				
+				if (err) return reject(err);
+				
+				let matches = vkr.match(/top\.cur\.loadAudioDone\((.*)\)\;/);
+				let audio = matches[1].replace(/^'\[/, "[").replace(/\]'/, "]").replace(/\\/g, "");
+				let json = audio;
+
+				try {
+					json = JSON.parse(json);
+				} catch (e) {
+					return reject(new Error('Not founded sounds, may be algorythm changed or just user blocked access for you'));
+				}
+
+
+				resolve({
+					vk: self._vk,
+					vkr: VKResponse(staticMethods, {
+						response: self._getAudioNormal(json) 
+					}),
+					json: json
+				});
+
+			});
+
+		});
+
+	}
+
+	search (params = {}) {
+		let self = this;
+
+		return new Promise((resolve, reject) => {
+
+			request.post({
+				jar: self._authjar,
+				url: `${configuration.PROTOCOL}://${configuration.BASE_DOMAIN}/al_audio.php`,
+				form: {
+					act: 'section',
+					al: 1,
+					claim: 0,
+					offset: params.offset,
+					owner_id: (params.owner_id || self._vk.session.user_id),
+					q: params.q,
+					section: 'search'
+				},
+				encoding: "binary"
+			}, (err, res, vkr) => {
+
+				res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString();
+
+				if (err) return reject(err);
+
+				if (!res.body.length) {
+					return reject(new Error('No have access on this audio!'));
+				}
+
+				let json = res.body.match(/<!json>(.*?)<!>/);
+				
+				require('fs').writeFileSync('log.txt', json[0]);
+
+				if (res.body.match(/<\!bool><\!>/)) {
+					return reject(new Error('Blocked access for you'));
+				}
+
+				if (!json) {
+					return reject(new Error('Not founded audios, maybe algorythm changed'));
+				}
+
+				try {
+					json = JSON.parse(json[1]);
+				} catch (e) {
+					return reject(new Error('Not founded sounds, may be algorythm changed or just user blocked access for you'));
+				}
+
+
+				let audios_ = json.playlists[0].list;
+
+				let audios = [];
+
+				for (let i = 0; i < audios_.length; i++) {					
+					let audio = audios_[i];
+					audios.push(self._getAudioNormal(audio));
+
+				}
+
+				resolve({
+					vk: self._vk,
+					json: json,
+					vkr: VKResponse(staticMethods, {
+						response: audios
+					})
+				});
+
+			});
+
+		});
+
+	}
+
+
+	_getAudioNormal (audio = []) {
+		
+		let self = this;
+
+		let audio_ = {
+			id: audio[0],
+			owner_id: audio[1],
+			source: self._http.__UnmuskTokenAudio(audio[2], self._vk.session.user_id),
+			title: audio[3],
+			artist: audio[4],
+			duration: audio[5],
+			icon: audio[14]
+		}
+
+		if (audio[19]) {
+			audio_.lyrics_id = audio[19][1];
+		}
+
+		return audio_;
+
+	}
+}
 
 class HTTPEasyVKClient {
 
@@ -30,6 +460,8 @@ class HTTPEasyVKClient {
 		self.LOGIN_ERROR = 'Need login by form, use .loginByForm() method';
 		self._vk = vk;
 		self._authjar = _jar;
+
+		self.audio = new AudioAPI(self._vk, self);
 	}
 
 

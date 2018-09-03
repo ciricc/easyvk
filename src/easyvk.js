@@ -138,6 +138,7 @@ class EasyVK {
 					}
 
 					if (vkr) {
+						console.log(vkr);
 						let json = staticMethods.checkJSONErrors(vkr, reject);						
 						
 						if (json) {

@@ -10,13 +10,16 @@ const currentSessionFile = path.join(__dirname, '.vksession')
 
 
 easyVK({
-	access_token: '{GROUP_TOKEN}',
+	access_token: '{GROUP_HERE}',
 	save_session: false,
 	session_file: currentSessionFile,
-	lang: "ru"
+	lang: "ru",
+	reauth: true
 }).then(async (vk) => {
 
-	let group = await (vk.call('groups.getById'));
+	let group = await (vk.call('groups.getById', {
+		group_ids: vk.session.group_id
+	}));
 
 	console.log(group.vkr, 'Is you..');
 
@@ -33,8 +36,21 @@ easyVK({
 			message: 'Test message!',
 			user_id: (vk.session.user_id || 356607530)
 		})
-	.then(({vkr}) => {
-		console.log(vkr.getFullResponse(), vkr, !isNaN(vkr));
+	.then(({vkr: vkr1}) => {
+		// let vkr1 = vkr;
+
+		console.log(vkr1, 'vkr1');
+
+		vk.call('messages.send', 
+		{
+			message: 'Test message!',
+			user_id: (vk.session.user_id || 356607530)
+		})
+		.then(({vkr: vkr2}) => {
+			console.log(vkr2, 'vkr2');
+			console.log(vkr1, 'vkr1');
+		});
+
 	})
 
 

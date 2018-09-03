@@ -18,12 +18,12 @@ const currentSessionFile = path.join(__dirname, '.vksession')
 
 
 easyVK({
-	username: '{LOGIN_FIELD}',
-	password: '{PASSWORD_FIELD}',
+	username: '{LOGIN_HERE}',
+	password: '{PASSWORD_HERE}',
 	api_v: '5.73',
-	save_session: false,
+	save_session: true,
 	session_file: currentSessionFile,
-	reauth: true,
+	// reauth: true,
 }).then(vk => {
 
 	const HttpVK = vk.http;
@@ -55,13 +55,13 @@ easyVK({
 
 			function newReq (offset = 0) {
 				return new Promise((resolve, reject) => {
-					Client.getAudios({
-						vk_id: vk.session.user_id,
+
+					Client.audio.get({
+						owner_id: vk.session.user_id,
 						offset: offset,
 						playlist_id: -1
-					}).then(({audios: audios_, vkr: json}) => {
+					}).then(({vkr: audios_, json}) => {
 						audios = [...audios, ...audios_];
-						
 						if (json.hasMore) {
 							newReq(json.nextOffset).then(resolve, reject);
 						} else {
@@ -75,11 +75,52 @@ easyVK({
 			return newReq;
 		}
 
-		(getAllAudios())().then((audios_) => {
-			//After all completed calls
-			console.log(audios_.length);
+		Client.audio.get({
+			owner_id: -45703770,
+			offset: 0,
+			playlist_id: -1
+		}).then(({vkr}) => {
+			console.log(vkr.length);
 		});
+
+		Client.audio.getCount({
+			owner_id: -45703770
+		}).then(({vkr}) => {
+			console.log(vkr);
+		})
+
+		Client.audio.getById({
+			ids: '-45703770_456242594'
+		}).then(({vkr, json}) => {
+			
+			Client.audio.getLyrics(vkr[0]).then(({vkr}) => {
+				console.log(vkr)
+			});
+		});
+
+
+		// Client.audio.getUploadServer().then(({vkr}) => {
 		
+		// 	let url = vkr.upload_url;
+
+		// 	Client.audio.upload(url, __dirname + '/main.mp3').then(({vkr}) => {
+		// 		return Client.audio.save(vkr, {
+		// 			title: 'Название',
+		// 			artist: 'Артист'
+		// 		});
+		// 	}).then(({vkr}) => {
+				
+		// 		console.log(vkr, 'saved audio');
+
+		// 	});
+
+		// });
+
+		Client.audio.search({
+			q: 'The beatles',
+		}).then(({vkr}) => {
+			console.log(vkr);
+		});
 
 	});
 

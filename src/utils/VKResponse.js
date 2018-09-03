@@ -4,8 +4,8 @@ let VKResponseReturner = function(staticMethods, dataResponse_) {
 
 	let res = response_.response;
 	
-	if (res === undefined || res === null) res = {};
-	
+	if (res === undefined || res === null) res = response_;
+
 	let constructorName = (res).constructor.name;
 	let Constructor = global[constructorName];
 
@@ -15,6 +15,7 @@ let VKResponseReturner = function(staticMethods, dataResponse_) {
 	class VKResponse extends Constructor {
 		
 		constructor (res) {
+
 
 			if ((staticMethods.isString(res) || !isNaN(res) || res instanceof Boolean) && constructorName != "Array") {
 				super(res);

@@ -12,6 +12,7 @@
 const fs = require("fs");
 const request = require("request");
 const staticMethods = require("./staticMethods.js");
+const VKResponse = require("./VKResponse.js");
 
 
 class EasyVKUploader {
@@ -55,14 +56,23 @@ class EasyVKUploader {
 
 			}
 
+
 			if (!staticMethods.isObject(paramsUpload)) {
 				paramsUpload = {};
 			}
 
 			let stream, data;
+			let customUpload = false;
 
 			stream = fs.createReadStream(filePath);
+
 			data = {};
+
+
+			if (paramsUpload.custom) {
+				paramsUpload.custom = 0;
+				customUpload = true;
+			}
 
 			Object.keys(paramsUpload)
 			.map((param) => {
@@ -75,13 +85,18 @@ class EasyVKUploader {
 			});
 
 			stream.on("open", () => {
+
 				data[fieldName] = stream;
 				
+				console.log(data);
+
 				request.post({
 					uri: url,
 					formData: data,
 				}, (err, response) => {
 					
+					console.log(customUpload, 'TRUE OR FALSE');
+
 					if (err) {
 						return reject(self._vk.error("server_error", {
 							error: err
@@ -93,7 +108,18 @@ class EasyVKUploader {
 					let vkr = response.body;
 
 					if (vkr) {
-						let json = staticMethods.checkJSONErrors(vkr);
+							
+						if (customUpload) {
+							return resolve({
+								vkr: VKResponse(staticMethods, {
+									response: vkr
+								}),
+								vk: self._vk
+							});
+						}
+
+
+						let json = staticMethods.checkJSONErrors(vkr, reject);
 						
 						if (json) {
 							
