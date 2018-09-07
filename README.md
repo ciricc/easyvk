@@ -9,8 +9,8 @@
 This library helps you easily create apps with vk api!
 Official VK API: [vk.com/dev/](https://vk.com/dev/)
 
-| [Community](https://vk.com/club162208999) | [Changelog](https://github.com/ciricc/easyvk/tree/master/CHANGELOG.md) | [Документация на русском](https://ciricc.github.io/) |
-| ------------------------------------------| ---------------------------------------------|-------------|
+| [Community](https://vk.com/club162208999) | [Документация на русском](https://ciricc.github.io/) |
+| ------------------------------------------| -------------|
 
 ## Для русскоязычных
 
