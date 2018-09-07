@@ -515,7 +515,7 @@ class StreamingAPIConnector {
 								let streamingSession, wsc;
 
 								streamingSession = {
-									server: vkrURL.response,
+									server: vkrURL,
 									client: json
 								}
 
