@@ -1,5 +1,5 @@
-/*
- *  Don't forget to require easyvk in your code: require('easyvk')
+/**
+ *  In your code you need require easyvk so: require('easyvk')
  */
 
 const path = require('path')
@@ -12,7 +12,7 @@ const currentSessionFile = path.join(__dirname, '.vksession')
 
 const me = 356607530
 const my_group = 162208999
-const filePath = __dirname + '/../src/logo_200.png' //change to your file
+const filePath = __dirname + '/../src/logo_200.png' //change on your file
 
 
 easyVK({
@@ -22,23 +22,23 @@ easyVK({
 
 	reauth: true,
 
-	//For this test we need to authenticate like a user (we need a user token)
-	username: '{LOGIN_HERE}',
-	password: '{PASSWORD_HERE}'
+	//For this test need user authentication type
+	username: '{LOGIN_FIELD}',
+	password: '{PASSWORD_FIELD}'
 }).then(async (vk) => {
 
 
 	/*
 	 * 
-	 * This test runs all the methods from the method list and gets all the upload_url's
-	 * So, if it works normally you will see a log like this: '1 / 12 ... 3 / 12 .... 12 / 12, true'
-	 * Where true means that response is equal to url (ooooh...)
-	 * And you will see ONE ERROR (BECAUSE MY UPLOADER AND GETURL METHOD USE .call() METHOD
-	 * FOR GETTING URL, SO ONE OF THE REQUESTS WILL WORK NORMALLY (It will send a message to you or me)
-	 * AND THEN AN ERROR WILL OCCUR LIKE `upload_url is not defined in response`)
+	 * This test run all methods from methods list and get all upload_url's
+	 * So, if it work normally you will see log like 1 / 12 ... 3 / 12 .... 12 / 12, true
+	 * Where true is mean that response uequals url (ooooh...)
+	 * And you will se ONE ERROR <BECAUSE MY UPLOADER AND GETURL METHOD USE .call() METHOD
+	 * FOR GETTING URL, SO, ONE OF REQUESTS WILL WORK NORMALLY (It will send message to you, or, me)
+	 * AND THEN WILL OCCUR ERROR LIKE `upload_url is not defined in response`
 	 * 
-	 * For it to work you need to create your own group or just delete the method where 
-	 * the `group_id` var is present
+	 * For work it you need create own group or just delete method where 
+	 * defined group_id field in the object
 	 *
 	 * 
 	 */
@@ -54,7 +54,7 @@ easyVK({
 	const Uploader = vk.uploader	
 	const album_id = ( await getMyAlbumId() ).vkr.response.items[0].id
 	
-	//Will log all the urls (12)
+	//Will logged all urls (12)
 	const methods = {
 		'photos.getUploadServer' : {
 			album_id: album_id
@@ -70,10 +70,10 @@ easyVK({
 			chat_id: 1
 		},
 
-		//You need to enable the marketplace in your group
-		//or else it won't work
+		//Need enable marketplace on your group
+		//else will not work
 		'photos.getMarketUploadServer': {
-			group_id: my_group //You need to put your group_id here or else it will throw Access denied
+			group_id: my_group //You need put your group_id else it will be Access denied
 		},
 		'photos.getMarketAlbumUploadServer': {
 			album_id: album_id,
@@ -84,7 +84,7 @@ easyVK({
 		'docs.getUploadServer': {},
 		'docs.getWallUploadServer': {},
 		'photos.getOwnerCoverPhotoUploadServer': {
-			group_id: my_group //You need to put your group_id here or else it will throw Access denied
+			group_id: my_group //You need put your group_id else it will be Access denied
 		}
 	}
 
@@ -92,17 +92,17 @@ easyVK({
 
 
 
-	//An error will occur like `upload_url` not defined
+	//Will occured error like `upload_url` not defined
 
 	vk.uploader.getUploadURL('messages.send', {
-		message: 'Error, but it will be sent, because this method uses .call() method to get URL !',
+		message: 'Error, but it will sended, beacouse this method use .call() method for get URL !',
 		user_id: me
 	})
 
 
 	/*
 	 *
-	 * This code is getting all the upload urls and testing my method - getUploadURL
+	 * This code getting all upload url and testing my method - getUploadURL
 	 *
 	 */
 
@@ -129,33 +129,34 @@ easyVK({
 	const field = 'photo'
 
 
-	console.log(vkr === url) //true, because you want get ALL REQUEST DATA
+	console.log(vkr === url) //true, beacouse you want get ALL REQUEST DATA
 
 	
 	url = url.response.upload_url
 	
 
-	//Get response from the file upload to save it for later usage
+	//Get response from upload file for save it and then sending
 	let { vkr: fileData } = await ( Uploader.uploadFile(url, filePath, field, {}) )
 		fileData = await ( vk.call('photos.saveMessagesPhoto', fileData) )	
 		fileData = fileData.vkr.response[0]
 
 
-	//Create attachments
+	//Create attahcments
 	const attahcments = [
 		`photo${fileData.owner_id}_${fileData.id}_${fileData.access_key}`
 	]
 
 	/*
 	 *
-	 * Sending a message with file
+	 * Sending message to me, will send file with message
+	 * `Hello! It tested normally!`
 	 * 
 	 */
 
 	return vk.call('messages.send', {
 		user_id: me,
 		attachment: attahcments,
-		message: 'Beep boop! I am a file!'
+		message: 'Hello! It tested normally!'
 	})
 
 
@@ -166,5 +167,5 @@ easyVK({
 }).catch(console.error)
 
 
-//Handler for all rejections and errors
+//Handler all rejects and errors
 process.on('unhandledRejection', console.error)

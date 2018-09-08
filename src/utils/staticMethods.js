@@ -3,17 +3,18 @@
 const configuration = require("./configuration.js");
 const request = require("request");
 const VKResponseError = require('./VKResponseError.js');
+const VKResponse = require('./VKResponse.js');
 
 class EasyVKStaticMethods {
 
 	/**
 	 *
-	 *	This function return a GET url with parameters. If you want to get url encoded string from object you can use this.
+	 *	This function return a GET url with parameters. If you want get url encoded string from object you can use it.
 	 *
-	 *	@param {Object} it's clean, man! it just an object.................. :(
+	 *	@param {Object} object it is clear, man! it just a object.................. :(
 	 *	
 	 *	@return {String}
-     	 *
+     *
 	 */
 
 	static urlencode(object = {}) { 
@@ -86,7 +87,7 @@ class EasyVKStaticMethods {
 					"content-type" : "application/x-www-form-urlencoded",
 				};
 
-				// Nice request recommendation
+				//Nice request recommendtion
 				for (let i in callParams.form) {
 					if (self.isObject(callParams.form[i])) {
 						callParams.form[i] = JSON.stringify(callParams.form[i]);
@@ -111,7 +112,7 @@ class EasyVKStaticMethods {
 				try {
 					debuggerIS.push("fullRequest", callParams);
 				} catch (e) {
-					// Ignore
+					//Ignore
 				}
 			}
 			
@@ -148,7 +149,7 @@ class EasyVKStaticMethods {
 		});
 	}
 
-	// Only for me, but you can use it if you understand how
+	// Only for me, but you can use it if understand how
 
 	static checkErrors(vkr) {
 		try {
@@ -168,7 +169,7 @@ class EasyVKStaticMethods {
 						}
 					}
 
-					return `Please, enter your ${type} code in the code parameter!`;
+					return `Please, enter your ${type} code in code parameter!`;
 
 				} else if (vkr.error.error_code === 17) {
 					return JSON.stringify({
@@ -192,16 +193,13 @@ class EasyVKStaticMethods {
 		}
 	}
 
+	/* 
+	 *	
+	 *  @deprecated
+	 *
+	 */
 	static encodeHTML (text) {
-		
-		return text.toString()
-		.replace(/\<br(\/)?\>/g, "\n")
-		.replace(/&amp;/g, "&")
-		.replace(/&lt;/g, "<")
-		.replace(/&gt;/g, ">")
-		.replace(/&quot;/g, "\"")
-		.replace(/&#039;/g, "'");
-
+		throw new Error('This method was deprecated from 2.0 version!');
 	}
 
 	static isString (n) {
@@ -232,7 +230,7 @@ class EasyVKStaticMethods {
 					err = new Error(err);
 				} else if (err instanceof Error) {
 
-					err = err; // ok? :D
+					err = err; //ok? :D
 				}
 
 				reject(err);
@@ -240,7 +238,7 @@ class EasyVKStaticMethods {
 				return false;
 			}
 
-			return vkr;
+			return VKResponse(self, vkr);
 
 		} catch (e) {
 			return reject(new Error(e));

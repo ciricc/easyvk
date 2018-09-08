@@ -1,5 +1,5 @@
-/*
- *  Don't forget to require easyvk in your code: require('easyvk')
+/**
+ *  In your code you need require easyvk so: require('easyvk')
  */
 
 const path = require('path')
@@ -12,10 +12,11 @@ const readline = require('readline');
 
 /*
  * 
- *  This tests shows you, how to use 'platform' parameter in user authentication
- *  Starting from version 1.4.2 you can use your own client_id and client_secret
+ *  This tests shows you, how you can use platform for authenticate user
+ *  Started from 1.4.2 version you can user own client_id and client_secret of application
+ *  For authentication user by password and username
  *  
- *  You can use debuggerRun to enable debug for easyvk before initialization
+ *  So, you can user debuggerRun for debug easyvk before initialize
  *  and authentication
  *
  */
@@ -26,8 +27,8 @@ console.log(easyVK.version);
 
 easyVK.debuggerRun.on("push", ({type, data}) => {
 	
-	//Type is the type of log: response
-	//Data is data of the log event
+	//Type if type of log: response
+	//Data is data of log event
 	console.log(data);
 
 });
@@ -35,7 +36,7 @@ easyVK.debuggerRun.on("push", ({type, data}) => {
 easyVK({
 	
 	/*
-	 *  You can use 'platform' parameter to change session platform
+	 *  You can use platform parameter for change session platform
 	 *  Correct values: [Android, IOS, Windows, iOs, AndRoId, wINDows etc..]
 	 *  Or use platform id: {
 			"6": "WINDOWS",
@@ -47,7 +48,7 @@ easyVK({
 
 	//platform: "Android",
 	
-	//This parameters are only for authentication password and username
+	//This parameters only for authenticate user by password and username
 	//It doesnt get access_token of your application!!
 	client_id: '3697615',
 	client_secret: 'AlVXZFMUqyrnABp8ncuU',
@@ -56,8 +57,8 @@ easyVK({
 	api_v: '5.75',
 
 	//user data
-	username: '{USERNAME_HERE}',
-	password: '{PASSWORD_HERE}',
+	username: '{USERNAME_FIELD}',
+	password: '{PASSWORD_FIELD}',
 
 	//other
 	reauth: true,
@@ -70,5 +71,6 @@ easyVK({
 }).catch(console.error);
 
 
-//Handler for all rejections and errors
+
+//Handle all rejects and errors
 process.on('unhandledRejection', console.error);

@@ -33,7 +33,7 @@ class EasyVKSession {
 		}
 
 
-		// Use session data with methods
+		//Use session data with methods
 		for (let prop in self.session) {
 			
 			Object.defineProperty(self, prop, {
@@ -48,7 +48,7 @@ class EasyVKSession {
 	}
 
 	/*
-	 *  This method saves your session to the file
+	 *  This method saved your session in file
 	 *  
 	 *  @return {Promise}
 	 *
@@ -63,7 +63,7 @@ class EasyVKSession {
 			let s;	
 
 			if (!(self.path)) {
-				return reject(new Error('You need to set the path for the session file!'));
+				return reject(new Error('You need set path for session file!'));
 			}
 
 			s = JSON.stringify(self);
@@ -88,7 +88,7 @@ class EasyVKSession {
 
 
 	/*
-	 *  This function saves your session and cleans it, making it empty
+	 *  This function saves your session and cleaning it, make this empty
 	 *  @returns Promise
 	 *  
 	 */
@@ -117,7 +117,7 @@ class EasyVKSession {
 	}
 
 	/*
-	 *  This function sets up your session path, you can change session path
+	 *  This function set up your path session, ou can change sesson path
 	 *	
 	 *  @param {String} path is absolute path for you file
 	 *  @return {Promise}
@@ -143,7 +143,7 @@ class EasyVKSession {
 				});
 
 
-				// Update for easyvk functions (latest releases!)
+				//Update for easyvk functions, for latest releases
 				self.vk.params.session_file = path;
 
 				return resolve({

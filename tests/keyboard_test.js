@@ -1,5 +1,5 @@
-/*
- *  Don't forget to require easyvk in your code: require('easyvk')
+/**
+ *  In your code you need require easyvk so: require('easyvk')
  */
 
 const path = require('path')
@@ -14,14 +14,15 @@ const currentSessionFile = path.join(__dirname, '.vksession')
 
 /**
  *
- *  This test runs your own bot with keyboard support
- *  To run it you need to enable LongPoll in your group and then get an access_token
- *  After this, put your access_token in the {acess_token} parameter
- *  And then run it. Send a message to your bot and he will reply to it with a keyboard interface!
+ *  This test run your own bot for group with keyboard support
+ *  For run it you need enable LongPoll in your group and then get access_token
+ *  After this, put your access_token in {acess_token} parameter
+ *  And then run it. Send messge to your bot, he will reply on it ith keyboard interface!
  *
  */
 
 function longPollDebugger({type, data}) {
+	//Debug all steps on the poll step
 	console.log(`[typeLog ${type}]`, data);
 }
 
@@ -30,7 +31,7 @@ easyVK({
 	save_session: false,
 	session_file: currentSessionFile,
 
-	//Access token that you need to get from your group settings
+	//Access token whcch you need get from your group settings
 	access_token: '{GROUP_ACCESS_TOKEN}',
 	reauth: true
 }).then(vk => {
@@ -38,7 +39,7 @@ easyVK({
 
 	const session = vk.session
 	
-	console.info(`Running a LongPoll server.... \nwith group named ("${session.group_name}")`)
+	console.info(`Running a LongPoll server.... \nwith group named as ("${session.group_name}")`)
 
 	//LongPoll for Bots
 	const LPB = vk.bots.longpoll
@@ -48,7 +49,7 @@ easyVK({
 			group_id: session.group_id //Group id, getting from session auth
 		},
 		forLongPollServer: {
-			wait: 10 //Need to wait 10 seconds for one poll
+			wait: 10 //Need wait for one poll 10 seconds
 		}
 	})
 
@@ -58,7 +59,7 @@ easyVK({
 
 
 	//Keyboard objet for user interface
-	//For this to work you need to enable LongPoll version >= 5.80 in group settings
+	//For work it you need enable LongPoll version >= 5.80 in group settings
 	const keyboardObject = {
 		one_time: false,
 		buttons: [
@@ -92,7 +93,7 @@ easyVK({
 			user_id: msgEvent.user_id,
 			message: ( (payload) ? "Button started" : 'Reply it'),
 			keyboard: keyboardObject
-		}), "post"); //Only POST requests recommended
+		}), "post"); //Only post requests recommend
 	}
 
 
@@ -100,21 +101,21 @@ easyVK({
 
 	/*
 	 *
-	 * In the next release these listeners will be put together to a main listener
-	 * And a debugger listener
+	 * In the next release this listeners will be one listener
+	 * And one-debugger will too
 	 *
 	 */
 
 	connection.on('error', console.error)
 	connection.on('failure', console.error)
 
-	//LongPoll needs auto-reconnect to support one connection without restarting the program
-	//So I added this feature and if an error occurs on reconection step you will catch it here
+	//LongPoll needs auto-reconnect for support one connection without stopping program
+	//Sure i am added this featture and if error uccurs on recconect step you will catch it by this method
 	connection.on('reconnectError', console.error)
 
 	return true
 
 }).catch(console.error)
 
-//Handler for all rejections and errors
+//Handle all rejects and errors
 process.on('unhandledRejection', console.error)
