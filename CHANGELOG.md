@@ -23,9 +23,9 @@ VK.login({
     return VK.call('messages.send', {
         user_id: me,
         message: 'Hello!'
-    });
+    })
 
-}).catch(console.error);
+}).catch(console.error)
 
 ```
 
@@ -38,13 +38,11 @@ const easyvk = require('easyvk')
 easyvk({ //Login here
     access_token: '{TOKEN_HERE}'
 }).then((vk) => {
-    
     return vk.call('messages.send', {
         user_id: vk.session.user_id,
         message: 'Hello!'
-    });
-
-}).catch(console.error);
+    })
+}).catch(console.error)
 
 
 ```
