@@ -99,7 +99,7 @@ class AudioAPI {
 				for (let i = 0; i < json.list.length; i++) {					
 					let audio = json.list[i];
 
-					audios.push(self._getAudioNormal(audio));
+					audios.push(self._getAudioAsObject(audio));
 
 				}
 
@@ -171,8 +171,10 @@ class AudioAPI {
 
 				let audios = json;
 
+
+
 				for (let i = 0; i < audios.length; i++) {
-					audios[i] = self._getAudioNormal(audios[i]);
+					audios[i] = self._getAudioAsObject(audios[i]);
 				}
 
 				return resolve({
@@ -272,14 +274,15 @@ class AudioAPI {
 
 	upload() {
 		let self = this;
-
+		let args = arguments;
 
 		return new Promise((resolve, reject) => {
 
-			self._vk.uploader.uploadFile(arguments[0], arguments[1], 'file', {
+
+			self._vk.uploader.uploadFile(args[0], args[1], 'file', {
 				custom: true
 			}).then(({vkr}) => {
-				
+
 				let matches = vkr.match(/parent\.\((.*)\)\;/);
 				let audio = matches[1].replace(/^'{/, "{").replace(/}'/, "}").replace(/\\/g, "");
 				
@@ -311,6 +314,7 @@ class AudioAPI {
 
 		return new Promise((resolve, reject) => {
 
+			console.log(data)
 			data.act = 'done_add';
 			data.al = 1;
 
@@ -335,15 +339,11 @@ class AudioAPI {
 					return reject(new Error('Not founded sounds, may be algorythm changed or just user blocked access for you'));
 				}
 
+				let f = self._getAudioAsObject(json)
 
-				resolve({
-					vk: self._vk,
-					vkr: VKResponse(staticMethods, {
-						response: self._getAudioNormal(json) 
-					}),
+				return self._responseIsAudioOrPromise(f, resolve, {
 					json: json
 				});
-
 			});
 
 		});
@@ -380,7 +380,6 @@ class AudioAPI {
 
 				let json = res.body.match(/<!json>(.*?)<!>/);
 				
-				require('fs').writeFileSync('log.txt', json[0]);
 
 				if (res.body.match(/<\!bool><\!>/)) {
 					return reject(new Error('Blocked access for you'));
@@ -400,20 +399,52 @@ class AudioAPI {
 				let audios_ = json.playlists[0].list;
 
 				let audios = [];
-
+				let audioWithoutURL = [];
+				
 				for (let i = 0; i < audios_.length; i++) {					
 					let audio = audios_[i];
-					audios.push(self._getAudioNormal(audio));
+					if (audio[2]) {
+						audios.push(self._getAudioAsObject(audio));
+					} else {
+						
+						let adi = self._getAdi(audio);
+
+						audioWithoutURL.push(adi.join('_'));
+					}
 
 				}
 
-				resolve({
-					vk: self._vk,
-					json: json,
-					vkr: VKResponse(staticMethods, {
-						response: audios
-					})
-				});
+				function nextAudios () {
+
+					let _audioWithoutURL = audioWithoutURL.splice(0, 10);
+
+					self.getById({
+						ids: _audioWithoutURL.join(',')
+					}).then(({json: _audios}) => {
+						
+						for (let i =0; i < _audios.length; i++) {
+							audios.push(self._getAudioAsObject(_audios[i]));
+						}
+
+						if (audioWithoutURL.length) {
+							setTimeout(nextAudios, 300);
+						} else {
+							resolve({
+								vk: self._vk,
+								json: json,
+								vkr: VKResponse(staticMethods, {
+									response: audios
+								})
+							});
+						}
+						
+					}).catch(() => {
+						console.log('Something error occured... I don\'t know what is this. (/src/utils/http.js:search[method])');
+					});
+				}
+
+				nextAudios();
+
 
 			});
 
@@ -421,15 +452,49 @@ class AudioAPI {
 
 	}
 
+	_getAdi (audio) {
+		let adi = [audio[1], audio[0]];
+		let e = audio[13].split('/');
 
-	_getAudioNormal (audio = []) {
+		let addHash = e[0]||"", 
+			editHash = e[1]||"", 
+			actionHash = e[2]||"", 
+			deleteHash = e[3]||"", 
+			replaceHash = e[4]||"";
+
+		if (actionHash) adi[2] = actionHash;
+
+		return adi;
+
+	}
+	
+	_getAudioAsObject (audio = []) {
 		
 		let self = this;
+
+		let source = self._http.__UnmuskTokenAudio(audio[2], self._vk.session.user_id);
+		
+		if (!source || source.length == 0) {
+			//need get reloaded audio
+			async function getAudioWithURL() {
+				return (await (
+					self.getById({
+						ids: self._getAdi(audio).join('_')
+					}).then(({json}) => {
+						return self._getAudioAsObject(json[0]);
+					}).catch(() => {
+						return null;
+					})
+				));
+			}
+
+			return getAudioWithURL();
+		}
 
 		let audio_ = {
 			id: audio[0],
 			owner_id: audio[1],
-			source: self._http.__UnmuskTokenAudio(audio[2], self._vk.session.user_id),
+			source: source,
 			title: audio[3],
 			artist: audio[4],
 			duration: audio[5],
@@ -441,6 +506,27 @@ class AudioAPI {
 		}
 
 		return audio_;
+
+	}
+
+	_responseIsAudioOrPromise (f, resolve, params = {}) {
+		let self = this;
+
+		params.vk = self._vk;
+
+		if (staticMethods.isObject(f)) {
+			params.vkr = VKResponse(staticMethods, {
+				response: f 
+			});
+			resolve(params);
+		} else {
+			f.then((audio) => {
+				params.vkr = VKResponse(staticMethods, {
+					response: audio
+				});
+				resolve(params);
+			});
+		}
 
 	}
 }

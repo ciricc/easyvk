@@ -27,7 +27,7 @@ class EasyVKUploader {
 		return new Promise((resolve, reject) => {
 			
 			if (!url || !staticMethods.isString(url)) {
-				return reject(self._vk.error("is_not_string", {
+				return reject(self._vk._error("is_not_string", {
 					parameter: "url",
 					method: "uploadFile",
 					format: "http(s)://www.domain.example.com/path?request=get"
@@ -35,7 +35,7 @@ class EasyVKUploader {
 			}
 
 			if (!filePath || !staticMethods.isString(filePath)) {
-				return reject(self._vk.error("is_not_string", {
+				return reject(self._vk._error("is_not_string", {
 					parameter: "filePath",
 					method: "uploadFile",
 					format: __dirname + '/../example/path'
@@ -46,7 +46,7 @@ class EasyVKUploader {
 			if (fieldName) {
 				
 				if (!staticMethods.isString(fieldName)) {
-					return reject(self._vk.error("is_not_string", {
+					return reject(self._vk._error("is_not_string", {
 						parameter: "fieldName",
 						method: "uploadFile",
 						required: false
@@ -77,13 +77,16 @@ class EasyVKUploader {
 			stream.on("open", () => {
 				data[fieldName] = stream;
 				
+				let _data = {};
+				_data[fieldName] = stream;
+
 				request.post({
-					uri: url,
-					formData: data,
+					url: url,
+					formData: _data,
 				}, (err, response) => {
-					
+
 					if (err) {
-						return reject(self._vk.error("server_error", {
+						return reject(self._vk._error("server_error", {
 							error: err
 						}));
 					}
@@ -93,23 +96,33 @@ class EasyVKUploader {
 					let vkr = response.body;
 
 					if (vkr) {
-						let json = staticMethods.checkJSONErrors(vkr);
-						
-						if (json) {
+
+						if (data.custom) {
 							
 							return resolve({
-								vkr: json,
+								vkr: vkr,
 								vk: self._vk
 							});
 
 						} else {
-							return reject(self._vk.error("invalid_response", {
-								response: response
-							}));
+							let json = staticMethods.checkJSONErrors(vkr, reject);
+							
+							if (json) {
+								
+								return resolve({
+									vkr: json,
+									vk: self._vk
+								});
+
+							} else {
+								return reject(self._vk._error("invalid_response", {
+									response: response
+								}));
+							}
 						}
 
 					} else {
-						return reject(self._vk.error("empty_response", {
+						return reject(self._vk._error("empty_response", {
 							response: response
 						}));
 					}
@@ -126,7 +139,7 @@ class EasyVKUploader {
 		return new Promise((resolve, reject) => {
 			
 			if (!staticMethods.isObject(params)) {
-				return reject(self._vk.error("is_not_object", {
+				return reject(self._vk._error("is_not_object", {
 					parameter: "params",
 					method: "getUploadURL",
 				}));
@@ -150,7 +163,7 @@ class EasyVKUploader {
 					}
 						
 				} else {
-					return reject(self._vk.error("upload_url_error", {
+					return reject(self._vk._error("upload_url_error", {
 						response: vkr
 					}));
 				}

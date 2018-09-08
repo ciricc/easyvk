@@ -57,6 +57,8 @@ let VKResponseReturner = function(staticMethods, dataResponse_) {
 					});
 
 				}
+			} else {
+				super(res);
 			}
 
 			return this;
