@@ -1,5 +1,6 @@
-/**
- *  In your code you need require easyvk so: require('easyvk')
+
+/*
+ *  Don't forget to require easyvk in your code: require('easyvk')
  */
 
 const path = require('path')
@@ -17,7 +18,7 @@ easyVK.callbackAPI.listen({
 			groupId: '{GROUP_ID_EXAMPLE_1}',
 			secret: '{YOUR_GROUP_SECRET_PASSWORD}',
 			confirmCode: '{YOUR_GROUP_CONFIRMATION_CODE}' 
-			//If it need, in next release it will be take from groups.getCallbackConfirmationCode method
+			//If needed, in next release I will add a groups.getCallbackConfirmationCode method
 		},
 
 		// {}, {}, .... , {}, 
@@ -28,9 +29,9 @@ easyVK.callbackAPI.listen({
 }).then(({connection, web}) => {
 
 	
-	//web.app, web.server - variables of server, express
+	//web.app, web.server - variables for a server, express
 
-	console.log(`Run a server on 127.0.0.1:${serverPort}`)
+	console.log(`Starting a server on 127.0.0.1:${serverPort}`)
 
 	const errorEvents = [
 		'secretError',
@@ -52,13 +53,13 @@ easyVK.callbackAPI.listen({
 
 	/**
 	 *
-	 *   If you authenticated by easyVK() function, then you cn call to methods by .call() method
-	 *   But if is not, then you need use staticMethods for do this
+	 *   If you authenticated by `easyVK()` function, then you can call to VK API methods by `.call()`
+	 *   If not, you need to use staticMethods to do this
 	 *   
 	 *   easyVK.staticMethods.call('messages.send', {
 	 *  	access_token: '{YOUR_ACCESS_TOKEN}'
 	 *   }).then(() => {
-     *
+     	 *
 	 *   })
 	 *
 	 */
@@ -66,5 +67,5 @@ easyVK.callbackAPI.listen({
 }).catch(console.error)
 
 
-//Handle all rejects and errors
+//Handler for all rejections and errors
 process.on('unhandledRejection', console.error)

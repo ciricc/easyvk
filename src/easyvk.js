@@ -3,7 +3,7 @@ const encoding = require("encoding");
 const fs = require("fs");
 const http = require("http");
 
-//Modules
+// Modules
 const staticMethods = require("./utils/staticMethods.js");
 const easyVKUploader = require("./utils/uploader.js");
 const easyVKLongPoll = require("./utils/longpoll.js");
@@ -19,8 +19,8 @@ const easyVKErrors = require("./utils/easyvkErrors.js");
 
 
 /**
- *  EasyVK module. In this module creates session by your params
- *  And then you will get a EasyVK object (Session creates in the easyvkInit.js file)
+ *  EasyVK module. Create vk sessions with your own params.
+ *  Returns an EasyVK object (Session is created in the easyvkInit.js file)
  *  Author: @ciricc
  *  License: MIT
  *  
@@ -29,7 +29,7 @@ const easyVKErrors = require("./utils/easyvkErrors.js");
 
 class EasyVK {
 
-	//Here will be created session
+	// Session is starting here
 	constructor (params, resolve, reject, debuggerRun) {
 		
 		let session = {}, 
@@ -80,13 +80,13 @@ class EasyVK {
 			}
 		}
 
-		if (!session.access_token) { //If session file contents access_token, try auth with it
+		if (!session.access_token) { // If you have an access_token, use it to auth
 			if (params.access_token) {
 				session.access_token = params.access_token;
 				initToken();
 			} else if (params.username) {
 				
-				//Try get access_token with auth
+				// If you don't have one, auth with your username and password
 				let getData = {
 					username: params.username,
 					password: params.password,
@@ -115,7 +115,7 @@ class EasyVK {
 					try {
 						self.debuggerRun.push("request", configuration.BASE_OAUTH_URL + "token/?" + getData);
 					} catch (e) {
-						//Ignore
+						// Ignore
 					}
 				}
 
@@ -133,12 +133,11 @@ class EasyVK {
 						try {
 							self.debuggerRun.push("response", vkr);
 						} catch (e) {
-							//Ignore
+							// Ignore
 						}
 					}
 
 					if (vkr) {
-						console.log(vkr);
 						let json = staticMethods.checkJSONErrors(vkr, reject);						
 						
 						if (json) {
@@ -184,19 +183,22 @@ class EasyVK {
 						try {
 							self.debuggerRun.push("response", vkr);
 						} catch (e) {
-							//Ignore
+							// Ignore
 						}
 					}
 
 					if (vkr) {
+
 						let json = staticMethods.checkJSONErrors(vkr, reject);
+
 						if (json) {
-							if (Array.isArray(json) && json.length === 0) {
+							
+							if (Array.isArray(json.response) && json.response.length === 0) {
 								groupToken();
 							} else {
-								session.user_id = json[0].id;
-								session.first_name = json[0].first_name;
-								session.last_name = json[0].last_name;
+								session.user_id = json.response[0].id;
+								session.first_name = json.response[0].first_name;
+								session.last_name = json.response[0].last_name;
 								self.session = session;
 								initResolve(self);
 							}
@@ -235,7 +237,7 @@ class EasyVK {
 				try {
 					self.debuggerRun.push("request", configuration.BASE_CALL_URL + "groups.getById?" + getData);
 				} catch (e) {
-					//Ignore
+					// Ignore
 				}
 			}
 
@@ -251,7 +253,7 @@ class EasyVK {
 					try {
 						self.debuggerRun.push("response", vkr);
 					} catch (e) {
-						//Ignore
+						// Ignore
 					}
 				}
 				
@@ -261,14 +263,12 @@ class EasyVK {
 
 					if (json) {
 						
-
-						if (Array.isArray(json) && json.length === 0) {
+						if (Array.isArray(json.response) && json.response.length === 0) {
 							reject(self._error("access_token_not_valid"));
 						} else {
-							session.group_id = json[0].id,
-							session.group_name = json[0].name;
-							session.group_screen =  json[0].screen_name;
-
+							session.group_id = json.response[0].id,
+							session.group_name = json.response[0].name;
+							session.group_screen =  json.response[0].screen_name;
 							self.session = session;
 							initResolve(self);
 						}
@@ -312,11 +312,11 @@ class EasyVK {
 			self.bots = {};
 			self.bots.longpoll = new easyVKBotsLongPoll(self);
 
-			//http module for http requests from cookies and jar session
+			// HTTP module for requests (cookies and jar)
 			self.http = new easyVKHttp(self);
 
 			
-			//Re init all cases
+			// Re init all cases
 			self.session = new easyVKSession(self, self.session);
 
 			Object.defineProperty(self, 'helpers', {
@@ -337,21 +337,22 @@ class EasyVK {
 
 	/**
 	 *	
-	 *	Function for calling to methods and get anything form VKontakte API
+	 *      The main call function, call anything you can imagine!
+	 *      Ok, actually only VKontakte API methods.
 	 *	See more: https://vk.com/dev/methods
 	 *
-	 *	@param {String} methodName - Is just a method name which you need to call and get data,
-	 *  for example: "messages.send", "users.get"
+	 *	@param {String} methodName - The name speaks for itself
+	 *  	Examples: "messages.send" or "users.get"
 	 *	@param {Object} [data={}] - Is data object for query params, it will be serialized from object to uri string. 
-	 *  If vk.com asks a parameters, you can send they. 
-	 *  (Send access_token to this from session is not necessary, but also you can do this)
-	 *	@param {String} [methodType=get] - Is type for query, ["post", "delete", "get", "put"]
+	 *  	Any parameters vk.com asks is provided here.
+	 *  	(You can send your access_token here)
+	 *	@param {String} [methodType=get] - Query type, available types: ["post", "delete", "get", "put"]
 	 *	
 	 *  @return {Promise}
-	 *  @promise Call to a method, send request for VKontakte API
-	 *  @resolve {Object} - Standard object like {vk: EasyVK, vkr: Response}
+	 *  @promise Calls to the method (sends a request to VKontakte API)
+	 *  @resolve {Object} - Returns an object of this structure {vk: EasyVK, vkr: Response}
 	 *  @reject {Error} - vk.com error response or request module error
-     *
+     	 *
 	 */
 
 	async call(methodName, data = {}, methodType="get") {
@@ -406,7 +407,7 @@ class EasyVK {
 							}
 
 
-							//Captcha error, handle it
+							// Captcha error, handle it (please)
 							const captcha_sid = vkr.error.captcha_sid || vkr.captcha_sid;
 							const captcha_img = vkr.error.captcha_img || vkr.captcha_img;
 							let paramsForHandler = {captcha_sid, captcha_img, vk: self};
@@ -418,7 +419,7 @@ class EasyVK {
 									
 									try {
 										let reCalled = reCall('NEED SOLVE', resolvedCaptcha, rejectCaptcha);
-									} catch (errorRecall) {/*Need pass it*/}
+									} catch (errorRecall) {/* We need to solve it */}
 
 								});
 							}
@@ -445,7 +446,7 @@ class EasyVK {
 	
 	/**
 	 *  
-	 *  This function saves your session chnages to a params.sessionf_file file
+	 *  This function saves your session to the params.sessionf_file file
 	 * 	
 	 *  @deprecated
 	 *  @return EasyVK
@@ -464,7 +465,7 @@ class EasyVK {
 	}
 
 
-	//Ony for mer
+	// Only for me (yeah, no documentation for you)
 	_error(...args) {
 		let self = this;
 		return self._errors.error(...args);

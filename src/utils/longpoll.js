@@ -80,7 +80,7 @@ class LongPollConnection extends EventEmitter {
 						try {
 							self._vk.debugger.push("response", res.body);
 						} catch (e) {
-							//Ignore
+							// Ignore
 						}
 					}
 					
@@ -94,10 +94,10 @@ class LongPollConnection extends EventEmitter {
 					});
 
 					if (vkr) {
-						//Ok
+						// Ok
 						if (vkr.failed) {
 							
-							if (vkr.failed === 1) { //update ts
+							if (vkr.failed === 1) { // update ts
 								
 								if (vkr.ts) {
 									self.config.longpollTs = vkr.ts;
@@ -105,15 +105,15 @@ class LongPollConnection extends EventEmitter {
 
 								init();
 
-							} else if ([2,3].indexOf(vkr.failed) != -1) { //need reconnect
+							} else if ([2,3].indexOf(vkr.failed) != -1) { // reconnect needed
 								
 								self._vk.call("messages.getLongPollServer", self.config.userConfig.forGetLongPollServer).then(({vkr}) => {
 									
-									self.config.longpollServer = vkr.server;
-									self.config.longpollTs = vkr.ts;
-									self.config.longpollKey =  vkr.key;
+									self.config.longpollServer = vkr.response.server;
+									self.config.longpollTs = vkr.response.ts;
+									self.config.longpollKey =  vkr.response.key;
 
-									init(); //reconnect with new parameters
+									init(); // reconnecting with new parameters
 
 								}).catch((err) => {
 									
@@ -181,15 +181,15 @@ class LongPollConnection extends EventEmitter {
 			}
 
 		} else {
-			return "Is not array!";
+			return "Not an array!";
 		}
 
 	}
 
 	/**
 	 *
-	 *	If my SDK not support certain event it doesn't mean that my SDK not support it :D
-	 *	You can add yours listeners with this function.
+	 *	If my SDK doesn't support a certain event it doesn't mean that my SDK doesn't support it :D
+	 *	You can add your listeners with this function.
 	 *	
 	 *	Docs: vk.com/dev/using_longpoll
 	 *
@@ -199,7 +199,7 @@ class LongPollConnection extends EventEmitter {
 	 */
 
 
-	async addEventCodeListener (eventCode, handler) { //Only for create new event listeneres (if there are not in default listeners, you can get a code and add it!)
+	async addEventCodeListener (eventCode, handler) { // Only for creating new event listeneres (you can get the code and add one!)
 		let self = this;
 
 		return new Promise((resolve, reject) => {
@@ -207,7 +207,7 @@ class LongPollConnection extends EventEmitter {
 			if (isNaN(eventCode)) {
 				return reject(new Error("eventCode must be numeric"));
 			} else if (Object.prototype.toString.call(handler) !== "[object Function]") {
-				return reject(new Error("callback function must be function"));
+				return reject(new Error("callback function must be function (obviously)"));
 			} else {
 				
 				eventCode = eventCode.toString();
@@ -218,7 +218,7 @@ class LongPollConnection extends EventEmitter {
 					self.userListeners[eventCode] = handler;
 
 				} else {
-					return reject(new Error("This eventCode already have"));
+					return reject(new Error("This eventCode is already handled"));
 				}
 
 			}
@@ -264,7 +264,7 @@ class LongPollConnection extends EventEmitter {
 class LongPollConnector {
 
 	constructor (vk) {
-		let self = this; //For the future
+		let self = this; // For the future
 		self._vk = vk;
 	}
 
@@ -273,7 +273,7 @@ class LongPollConnector {
 
 		return new Promise ((resolve, reject) => {
 			if (!staticMethods.isObject(params)) {
-				return reject(new Error("LongPoll parameters mast be an object!"));
+				return reject(new Error("LongPoll parameters must be an object!"));
 			} else {
 				
 				if (params.forGetLongPollServer) {
@@ -311,9 +311,9 @@ class LongPollConnector {
 				.then(({vkr}) => {
 					
 					let forLongPoll = {
-						longpollServer: vkr.server,
-						longpollTs: vkr.ts,
-						longpollKey: vkr.key,
+						longpollServer: vkr.response.server,
+						longpollTs: vkr.response.ts,
+						longpollKey: vkr.response.key,
 						responseGetServer: vkr,
 						userConfig: params
 					};

@@ -1,5 +1,5 @@
-/**
- *  In your code you need require easyvk so: require('easyvk')
+/*
+ *  Don't forget to require easyvk in your code: require('easyvk')
  */
 
 const path = require('path')
@@ -14,15 +14,14 @@ const currentSessionFile = path.join(__dirname, '.vksession')
 
 /**
  *
- *  This test run your own bot for group
- *  For run it you need enable LongPoll in your group and then get access_token
- *  After this, put your access_token in {acess_token} parameter
- *  And then run it. Send messgeto your bot, he will reply on it!
+ *  This test runs your own bot for a group
+ *  To run it you need to enable LongPoll in your group and then get an access_token
+ *  After this, put your access_token in the {acess_token} parameter
+ *  And then run it. Send a message to your bot and he will reply to it!
  *
  */
 
 function longPollDebugger({type, data}) {
-	//Debug all steps on the poll step
 	console.log(`[typeLog ${type}]`, data);
 }
 
@@ -31,8 +30,8 @@ easyVK({
 	save_session: false,
 	session_file: currentSessionFile,
 
-	//Access token whcch you need get from your group settings
-	access_token: '{TOKEN_FIELD}',
+	//Access token that you need to get from your group settings
+	access_token: '{TOKEN_HERE}',
 }).then(vk => {
 
 
@@ -48,7 +47,7 @@ easyVK({
 			group_id: session.group_id //Group id, getting from session auth
 		},
 		forLongPollServer: {
-			wait: 10 //Need wait for one poll 10 seconds
+			wait: 10 //Need wait 10 seconds for one poll
 		}
 	})
 
@@ -70,16 +69,16 @@ easyVK({
 
 	/*
 	 *
-	 * In the next release this listeners will be one listener
-	 * And one-debugger will too
+	 * In the next release these listeners will be put together to a main listener
+	 * And a debugger listener
 	 *
 	 */
 
 	connection.on('error', console.error)
 	connection.on('failure', console.error)
 
-	//LongPoll needs auto-reconnect for support one connection without stopping program
-	//Sure i am added this featture and if error uccurs on recconect step you will catch it by this method
+	//LongPoll needs auto-reconnect to support one connection without restarting the program
+	//So I added this feature and if an error occurs on reconection step you will catch it here
 	connection.on('reconnectError', console.error)
 
 
@@ -87,7 +86,7 @@ easyVK({
 	const LPU = vk.longpoll
 
 
-	//Connect to user longpoll for create group bot :D
+	//Connecting to the user longpoll to create a group bot :D
 	return LPU.connect({
 	    forGetLongPollServer: {
 	        lp_version: "2",
@@ -122,14 +121,14 @@ easyVK({
 
 			/*
 			 *
-			 *  It will be work if you really puted a group token not user token which admins this group
-			 *  If you put this token, it will be sended
+			 *  It would work if you put a group token not a user (group admin) token
+			 *  If you put a group token, it will send a message
 			 *
 			 */
 
 			const sendMessage = vk.call('messages.send', { 
 				user_id: msg.user_id,
-				message: 'Reply it from User LongPoll system'
+				message: 'Reply it from User LongPoll system o/'
 			})
 
 			await sendMessage
@@ -143,7 +142,7 @@ easyVK({
 
 
 
-	//Handler errors
+	//Error handlers
 	userLongPollConnection.on('failure', console.error)
 	userLongPollConnection.on('error', console.error)
 	userLongPollConnection.on('reconnectError', console.error)
@@ -151,7 +150,7 @@ easyVK({
 
 }).catch(console.error)
 
-//Handle all rejects and errors
+//Handler for all rejections and errors
 process.on('unhandledRejection', console.error)
 
 

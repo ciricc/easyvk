@@ -1,8 +1,7 @@
 
 
 /**
- *   In this file are widgets for EasyVK
- *   You can use it
+ *   This file contains widgets for EasyVK
  *
  *   Author: @ciricc
  *   License: MIT
@@ -20,7 +19,7 @@ const encoding = require("encoding");
 
 class Widgets {
     
-    //For call to methods an others, standard procedure
+    // Standard procedure, you know :D
 	constructor (vk) {
 		let self = this;
 		self._vk = vk;
@@ -35,7 +34,7 @@ class Widgets {
 				return reject(self._vk.error('is_not_string', {
 					parameter: 'video_source_id',
 					method: 'widgets.getLiveViews',
-					format: 'need format like -2222_22222 (from url)'
+					format: 'format is like -2222_22222 (from url)'
 				}));
 
 			} 
@@ -63,7 +62,7 @@ class Widgets {
 				'video': video_source_id
 			}
 
-			//Get specify hash for get permissions to watch
+			// Getting the hash to get the permission to watch
 			queryParams = {
 				url: alVideoUrl,
 				headers: headers,
@@ -84,12 +83,12 @@ class Widgets {
 					try {
 						self._vk.debugger.push("response", res.body);
 					} catch (e) {
-						//ignore
+						// Ignore
 					}
 				}
 
 
-				//Parsing hash from response body {"action_hash" : "hash"}
+				// Parsing hash from response body {"action_hash" : "hash"}
 				let matCH = res.body.match(/(\"|\')action_hash(\"|\')(\s)?\:(\s)?(\'|\")(.*?)(\'|\")/i);
 				if (matCH) {
 					
@@ -100,11 +99,11 @@ class Widgets {
 					getVideoViewsQueryParams = {
 						url:  `${alVideoUrl}?act=live_heartbeat`,
 						body: `al=1&hash=${hash}&oid=${oid}&user_id=0&vid=${vid}`,
-						encoding: "binary", //Special
+						encoding: "binary", // Special
 						headers: headers,
 					}
 
-					//Here is magic
+					// Here is magic (Translator note: Yeah, actual magic here guys)
 					request.post(getVideoViewsQueryParams, (err, res) => {
 						
 						if (err) {

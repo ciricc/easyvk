@@ -1,6 +1,5 @@
 /**
  *   In this file are http widgets for EasyVK
- *   You can use it
  *
  *   Author: @ciricc
  *   License: MIT
@@ -14,522 +13,6 @@ const configuration = require("./configuration.js");
 const staticMethods = require("./staticMethods.js");
 const request = require("request");
 const encoding = require("encoding");
-const VKResponse = require("./VKResponse.js");
-
-
-class AudioAPI {
-	constructor (vk, http) {
-		let self = this;
-
-		self._vk = vk;
-		self._http = http;
-		self._authjar = self._http._authjar;
-
-	}
-
-	get (params = {}) {
-		return new Promise((resolve, reject) => {
-			let self = this;
-
-
-			let uid = self._vk.session.user_id,
-				playlist_id = -1, 
-				offset = 0;
-
-			if (params.owner_id) {
-				params.owner_id = Number(params.owner_id);
-			} else if (uid) {
-				params.owner_id = uid;
-			}
-
-			if (params.playlist_id) {
-				params.playlist_id = Number(params.playlist_id);
-				if (!isNaN(params.playlist_id)) playlist_id = params.playlist_id;
-			}
-
-			if (params.offset) {
-				params.offset = Number(params.offset);
-				if (!isNaN(params.offset)) offset = params.offset;
-			}
-
-			if (!params.owner_id) return reject(new Error('User id not defined in your session, use vk.sesion.user_id = X'));
-
-			request.post({
-				jar: self._authjar,
-				url: `${configuration.PROTOCOL}://${configuration.BASE_DOMAIN}/al_audio.php`,
-				form: {
-					act: 'load_section',
-					al: 1,
-					claim: 0,
-					offset: offset,
-					owner_id: params.owner_id,
-					playlist_id: playlist_id,
-					type: 'playlist'
-				},
-				encoding: "binary"
-			}, (err, res, vkr) => {
-
-				res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString();
-
-				if (err) return reject(err);
-
-				if (!res.body.length) {
-					return reject(new Error('No have access on this audio!'));
-				}
-
-				let json = res.body.match(/<!json>(.*?)<!>/);
-				
-
-				if (res.body.match(/<\!bool><\!>/)) {
-					return reject(new Error('Blocked access for you'));
-				}
-
-				if (!json) {
-					return reject(new Error('Not founded audios, maybe algorythm changed'));
-				}
-
-				try {
-					json = JSON.parse(json[1]);
-				} catch (e) {
-					return reject(new Error('Not founded sounds, may be algorythm changed or just user blocked access for you'));
-				}
-
-				let audios = [];
-
-				for (let i = 0; i < json.list.length; i++) {					
-					let audio = json.list[i];
-
-					audios.push(self._getAudioAsObject(audio));
-
-				}
-
-
-				if (!params.needAll) {
-					json.list = undefined;
-				}
-
-				resolve({
-					vk: self._vk,
-					json: json,
-					vkr: VKResponse(staticMethods, {
-						response: audios
-					})
-				});
-
-			});
-		})
-	}
-
-	getCount (params = {}) {
-		
-		let self = this;
-
-		return new Promise((resolve, reject) => {
-			self.get({
-				owner_id: params.owner_id
-			}).then(({json}) => {
-				
-				return resolve({
-					vk: self._vk,
-					vkr: VKResponse(staticMethods, {
-						response: json.totalCount
-					})
-				});
-
-			}, reject);
-		});
-
-	}
-
-	getById (params = {}) {
-		let self = this;
-
-		return new Promise((resolve, reject) => {
-
-			request.post({
-				jar: self._authjar,
-				url: `${configuration.PROTOCOL}://${configuration.BASE_DOMAIN}/al_audio.php`,
-				form: {
-					act: 'reload_audio',
-					al: 1,
-					ids: params.ids
-				},
-				encoding: "binary"
-			}, (err, res, vkr) => {
-
-				res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString();
-
-				if (err) return reject(err);
-
-				let json = res.body.match(/<!json>(.*?)<!>/);
-
-				try {
-					json = JSON.parse(json[1]);
-				} catch (e) {
-					return reject(new Error('Not founded sounds, may be algorythm changed or just user blocked access for you'));
-				}
-
-				let audios = json;
-
-
-
-				for (let i = 0; i < audios.length; i++) {
-					audios[i] = self._getAudioAsObject(audios[i]);
-				}
-
-				return resolve({
-					vkr: VKResponse(staticMethods, {
-						response: audios
-					}),
-					vk: self._vk,
-					json: JSON.parse(res.body.match(/<!json>(.*?)<!>/)[1])
-				});
-
-			});
-
-		});
-
-	}
-
-	getLyrics (params = {}) {
-		let self = this;
-	
-
-		return new Promise((resolve, reject) => {
-			request.post({
-				jar: self._authjar,
-				url: `${configuration.PROTOCOL}://${configuration.BASE_DOMAIN}/al_audio.php`,
-				form: {
-					act: 'get_lyrics',
-					al: 1,
-					lid: params.lyrics_id
-				},
-				encoding: "binary"
-			}, (err, res, vkr) => {
-
-				res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString();
-				
-				if (err) return reject(err);
-						
-				let text = res.body;
-				text = text.split('<!>');
-				text = text[text.length - 1];
-
-				return resolve({
-					vkr: VKResponse(staticMethods, {
-						response: {
-							text: text
-						}
-					}),
-					vk: self._vk
-				});
-
-			});
-		})
-	}
-
-
-	getUploadServer (params = {}) {
-		let self = this;
-	
-
-		if (!params.group_id) {
-			params.group_id = 0;
-		}
-
-		return new Promise((resolve, reject) => {
-			request.post({
-				jar: self._authjar,
-				url: `${configuration.PROTOCOL}://${configuration.BASE_DOMAIN}/al_audio.php`,
-				form: {
-					act: 'new_audio',
-					al: 1,
-					gid: params.group_id
-				},
-				encoding: "binary"
-			}, (err, res, vkr) => {
-
-				res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString();
-				
-				if (err) return reject(err);
-			
-				let matches = res.body.match(/Upload\.init\((.*)/)[0];
-				matches = String(matches).replace(/Upload\.init\(/, "").split(', ');
-				let url = matches[1].replace(/'|"/g, "");
-				let queryString = JSON.parse(matches[2]);
-				queryString = staticMethods.urlencode(queryString);
-
-				resolve({
-					vk: self._vk,
-					vkr: VKResponse(staticMethods, {
-						response: {
-							upload_url: url + '?' + queryString
-						}
-					})
-				});
-
-			});
-		})
-	}
-
-	upload() {
-		let self = this;
-		let args = arguments;
-
-		return new Promise((resolve, reject) => {
-
-
-			self._vk.uploader.uploadFile(args[0], args[1], 'file', {
-				custom: true
-			}).then(({vkr}) => {
-
-				let matches = vkr.match(/parent\.\((.*)\)\;/);
-				let audio = matches[1].replace(/^'{/, "{").replace(/}'/, "}").replace(/\\/g, "");
-				
-				try {
-					audio = JSON.parse(audio);
-				} catch (e) {
-					return reject(self._vk._error("invalid_response", {
-						where: 'audio.upload',
-						more: e
-					}));
-				}
-				
-				return resolve({
-					vk: self._vk,
-					vkr: VKResponse(staticMethods, {
-						response: audio
-					})
-				});
-
-			});
-
-		});
-
-	}
-
-	save (data = {}) {
-		let self = this;
-
-
-		return new Promise((resolve, reject) => {
-
-			console.log(data)
-			data.act = 'done_add';
-			data.al = 1;
-
-			request.post({
-				jar: self._authjar,
-				url: `${configuration.PROTOCOL}://${configuration.BASE_DOMAIN}/al_audio.php`,
-				form: data,
-				encoding: "binary"
-			}, (err, res, vkr) => {
-
-				res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString();
-				
-				if (err) return reject(err);
-				
-				let matches = vkr.match(/top\.cur\.loadAudioDone\((.*)\)\;/);
-				let audio = matches[1].replace(/^'\[/, "[").replace(/\]'/, "]").replace(/\\/g, "");
-				let json = audio;
-
-				try {
-					json = JSON.parse(json);
-				} catch (e) {
-					return reject(new Error('Not founded sounds, may be algorythm changed or just user blocked access for you'));
-				}
-
-				let f = self._getAudioAsObject(json)
-
-				return self._responseIsAudioOrPromise(f, resolve, {
-					json: json
-				});
-			});
-
-		});
-
-	}
-
-	search (params = {}) {
-		let self = this;
-
-		return new Promise((resolve, reject) => {
-
-			request.post({
-				jar: self._authjar,
-				url: `${configuration.PROTOCOL}://${configuration.BASE_DOMAIN}/al_audio.php`,
-				form: {
-					act: 'section',
-					al: 1,
-					claim: 0,
-					offset: params.offset,
-					owner_id: (params.owner_id || self._vk.session.user_id),
-					q: params.q,
-					section: 'search'
-				},
-				encoding: "binary"
-			}, (err, res, vkr) => {
-
-				res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString();
-
-				if (err) return reject(err);
-
-				if (!res.body.length) {
-					return reject(new Error('No have access on this audio!'));
-				}
-
-				let json = res.body.match(/<!json>(.*?)<!>/);
-				
-
-				if (res.body.match(/<\!bool><\!>/)) {
-					return reject(new Error('Blocked access for you'));
-				}
-
-				if (!json) {
-					return reject(new Error('Not founded audios, maybe algorythm changed'));
-				}
-
-				try {
-					json = JSON.parse(json[1]);
-				} catch (e) {
-					return reject(new Error('Not founded sounds, may be algorythm changed or just user blocked access for you'));
-				}
-
-
-				let audios_ = json.playlists[0].list;
-
-				let audios = [];
-				let audioWithoutURL = [];
-				
-				for (let i = 0; i < audios_.length; i++) {					
-					let audio = audios_[i];
-					if (audio[2]) {
-						audios.push(self._getAudioAsObject(audio));
-					} else {
-						
-						let adi = self._getAdi(audio);
-
-						audioWithoutURL.push(adi.join('_'));
-					}
-
-				}
-
-				function nextAudios () {
-
-					let _audioWithoutURL = audioWithoutURL.splice(0, 10);
-
-					self.getById({
-						ids: _audioWithoutURL.join(',')
-					}).then(({json: _audios}) => {
-						
-						for (let i =0; i < _audios.length; i++) {
-							audios.push(self._getAudioAsObject(_audios[i]));
-						}
-
-						if (audioWithoutURL.length) {
-							setTimeout(nextAudios, 300);
-						} else {
-							resolve({
-								vk: self._vk,
-								json: json,
-								vkr: VKResponse(staticMethods, {
-									response: audios
-								})
-							});
-						}
-						
-					}).catch(() => {
-						console.log('Something error occured... I don\'t know what is this. (/src/utils/http.js:search[method])');
-					});
-				}
-
-				nextAudios();
-
-
-			});
-
-		});
-
-	}
-
-	_getAdi (audio) {
-		let adi = [audio[1], audio[0]];
-		let e = audio[13].split('/');
-
-		let addHash = e[0]||"", 
-			editHash = e[1]||"", 
-			actionHash = e[2]||"", 
-			deleteHash = e[3]||"", 
-			replaceHash = e[4]||"";
-
-		if (actionHash) adi[2] = actionHash;
-
-		return adi;
-
-	}
-	
-	_getAudioAsObject (audio = []) {
-		
-		let self = this;
-
-		let source = self._http.__UnmuskTokenAudio(audio[2], self._vk.session.user_id);
-		
-		if (!source || source.length == 0) {
-			//need get reloaded audio
-			async function getAudioWithURL() {
-				return (await (
-					self.getById({
-						ids: self._getAdi(audio).join('_')
-					}).then(({json}) => {
-						return self._getAudioAsObject(json[0]);
-					}).catch(() => {
-						return null;
-					})
-				));
-			}
-
-			return getAudioWithURL();
-		}
-
-		let audio_ = {
-			id: audio[0],
-			owner_id: audio[1],
-			source: source,
-			title: audio[3],
-			artist: audio[4],
-			duration: audio[5],
-			icon: audio[14]
-		}
-
-		if (audio[19]) {
-			audio_.lyrics_id = audio[19][1];
-		}
-
-		return audio_;
-
-	}
-
-	_responseIsAudioOrPromise (f, resolve, params = {}) {
-		let self = this;
-
-		params.vk = self._vk;
-
-		if (staticMethods.isObject(f)) {
-			params.vkr = VKResponse(staticMethods, {
-				response: f 
-			});
-			resolve(params);
-		} else {
-			f.then((audio) => {
-				params.vkr = VKResponse(staticMethods, {
-					response: audio
-				});
-				resolve(params);
-			});
-		}
-
-	}
-}
 
 class HTTPEasyVKClient {
 
@@ -543,11 +26,9 @@ class HTTPEasyVKClient {
 		};
 
 
-		self.LOGIN_ERROR = 'Need login by form, use .loginByForm() method';
+		self.LOGIN_ERROR = 'Need to login by form, use .loginByForm() method';
 		self._vk = vk;
 		self._authjar = _jar;
-
-		self.audio = new AudioAPI(self._vk, self);
 	}
 
 
@@ -563,7 +44,7 @@ class HTTPEasyVKClient {
 
 			if (isNaN(vk_id)) return reject(new Error('Is not numeric vk_id'));
 
-			//else try get sttories from user
+			// else try to get stories from user
 			if (!self._authjar) return reject(new Error(self.LOGIN_ERROR));
 
 			request.get({
@@ -581,14 +62,14 @@ class HTTPEasyVKClient {
 							
 							if (story_id) {
 									
-								//Only one story
+								// Only one story
 								if (item.raw_id === story_id) {
 									self.__readStory(story.read_hash, item.raw_id, 'profile');
 								}
 
 							} else {
 
-								//All stories
+								// All stories
 								self.__readStory(story.read_hash, item.raw_id, 'profile');
 
 							}
@@ -660,7 +141,7 @@ class HTTPEasyVKClient {
 
 		return new Promise((resolve, reject) => {
 
-			//else try get sttories from user
+			// else tryto  get stories from user
 			if (!self._authjar) return reject(new Error(self.LOGIN_ERROR));
 
 			request.get({
@@ -669,7 +150,7 @@ class HTTPEasyVKClient {
 			}, (err, res, vkr) => {
 				if (err) return reject(new Error(err));
 
-				//parse stories
+				// parse stories
 
 				let stories = self.__getStories(res.body, 'feed');
 				let i = 0;
@@ -719,7 +200,7 @@ class HTTPEasyVKClient {
 				if (!isNaN(params.offset)) offset = params.offset;
 			}
 
-			if (!uid) return reject(new Error('User id not defined in your session, use vk.sesion.user_id = X'));
+			if (!uid) return reject(new Error('User id is not defined in your session, use vk.sesion.user_id = X'));
 
 			request.post({
 				jar: self._authjar,
@@ -741,24 +222,24 @@ class HTTPEasyVKClient {
 				if (err) return reject(err);
 
 				if (!res.body.length) {
-					return reject(new Error('No have access on this audio!'));
+					return reject(new Error('You don\'t have access to this audio!'));
 				}
 
 				let json = res.body.match(/<!json>(.*?)<!>/);
 				
 
 				if (res.body.match(/<\!bool><\!>/)) {
-					return reject(new Error('Blocked access for you'));
+					return reject(new Error('Access is blocked for you'));
 				}
 
 				if (!json) {
-					return reject(new Error('Not founded audios, maybe algorythm changed'));
+					return reject(new Error('No audios found, maybe algorythm changed'));
 				}
 
 				try {
 					json = JSON.parse(json[1]);
 				} catch (e) {
-					return reject(new Error('Not founded sounds, may be algorythm changed or just user blocked access for you'));
+					return reject(new Error('No audios found, maybe algorythm changed or user just blocked access for you'));
 				}
 
 				let audios = [];
@@ -803,8 +284,8 @@ class HTTPEasyVKClient {
 
 	__UnmuskTokenAudio(e, vk_id = 1)
 	{
-		//This code is official algorithm for unmusk audio source
-		//Took from vk.com website, official way, no magic
+		// This code is an official algorithm to unmusk the audio source
+		// 'Stealed' from vk.com website, official way, no magic
 		
 		var n = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN0PQRSTUVWXYZO123456789+/=",
 		    i = {
@@ -901,8 +382,8 @@ class HTTPEasyVK {
 			if (!pass || !login) return reject(new Error('Need authenticate by password and username. This data not saving in session file!'));
 
 			
-			//Make first request, for know url for POST request
-			//parse from m.vk.com page
+			// Make first request, to get the url for POST requests
+			// parse from m.vk.com page
 			let jar = request.jar();
 
 			self._authjar = jar;

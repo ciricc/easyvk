@@ -9,8 +9,8 @@ const currentSessionFile = path.join(__dirname, '.vksession')
 
 
 easyVK({
-	username: '{LOGIN_FIELD}',
-	password: '{PASSWORD_FIELD}',
+	username: '{LOGIN_HERE}',
+	password: '{PASSWORD_HERE}',
 	session_file: currentSessionFile,
 	save_session: true,
 	reauth: true
@@ -20,7 +20,7 @@ easyVK({
 	console.log(vk.session)
 
 
-	//It will be deleted, but you can changed data like so
+	//This will be deleted when a new session starts, but you can changed data like so
 	vk.session.changes = [1,2,3,4]
 
 	vk.session.save()
@@ -28,15 +28,15 @@ easyVK({
 	.then(() => vk.session.setPath(path.join(__dirname, '.vksession2changed')))
 	.then(() => {
 
-		//Changing data, you can do it too
+		//Changing data (you can do it too)
 		vk.session.tokenChanged = []
 
-		return vk.session.save() //then save only this changes
+		return vk.session.save() //Saving only these changes
 	})
 	.then(() => console.log(JSON.stringify(vk.session))) //Object with tokenChanged array
 
 
-	//Test deprecated method
+	//Testing a deprecated method
 	try {
 		vk.saveSession();
 	} catch (err) {
@@ -46,5 +46,5 @@ easyVK({
 }).catch(console.error)
 
 
-//Handle all rejects and errors
+//Handler for all rejections and errors
 process.on('unhandledRejection', console.error)

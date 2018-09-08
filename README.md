@@ -9,8 +9,8 @@
 This library helps you easily create apps with vk api!
 Official VK API: [vk.com/dev/](https://vk.com/dev/)
 
-| [Community](https://vk.com/club162208999) | [Документация на русском](https://ciricc.github.io/) |
-| ------------------------------------------| -------------|
+| [Community](https://vk.com/club162208999) | [Changelog](https://github.com/ciricc/easyvk/tree/master/CHANGELOG.md) | [Документация на русском](https://ciricc.github.io/) |
+| ------------------------------------------| ---------------------------------------------|-------------|
 
 ## Для русскоязычных
 
@@ -85,98 +85,3 @@ easyvk({
 
 
 You can read documentation <a href="https://ciricc.github.io/">here</a>
-
-## Мини-гайд
-
-Тут немного для русскоговорящих мини-гайд, чтобы сразу войти в курс дела.
-
-### LongPoll
-```javascript
-  
-  //bots
-  vk.bots.longpoll.connect({
-    forGetLongPollServer: {
-      grop_id: vk.session.group_id
-    }
-  }).then(({connection, vk: EasyVK}) => {
-    
-    connection.on("message_new", (msg) => {
-      
-      //On message event
-      vk.call("messages.send", {
-        peer_id: msg.from_id,
-        message: "Reply it!"
-      }).catch(console.error);
-
-    });
-
-  });
-
-  //user longpoll
-  vk.longpoll.connect({}).then(({connection}) => {
-    connection.on("message", (event) => {
-      console.log(event);
-    });
-  
-    //changed state of message
-    connection.addEventCodeListener(3, (eventChangeState) => {
-      console.log(eventChangeState);
-    });
-  });
-
-
-```
-
-### Streaming API
-```javascript
-    
-  vk.streamingAPI.connect(({connection: stream}) => {
-      
-      stream.initRules({
-        key1: 'кошка',
-        key2: 'собака -кот'
-      }).then(({log: changes}) => {
-        
-        console.log(changes.changedRules, changes.deletedRules, changes.addedRules);
-
-        stream.on("post", (postEvent) => {
-          console.log("Post info: ", postEvent);
-        });
-        
-        //.on(...)
-        //.on("share")
-        //.on("comment") etc...
-
-      });
-
-  });
-
-```
-
-### Callback API
-
-```javascript
-
-  easyvk.callbackAPI.listen({
-    port: process.env.PORT || 8080,
-    groups: [
-      {
-        groupId: 11,
-        confirmCode: 'TestConfirmationCode',
-        secret: 'GroupPassword'
-      },
-      {
-        /*....*/
-      }
-    ]
-  }).then(({ connection }) => {
-    
-    connection.on('message_new', (msg) => {
-        console.log(msg.group_id);
-    });
-
-  }).catch(console.error);
-
-```
-
-Все остальное находится на <a href="https://ciricc.github.io/">сайте-документации</a> проекта.
