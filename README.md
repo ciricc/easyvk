@@ -6,8 +6,8 @@
 
 # EasyVK (VKontakte API Manager)
 
-This library helps you easily create apps with vk api!
-Official VK API: [vk.com/dev/](https://vk.com/dev/)
+This app helps you create an apps with vk api easy!
+You can use it for know more: [vk.com/dev/](https://vk.com/dev/)
 
 | [Community](https://vk.com/club162208999) | [Changelog](https://github.com/ciricc/easyvk/tree/master/CHANGELOG.md) | [Документация на русском](https://ciricc.github.io/) |
 | ------------------------------------------| ---------------------------------------------|-------------|
@@ -21,34 +21,34 @@ Official VK API: [vk.com/dev/](https://vk.com/dev/)
 Если вы хотите помочь нам кодом - делайте это на [github](https://github.com/ciricc/easyvk).
 Ниже написано, что можно делать при помощи EasyVK.
 
-## Installing
+## Usage
 
-Download and install Node.js. Create a project and install `easyvk` with `npm`:
+You need download Node.js and install it with npm manager. Then you need create your project and install easyvk so.
 
 ```
 npm i easyvk --save
 ```
 
-## Example usage
+## Test in browser code (Example usage)
 
-You can test the library without installing on [npm runkit](https://npm.runkit.com/easyvk).
-Copy this code and paste it in the code area, don't forget to change username and password.
+You can test library in the browser of [npm runkit](https://npm.runkit.com/easyvk).
+You need copy this code and paste it in the area code, changed your parameters
 
 ```javascript
 
 var easyvk = require("easyvk")
 
-//Authenticating user
+//Authenticate user
 easyvk({
    username: 'your_login',
    password: 'your_password',
    save_session: false
 }).then(vk => {
   
-   //Getting user id from authenticated session
+   //get user id from authenticated session
    var me = vk.session.user_id || 356607530 //Or your account id
    
-   //Sending a message using messages.send method
+   //The send message by messages.send API method
    vk.call('messages.send', {
       message: 'Hi',
       user_id: me
@@ -61,27 +61,25 @@ easyvk({
 
 
 
-## EasyVK can help you:
+# EasyVK can help you...
 
 * <b>Create Bots</b>
 * Manage groups
-* Use LongPoll: <b>Bots LongPoll (groups) and User LongPoll</b>
-* Use <b>Callback API</b> (like creating your server to listen to group events)
-* Manage your stream based on official <b>Streaming API</b>,
-  listen to events and collect data to create statistic and metrics
-* Upload your files to the server
-* Call official <b>VKontakte API methods</b>
-* Use my widgets - non-official instruments for everyday tasks
-* Use helpers - utility for creating something that you need everyday
-* Use saved session, cache data to saved session
-* Catch errors like Captcha error and others
-
-## EasyVK provide:
-* <b>Promises and async / await based library</b>
-* Authentication support: groups, users, applications, password + username
+* <b>LongPoll listen, Bots LongPoll (groups), User LongPoll</b>
+* <b>Callback API</b> support, create your server and listen group events
+* You can create your stream based on official <b>Streaming API</b> platform,
+  listen events, collect data for create statistic and metrics
+* You can upload your files on the server
+* You can call to  official <b>VKontakte API methods</b>
+* You can use my widgets - not official instruments for do evereyday something
+* You can use helpers - utility for create something that you need everyday 
+* You can use saver session, use session for cache data
+* Catching errors like Captcha error and others
+* <b>Promises, async / await based library</b>
+* Authentication support: groups, users, aplications, password / username
 * Informative documentation
-* Regular updates and support for newest features
+* Regulary updates and support for the newest features
 * Two factor authentication support
 
 
-You can read documentation <a href="https://ciricc.github.io/">here</a>
+You can read documentation of this library <a href="https://ciricc.github.io/">here</a>

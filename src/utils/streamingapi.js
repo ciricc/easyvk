@@ -1,7 +1,7 @@
 
 /**
- *  Added support for Streaming API (module for EasyVK).
- *  You can use it to listen and collect data from vk, create metrics and other...
+ *  Added support Streaming API, module for EasyVK.
+ *  You can use it for listen and collect data from vk, create metrics and other...
  *  
  *  Author: @ciricc
  *  License: MIT
@@ -135,7 +135,7 @@ class StreamingAPIConnection extends EventEmitter {
 						if (json) {
 							return resolve(json);
 						} else {
-							return reject(new Error("JSON is not valid... or I don't know what"));
+							return reject(new Error("JSON is not valid... oor i don't know"));
 						}
 
 					} else {
@@ -213,7 +213,7 @@ class StreamingAPIConnection extends EventEmitter {
 		let self = this;
 
 		return new Promise((resolve, reject) => {
-			// For beginning - get All rules
+			//For begin - get All rules
 			self.getRules().then(({vkr: rules}) => {
 				rules = rules.rules;
 				let i = 0;
@@ -269,7 +269,7 @@ class StreamingAPIConnection extends EventEmitter {
 
 
 
-			// For beginning get all rules and then change/add/delete rules
+			//For begin get all rules and then change/add/delete rules
 			self.getRules().then(({vkr: startedRules}) => {
 
 				let changedRules, stRulesObject, tags, addedRules, deletedRules;
@@ -320,17 +320,17 @@ class StreamingAPIConnection extends EventEmitter {
 					let rule = startedRules[i];
 
 
-					if (rulesObject[rule.tag]) { // Change rule
+					if (rulesObject[rule.tag]) { //Change rule
 						if (rule.value === rulesObject[rule.tag]) { //No need change
 							next();
 						} else {
-							// We need to change, delete and then add it back
+							//Need change it. Delete and it and then add
 							self.deleteRule(rule.tag).then(() => {
-								// Add again
+								//Add again
 
-								self.addRule(rule.tag, rulesObject[rule.tag]).then(() => {                                                                   
+								self.addRule(rule.tag, rulesObject[rule.tag]).then(() => {
 								
-									// Success
+									//Success changed
 									changedRules.push({
 										tag: rule.tag,
 										lastValue: rule.value,
@@ -345,7 +345,7 @@ class StreamingAPIConnection extends EventEmitter {
 										where: "add changes",
 										rule: rule,
 										from: "user_rules",
-										description: "An error occured in the add method when we tried to add the rule which was changed",
+										description: "Occured error in add method when we tried add rule which was changed",
 										error: err
 									});
 
@@ -359,7 +359,7 @@ class StreamingAPIConnection extends EventEmitter {
 									where: "delete changes",
 									rule: rule,
 									from: "vk_rules",
-									description: "An error occured in the delete method when we tried to delete rule which was changed",
+									description: "Occured error in delete method when we tried delete rule which was changed",
 									error: err
 								});
 
@@ -367,10 +367,10 @@ class StreamingAPIConnection extends EventEmitter {
 
 							});
 						}
-					} else { // Delete rule
+					} else { //Delete rule
 						self.deleteRule(rule.tag).then(()=>{
 							
-							// Success
+							//Success deleted
 							deletedRules.push({
 								tag: rule.tag,
 								value: rule.value
@@ -384,7 +384,7 @@ class StreamingAPIConnection extends EventEmitter {
 								where: "delete",
 								rule: rule,
 								from: "vk_rules",
-								description: "An error occured in the delete method when we tried to delete the rule which was not declared in init object",
+								description: "Occured error in delete method when we tried delete rule which not declared in init object",
 								error: err
 							});
 							
@@ -422,10 +422,10 @@ class StreamingAPIConnection extends EventEmitter {
 				
 					let rule = tags[iN];
 
-					if (!stRulesObject.hasOwnProperty(tags[iN])) { // We need to add new rules
+					if (!stRulesObject.hasOwnProperty(tags[iN])) { //Need add new rules
 						self.addRule(tags[iN], rulesObject[tags[iN]]).then(() => {
 							
-							// Success
+							//Success add
 							addedRules.push({
 								tag: tags[iN],
 								value: rulesObject[tags[iN]]
@@ -439,7 +439,7 @@ class StreamingAPIConnection extends EventEmitter {
 								where: "add",
 								rule: rule,
 								from: "user_rules",
-								description: "An error occured in the add method when we tried to add the rule which was not declared in vk rules",
+								description: "Occured error in add method when we tried add rule which not declared in vk rules",
 								error: err
 							});
 							
@@ -500,7 +500,7 @@ class StreamingAPIConnector {
 						try {
 							self._vk.debugger.push("response", vkr);
 						} catch (e) {
-							// Ignore
+							//Ignore
 						}
 					}
 					
@@ -537,7 +537,7 @@ class StreamingAPIConnector {
 							}, reject);
 
 						} else {
-							return reject(new Error("JSON is not valid... or I don't know what"));
+							return reject(new Error("JSON is not valid... oor i don't know"));
 						}
 
 					} else {
@@ -547,7 +547,7 @@ class StreamingAPIConnector {
 				});
 
 			} else {
-				return reject(new Error("clientId and clientSecret are not declared"));
+				return reject(new Error("clientId and clientSecret not declared"));
 			}
 		});
 	}

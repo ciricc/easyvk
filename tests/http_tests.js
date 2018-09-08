@@ -1,5 +1,5 @@
-/*
- *  Don't forget to require easyvk in your code: require('easyvk')
+/**
+ *  In your code you need require easyvk so: require('easyvk')
  */
 
 const path = require('path')
@@ -13,14 +13,13 @@ const currentSessionFile = path.join(__dirname, '.vksession')
 
 /*
  *
- * This test is going thru all my Http widgets
- *
+ * This test is testing all my Http widgets
  */
 
 
 easyVK({
-	username: '{LOGIN_HERE}',
-	password: '{PASSWORD_HERE}',
+	username: '{LOGIN_FIELD}',
+	password: '{PASSWORD_FIELD}',
 	api_v: '5.73',
 	save_session: false,
 	session_file: currentSessionFile,
@@ -30,7 +29,7 @@ easyVK({
 	const HttpVK = vk.http;
 
 
-	// First: You need to authenticate by an HTTP form, 
+	// First: You need authenticate by HTTP form, 
 	// with login and password
 	return HttpVK.loginByForm().then(({vk: EasyVK, client: Client}) => {
 
@@ -39,7 +38,7 @@ easyVK({
 		const user_id = 1; //read all Pavel's stories
 		
 		Client.readStories(user_id).then(({count, vk: EasyVK}) => {
-			//Count of already read stories
+			//Count of stories, that readed
 			console.log(count + ` [;user_id = ${user_id}, stories count]`);
 
 		});
