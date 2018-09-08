@@ -1,7 +1,6 @@
 /*
- *  - Knock knock?
- *  - Who's there?
- *  - It's the Callback API module for EasyVK!
+ *  It's a Callbakc API module for EasyVK
+ *  You can use it
  *
  *  Author: @ciricc
  *  License: MIT
@@ -43,16 +42,16 @@ class CallbackAPI extends EventEmitter {
 
 			if (group) {
 				
-				if (group.secret) { // If you use a password (secret key)
+				if (group.secret) { //If you use a password fro menage it
 					
-					if (postData.secret && postData.secret.toString() === group.secret.toString()) {                                                                            
+					if (postData.secret && postData.secret.toString() === group.secret.toString()) {
 						res.status(200).send(group.confirmCode);
 					} else {
 						
 						res.status(400).send("secret error");
 						self.emit("secretError", {
 							postData: postData,
-							description: "Whoops, you don't have a secret key! If you want to add one, go to your group settings!"
+							description: "We got the secret key which no uses in your settings! If you want to add secret, set up it in secret parameter!"
 						});
 
 					}
@@ -63,10 +62,10 @@ class CallbackAPI extends EventEmitter {
 
 			} else {
 				
-				res.status(400).send("group doesn't exist");
+				res.status(400).send("not have this group");
 				self.emit("confirmationError", {
 					postData: postData,
-					description: "There is no group with this groupId"
+					description: "You don't use this group, becouse we don't know this groupId"
 				});
 
 			}
@@ -82,7 +81,7 @@ class CallbackAPI extends EventEmitter {
 						res.status(400).send("secret error");
 						self.emit("secretError", {
 							postData: postData,
-							description: "Secret key in the request and in your settings are not the same"
+							description: "Secret from request and from your settings are not the same"
 						});
 						
 						return;
@@ -92,7 +91,7 @@ class CallbackAPI extends EventEmitter {
 						res.status(400).send("secret error");
 						self.emit("secretError", {
 							postData: postData,
-							description: "Your group settings are set to use the secret key, but you don't have one in the request"
+							description: "Request has not a secret password, but you use it in this group"
 						});
 						
 						return;
@@ -107,20 +106,20 @@ class CallbackAPI extends EventEmitter {
 
 				} else {
 					
-					res.status(400).send("invalid event type");
+					res.status(400).send("invalid type event");
 					self.emit("eventEmpty", {
 						postData: postData,
-						description: "This request doesn't have the event type. Event name is empty"
+						description: "This request haven't type of event. Event name is empty"
 					});
 
 				}
 
 			} else {
 				
-				res.status(400).send("group doesn't exist");
+				res.status(400).send("not have this group");
 				self.emit("confirmationError", {
 					postData: postData,
-					description: "There is no group with this groupId"
+					description: "You don't use this group, becouse we don't know this groupId"
 				});
 
 			}
@@ -141,8 +140,8 @@ class CallbackAPI extends EventEmitter {
 		self._cbparams = params;
 		
 		return new Promise ((resolve, reject) => {
-			if (self._app) { // One time only
-				return reject(new Error("You are already listening the server!"));	
+			if (self._app) { //Only one time
+				return reject(new Error("You are listening the server yet!"));	
 			} else {
 				
 				let app, server;
@@ -181,7 +180,7 @@ class CallbackAPI extends EventEmitter {
 
 class CallbackAPIConnector {
 	
-	// Auto constructed by EasyVK
+	//Auto constructed by EasyVK
 	constructor (vk) {
 		let self = this;
 		self._vk = vk;
@@ -189,24 +188,26 @@ class CallbackAPIConnector {
 
 
 	/*
-	 *  This function sets up a server to listen to group events
+	 *  This function is up your server for listen group events
 	 *
-	 *  @param {Object} callbackParams - Yo, params here
-	 *  @param {Object[]} [callbackParams.groups] - Array of groups to listen to
-	 *  @param {String|Number} [callbackParams.groupId] - Group id to listen to, if callbackParams.groups[] are specified, this one is added to the array
-	 *  You need to select at least one group
-	 *  @param {String|Number} [callbackParams.confirmCode] - Your confirmation code. This code will be sended to confirm the query
+	 *  @param {Object} callbackParams - Object for setup your server
+	 *  @param {Object[]} [callbackParams.groups] - Array of your groups which you want listen
+	 *  @param {String|Number} [callbackParams.groupId] - Group id which you want listen, if you use groups[] then it will be added too
+	 *  but you can't no input neither callbackParams.groups nor groupId and etc.
+	 *  You need select your group at least one way
+	 *  @param {String|Number} [callbackParams.confirmCode] - Your confirmation code. This code will be sended for confirmation query
 	 *  @param {String|Number} [callbackParams.secret] - Your secret code for one group, I am recommend you to use it for secure
-	 *  @param {String|Number} [callbackParams.port=(process.env.PORT || 3000)] - Port for the http server, default is process.env.PORT || 3000
+	 *  @param {String|Number} [callbackParams.port=(process.env.PORT || 3000)] - Port for http server, default is process.env.PORT || 3000
 	 *  
-	 *  If you listen to many groups, you need to separate (spread) groupId, secret and confirmCode parameters to objects in array
+	 *  If you use many groups, you need separate (spread) groupId, secret and condirmCode parameters on objects in array of groups
 	 *  like { groups: [{groupId: ..., secret: ..., confirmCode: ...}, ...] }
 	 * 
 	 *  @return {Promise}
-	 *  @promise Turns on your server... Err, I mean starts a server
-	 *  @resolve {Object} - Object of this structure:
+	 *  @promise up your server for listen group events
+	 *  @resolve {Object} - Object with web application, CallbackAPI connection object 
+	 *  and EasyVK parameter:
 	 *  {vk: EasyVK, connection: CallbackAPI, web: expressApplication}
-	 *  @reject {Error} - Error, error, error
+	 *  @reject {Error} - express run and up server error
 	 * 
 	 */
 
@@ -230,10 +231,10 @@ class CallbackAPIConnector {
 			}
 
 
-			if (callbackParams.groupId) { // If only one groupId is specified
+			if (callbackParams.groupId) {//If user wants only one group init
 				
 				if (!callbackParams.confirmCode) {
-					return reject(new Error("Where's the confirmation code, dude? Go get one"));
+					return reject(new Error("You don't puted confirmation code"));
 				}
 
 				
@@ -249,7 +250,7 @@ class CallbackAPIConnector {
 			}
 
 			if (callbackParams.groups.length === 0) {
-				return reject(new Error("Select a group to listen to"));
+				return reject(new Error("Select a group for listen calls"));
 			} else {
 
 				let gr_temp = {};

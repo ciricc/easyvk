@@ -1,5 +1,5 @@
-/*
- *  Don't forget to require easyvk in your code: require('easyvk')
+/**
+ *  In your code you need require easyvk so: require('easyvk')
  */
 
 const path = require('path')
@@ -13,16 +13,17 @@ const currentSessionFile = path.join(__dirname, '.vksession')
 
 /*
  *
- * This test is testing all my widgets, for example: getLiveViews
- * This example gets the views count from videoSourceId and then sends it to user with id me
+ * This test is testing all my wisgets, for example: getLiveViews
+ * This example get views from videoSourceId and then send to user with id me
  *
  */
 
 easyVK({
 	api_v: '5.73',
 	session_file: currentSessionFile,
-	username: '{LOGIN_HERE}',
-	password: '{PASSWORD_HERE}',
+	//Access token whcch you need get from your group settings
+	username: '{LOGIN_FIELD}',
+	password: '{PASSWORD_FIELD}',
 	reauth: true,
 	lang: "ru"
 }).then((vk) => {
@@ -30,7 +31,7 @@ easyVK({
 	const Widgets = vk.http
 	
 	Widgets.loginByForm().then(({client}) => {
-		//You can read stories and other
+		//You can get read stories and other
 		
 		client.readStories('497395239').then(({vk, count}) => {
 			console.log(count);
@@ -41,5 +42,5 @@ easyVK({
 }).catch(console.error);
 
 
-//Handler for all rejections and errors
+//Handle all rejects and errors
 process.on('unhandledRejection', console.error)
