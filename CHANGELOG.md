@@ -1,7 +1,7 @@
 # Changelog
 
-This file started from 0.2.8 version.
-So, in older versions you need see changes in a commits.
+This file only holds the changelog from version 0.2.8.
+For older versions see commits.
 
 
 ## [1.0] 
@@ -15,17 +15,17 @@ So, in older versions you need see changes in a commits.
 const VK = require('easyvk')
 
 VK.login({
-    access_token: '{TOKEN_FIELD}'
+    access_token: '{TOKEN_HERE}'
 }).then(function (session) {
-    //need know your id before start script
+    //Insert your id here
     const me = 1
 
     return VK.call('messages.send', {
         user_id: me,
         message: 'Hello!'
-    })
+    });
 
-}).catch(console.error)
+}).catch(console.error);
 
 ```
 
@@ -36,13 +36,15 @@ VK.login({
 const easyvk = require('easyvk')
 
 easyvk({ //Login here
-    access_token: '{TOKEN_FIELD}'
+    access_token: '{TOKEN_HERE}'
 }).then((vk) => {
+    
     return vk.call('messages.send', {
         user_id: vk.session.user_id,
         message: 'Hello!'
-    })
-}).catch(console.error)
+    });
+
+}).catch(console.error);
 
 
 ```
@@ -89,12 +91,12 @@ easyVK({
 ## [0.3.12] - 2018-02-18
 
 ### Added 
-- Added 2 parameter in callback function for StreamingAPI. Now, you can get access_token before WeSocket connection inited.
+- Added 2 parameters to callback function for StreamingAPI. Now you can get `access_token` before WebSocket connection is initiated.
 
 ```javascript
   
   VK.streamingAPI({}).then(function(connection, session){
-    console.log(session.access_token); //This token is not a user token, it's only for one connection
+    console.log(session.access_token); //This token is not a user token, it's for streamingAPI and is temporary
   });
   
 ```
@@ -102,17 +104,17 @@ easyVK({
 ## [0.3.11] - 2018-02-18
 
 ### Added
-- Link on our community group
-- Created our community group
+- Link to our community group
 
 ### Changed
-- api_v default parameter. Now is 5.73 version
+- Created our community group
+- `api_v` default value is now `5.73`
 - Readme file
 
 ## [0.3.1] 
 
 ### Changed
-- Comments in scripts
+- Added comments to scripts
 - Corrected readme
 - Corrected changelog
 
@@ -120,30 +122,30 @@ easyVK({
 
 ### Added
 - CallbackAPI support (tested on heroku server)
-- package.json file, added must have node version
+- Added node version to `package.json` file
 
 ### Changed
 
-- Fixed auth with group access token. VK APi was updated from uid to user_id 
-- All functions like longpoll(), streamingAPI(), callbackAPI() now is asynchronous
-- Changed api_v in README file (5.73)
-- Fixed package.json
+- Fixed auth with group access token. VK API replaced `uid` with `user_id` 
+- All functions like `longpoll()`, `streamingAPI()`, `callbackAPI()` are now asynchronous
+- Changed `api_v` in README file (5.73)
+- Fixed `package.json`
 
 ## [0.2.81]
 
 ### Changed
-- Fixed video streaming error, when live stream there is no, but programmer try to get views. In older version it can throw error and stop your script. It solved.
-- Removed "UUURAA!!" in console's  log
+- Fixed video streaming error, when there is no live stream, but it tries to get the views. In older versions it could throw an error and crash. It's solved.
+- Removed "UUURAA!!" from the log
 
 ## [0.2.8]
 
 ### Added
-- New event type for longpoll - close (Arises when connection closed by .close() method)
+- New event type for longpoll - close (Emitted when connection is closed by the `.close()` method)
 
 ### Changed
-- Fixed StreamingAPI. When you may be tried delete many rules, there was a mistake "vk response undefined". Now this problem solved and it works normal.
-- Fixed api_v parameter. Previously, this parameter could not be changed, because of the shortcomings in the code. Now this problem solved.
+- Fixed StreamingAPI. When you try to delete many rules, there was an error "vk response undefined". Now this problem is solved and it works normally.
+- Fixed api_v parameter. Previously, this parameter could not be changed, because of the shortcomings in the code. Now this problem is solved.
 - Fixed longpoll connection
 - Fixed tests examples
-- All quieries will be send with &v=api_v parameter (beacouse in febr of 2018, VK API was updated)
-- VK API version on 5.71
+- All quieries will now be sent with `v=api_v` parameter (beacouse in febr of 2018, VK API was updated)
+- VK API version 5.71
