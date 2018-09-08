@@ -546,7 +546,6 @@ class HTTPEasyVKClient {
 		self.LOGIN_ERROR = 'Need login by form, use .loginByForm() method';
 		self._vk = vk;
 		self._authjar = _jar;
-
 		self.audio = new AudioAPI(self._vk, self);
 	}
 

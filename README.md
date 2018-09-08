@@ -44,8 +44,8 @@ easyvk({
    password: 'your_password',
    save_session: false
 }).then(vk => {
-  
-   //Getting user id from authenticated session
+
+   //get user id from authenticated session
    var me = vk.session.user_id || 356607530 //Or your account id
    
    //Sending a message using messages.send method

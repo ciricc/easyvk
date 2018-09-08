@@ -5,7 +5,6 @@ const request = require("request");
 const VKResponseError = require('./VKResponseError.js');
 const VKResponse = require('./VKResponse.js');
 
-
 class EasyVKStaticMethods {
 
 	/**

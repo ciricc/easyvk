@@ -18,12 +18,12 @@ const currentSessionFile = path.join(__dirname, '.vksession')
 
 
 easyVK({
-	username: '{LOGIN_HERE}',
-	password: '{PASSWORD_HERE}',
+	username: '{LOGIN_FIELD}',
+	password: '{PASSWORD_FIELD}',
 	api_v: '5.73',
-	save_session: true,
+	save_session: false,
 	session_file: currentSessionFile,
-	// reauth: true,
+	reauth: true
 }).then(vk => {
 
 	const HttpVK = vk.http;
@@ -47,21 +47,21 @@ easyVK({
 			console.log(count + ' [feed stories]');
 		});
 
-		// //This script shows you how to get all user's audios
-		// //offset - is offset :D
+		//This script shows you how to get all user's audios
+		//offset - is offset :D
 
 		function getAllAudios () {
 			let audios = [];
 
 			function newReq (offset = 0) {
 				return new Promise((resolve, reject) => {
-
 					Client.audio.get({
 						owner_id: vk.session.user_id,
 						offset: offset,
 						playlist_id: -1
 					}).then(({vkr: audios_, json}) => {
 						audios = [...audios, ...audios_];
+
 						if (json.hasMore) {
 							newReq(json.nextOffset).then(resolve, reject);
 						} else {
@@ -74,7 +74,7 @@ easyVK({
 
 			return newReq;
 		}
-
+		
 		Client.audio.get({
 			owner_id: -45703770,
 			offset: 0,

@@ -261,7 +261,6 @@ class EasyVK {
 
 					if (json) {
 						
-
 						if (Array.isArray(json) && json.length === 0) {
 							reject(self._error("access_token_not_valid"));
 						} else {
