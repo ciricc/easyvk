@@ -1,5 +1,6 @@
 /**
  *   In this file are http widgets for EasyVK
+ *   You can use it
  *
  *   Author: @ciricc
  *   License: MIT
@@ -13,6 +14,8 @@ const configuration = require("./configuration.js");
 const staticMethods = require("./staticMethods.js");
 const request = require("request");
 const encoding = require("encoding");
+const VKResponse = require("./VKResponse.js");
+const AudioAPI = require("./AudioAPI.js");
 
 class HTTPEasyVKClient {
 
@@ -26,9 +29,11 @@ class HTTPEasyVKClient {
 		};
 
 
-		self.LOGIN_ERROR = 'Need to login by form, use .loginByForm() method';
+		self.LOGIN_ERROR = 'Need login by form, use .loginByForm() method';
 		self._vk = vk;
 		self._authjar = _jar;
+
+		self.audio = new AudioAPI(self._vk, self);
 	}
 
 
@@ -44,7 +49,7 @@ class HTTPEasyVKClient {
 
 			if (isNaN(vk_id)) return reject(new Error('Is not numeric vk_id'));
 
-			// else try to get stories from user
+			//else try get sttories from user
 			if (!self._authjar) return reject(new Error(self.LOGIN_ERROR));
 
 			request.get({
@@ -62,14 +67,14 @@ class HTTPEasyVKClient {
 							
 							if (story_id) {
 									
-								// Only one story
+								//Only one story
 								if (item.raw_id === story_id) {
 									self.__readStory(story.read_hash, item.raw_id, 'profile');
 								}
 
 							} else {
 
-								// All stories
+								//All stories
 								self.__readStory(story.read_hash, item.raw_id, 'profile');
 
 							}
@@ -141,7 +146,7 @@ class HTTPEasyVKClient {
 
 		return new Promise((resolve, reject) => {
 
-			// else tryto  get stories from user
+			//else try get sttories from user
 			if (!self._authjar) return reject(new Error(self.LOGIN_ERROR));
 
 			request.get({
@@ -150,7 +155,7 @@ class HTTPEasyVKClient {
 			}, (err, res, vkr) => {
 				if (err) return reject(new Error(err));
 
-				// parse stories
+				//parse stories
 
 				let stories = self.__getStories(res.body, 'feed');
 				let i = 0;
@@ -171,189 +176,6 @@ class HTTPEasyVKClient {
 
 			});
 		});
-	}
-
-	async getAudios (params = {}) {
-		
-		let self = this;
-
-		return new Promise((resolve, reject) => {
-
-			if (!self._authjar) return reject(new Error(self.LOGIN_ERROR));
-
-			let uid = self._vk.session.user_id,
-				playlist_id = -1, 
-				offset = 0;
-
-			if (params.vk_id) {
-				params.vk_id = Number(params.vk_id);
-				if (!isNaN(params.vk_id) && params.vk_id > 0) uid = params.vk_id;
-			}
-
-			if (params.playlist_id) {
-				params.playlist_id = Number(params.playlist_id);
-				if (!isNaN(params.playlist_id)) playlist_id = params.playlist_id;
-			}
-
-			if (params.offset) {
-				params.offset = Number(params.offset);
-				if (!isNaN(params.offset)) offset = params.offset;
-			}
-
-			if (!uid) return reject(new Error('User id is not defined in your session, use vk.sesion.user_id = X'));
-
-			request.post({
-				jar: self._authjar,
-				url: `${configuration.PROTOCOL}://${configuration.BASE_DOMAIN}/al_audio.php`,
-				form: {
-					act: 'load_section',
-					al: 1,
-					claim: 0,
-					offset: offset,
-					owner_id: uid,
-					playlist_id: playlist_id,
-					type: 'playlist'
-				},
-				encoding: "binary"
-			}, (err, res, vkr) => {
-
-				res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString();
-
-				if (err) return reject(err);
-
-				if (!res.body.length) {
-					return reject(new Error('You don\'t have access to this audio!'));
-				}
-
-				let json = res.body.match(/<!json>(.*?)<!>/);
-				
-
-				if (res.body.match(/<\!bool><\!>/)) {
-					return reject(new Error('Access is blocked for you'));
-				}
-
-				if (!json) {
-					return reject(new Error('No audios found, maybe algorythm changed'));
-				}
-
-				try {
-					json = JSON.parse(json[1]);
-				} catch (e) {
-					return reject(new Error('No audios found, maybe algorythm changed or user just blocked access for you'));
-				}
-
-				let audios = [];
-
-				for (let i = 0; i < json.list.length; i++) {					
-					let audio = json.list[i];
-
-					audios.push({
-						id: audio[0],
-						owner_id: audio[1],
-						source: self.__UnmuskTokenAudio(audio[2], self._vk.session.user_id),
-						title: audio[3],
-						artist: audio[4],
-						duration: audio[5],
-						icon: audio[14]
-					});
-
-				}
-
-				if (!params.needAll) {
-					json.list = undefined;
-				}
-
-				resolve({
-					vk: self._vk,
-					audios: audios,
-					vkr: json
-				});
-
-			});
-
-		});
-	}
-
-	getPlaylists (vk_id, playlist_id) {
-		let self = this;
-
-		return new Promise((resolve, reject) => {
-			
-		});
-	}
-
-	__UnmuskTokenAudio(e, vk_id = 1)
-	{
-		// This code is an official algorithm to unmusk the audio source
-		// 'Stealed' from vk.com website, official way, no magic
-		
-		var n = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN0PQRSTUVWXYZO123456789+/=",
-		    i = {
-		        v: function(e) {
-		            return e.split("").reverse().join("")
-		        },
-		        r: function(e, t) {
-		            e = e.split("");
-		            for (var i, o = n + n, r = e.length; r--;) i = o.indexOf(e[r]), ~i && (e[r] = o.substr(i - t, 1));
-		            return e.join("")
-		        },
-		        s: function(e, t) {
-		            var n = e.length;
-		            if (n) {
-		                var i = s(e, t),
-		                    o = 0;
-		                for (e = e.split(""); ++o < n;) e[o] = e.splice(i[n - 1 - o], 1, e[o])[0];
-		                e = e.join("")
-		            }
-		            return e
-		        },
-		        i: function(e, t) {
-		            return i.s(e, t ^ vk_id)
-		        },
-		        x: function(e, t) {
-		            var n = [];
-		            return t = t.charCodeAt(0), each(e.split(""), function(e, i) {
-		                n.push(String.fromCharCode(i.charCodeAt(0) ^ t))
-		            }), n.join("")
-		        }
-		    };
-
-		function o() {
-		    return false;
-		}
-
-		function r(e) {
-		    if (!o() && ~e.indexOf("audio_api_unavailable")) {
-		        var t = e.split("?extra=")[1].split("#"),
-		            n = "" === t[1] ? "" : a(t[1]);
-		        if (t = a(t[0]), "string" != typeof n || !t) return e;
-		        n = n ? n.split(String.fromCharCode(9)) : [];
-		        for (var r, s, l = n.length; l--;) {
-		            if (s = n[l].split(String.fromCharCode(11)), r = s.splice(0, 1, t)[0], !i[r]) return e;
-		            t = i[r].apply(null, s)
-		        }
-		        if (t && "http" === t.substr(0, 4)) return t
-		    }
-		    return e
-		}
-
-		function a(e) {
-		    if (!e || e.length % 4 == 1) return !1;
-		    for (var t, i, o = 0, r = 0, a = ""; i = e.charAt(r++);) i = n.indexOf(i), ~i && (t = o % 4 ? 64 * t + i : i, o++ % 4) && (a += String.fromCharCode(255 & t >> (-2 * o & 6)));
-		    return a
-		}
-
-		function s(e, t) {
-		    var n = e.length,
-		        i = [];
-		    if (n) {
-		        var o = n;
-		        for (t = Math.abs(t); o--;) t = (n * (o + 1) ^ t + o) % n, i[o] = t
-		    }
-		    return i
-		}
-
-		return r(e);
 	}
 }
 
@@ -382,8 +204,8 @@ class HTTPEasyVK {
 			if (!pass || !login) return reject(new Error('Need authenticate by password and username. This data not saving in session file!'));
 
 			
-			// Make first request, to get the url for POST requests
-			// parse from m.vk.com page
+			//Make first request, for know url for POST request
+			//parse from m.vk.com page
 			let jar = request.jar();
 
 			self._authjar = jar;

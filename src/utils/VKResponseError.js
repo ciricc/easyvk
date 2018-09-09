@@ -1,6 +1,6 @@
 
 
-// This is an error object. Contains: code, message, desciption and other information from the stack
+//This is an object error for know: code, message, desciption and other information from stack
 
 class VKResponseError extends Error {
 	constructor (message, code = 0, request = {}) {

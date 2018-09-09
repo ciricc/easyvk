@@ -1,6 +1,6 @@
 
-/*
- *  Don't forget to require easyvk in your code: require('easyvk')
+/**
+ *  In your code you need require easyvk so: require('easyvk')
  */
 
 const path = require('path')
@@ -12,8 +12,9 @@ const easyVK = require(`${_easyvk}`)
 
 /*
  * 
- * This test shows you how to chaing all calls
- * If it works, it sends a message to a user with id 356607530 
+ * This test shows you how you can chaing all calls
+ * So, look at it
+ * If all worked, it will send message for user with id 356607530 
  *
  */
 
@@ -24,30 +25,31 @@ easyVK({
 	save_session: false,
 	session_file: currentSessionFile,
 
-	//Access token that you need to get from your group settings
-	access_token: '{TOKEN_HERE}',
+	//Access token which you need get from your group settings
+	access_token: '{TOKEN_FIELD}',
 }).then((vk) => {
 
 
-	//Getting 2 users - me and a user with id 1
+	//Get 2 users - me and 1
 	return vk.call('users.get', {
 		user_ids: [1, 356607530]
 	})
 
 }).then(({vkr, vk}) => {
 
-	//Getting my id from response, not the variable
+	//Get my id not from cariable
+	//Get it only from response
 	const me = vkr.response[1].id
 
 
 
-	//Logging response
+	//Log response
 	console.log('[Users] - ', vkr.response)
 
 
 	return vk.call('messages.send', {
 		user_id: me,
-		message: 'Sample text! Lorem ipsum!'
+		message: 'Hi! Test it!'
 	})
 
 }).then(({vkr: messageSendedResponse, vk}) => {
@@ -57,5 +59,5 @@ easyVK({
 }).catch(console.error)
 
 
-//Handler for all rejections and errors
+//Handler all rejects and errors
 process.on('unhandledRejection', console.error)

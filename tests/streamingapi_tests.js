@@ -1,5 +1,5 @@
-/*
- *  Don't forget to require easyvk in your code: require('easyvk')
+/**
+ *  In your code you need require easyvk so: require('easyvk')
  */
 
 const path = require('path')
@@ -23,8 +23,8 @@ easyVK({
 	save_session: false,
 	session_file: currentSessionFile,
 
-	//Access token that you need to get from your group settings
-	access_token: '{TOKEN_HERE}',
+	//Access token whcch you need get from your group settings
+	access_token: '{TOKEN_FIELD}',
 }).then((vk) => {
 
 	const myApplicationId = '{MY_APPLICATION_ID_FIELD}'
@@ -41,24 +41,24 @@ easyVK({
 }).then(({ connection, vk }) => {
 
 	//Statistic counters
-	//On event the counter increments
+	//When some event was declared need inrement counters
 	connection.on('post', () => (counters.posts += 1))
 	connection.on('share', () => (counters.shares += 1))
 	connection.on('comment', () => (counters.comments += 1))
  
 
-    	//On error - console.error :D
+    //All errors listeners
 	connection.on('error', console.error)
 	connection.on('failure', console.error)
 
-	//Not an error, but I'm logging it anyway :)
+	//Not errors, but it an make some error
 	connection.on('serviceMessage', console.log)
 
     
     /*
      *
-     * This method initializes your rules and manages them
-     * For example: if you delete a rule (like keyRule) from this obj, it will be deleted from stream settings 
+     * This method initializing your rules and manages them
+     * For example: if you deleted from this obj some keyRule, it will be deleted from stream settings 
      *
      */
 
@@ -68,13 +68,13 @@ easyVK({
 		key3: 'а со -собака', //Dog
 	}, ({where, rule, error}) => {
 
-		console.error(`An error occured in ${where} method in rule ${rule}. (${error})`)
+		console.error(`Occured error on ${where} method in ${rule} rule (${error})`)
 
 	})
 
 	return new Promise(async (resolve, rejects) => { 
 
-		//sending connection to the next chain
+		//send connection to next chain
 		const changes = await initRules
 		changes.connection = connection
 
@@ -92,8 +92,8 @@ easyVK({
 
     /*
      *
-     * This function sends statistics by calling to the messages.send method
-     * If you want to send statistics to yourself, change the `me` variable to your user_id
+     * This function sends statistic with EasyVK object by call to messages.send method
+     * If you want to send statistic to you, you need change `me` variable on your user_id
      * 
      */
 
@@ -152,5 +152,5 @@ easyVK({
 }).catch(console.error)
 
 
-//Handler for all rejections and errors
+//Handle all rejects and errors
 process.on('unhandledRejection', console.error)
