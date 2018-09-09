@@ -329,7 +329,11 @@ class AudioAPI {
 		}
 
 		if (!json) {
-			return reject(new Error('Not founded audios, maybe algorythm changed'));
+			json = body.match(/<!json>(.*)/);
+
+			if (!json) {
+				return reject(new Error('Not founded audios, maybe algorythm changed'));
+			}
 		}
 
 		try {
@@ -417,32 +421,85 @@ class AudioAPI {
 		let self = this;
 
 		return new Promise((resolve, reject) => {
-
 			self._request({
 				act: 'section',
 				al: 1,
-				claim: 0,
-				offset: params.offset,
 				owner_id: (params.owner_id || self._vk.session.user_id),
+				is_layer: 0,
 				q: params.q,
-				section: 'search'
+				section: 'search',
 			}).then(res => {
-				
+
+
 				let json, audios = [], audioWithoutURL = [];
 
 				json = self._parseJSON(res.body, reject);
 				if (json instanceof Promise) return;
-				
+
 				audios = json.playlists[0].list;
 
 				self._getNormalAudiosWithURL(audios).then((audios) => {
-					resolve({
-						vk: self._vk,
-						json: json,
-						vkr: VKResponse(staticMethods, {
-							response: audios
-						})
-					});
+					
+					let playlist = json.playlists[0];
+					let playlist_id = playlist.id;
+					let owner_id = playlist.ownerId;
+					let offset_num = Number((params.offset || 0));
+					//50 - 100 - 150 etc..
+
+					let countOffset = Math.floor(offset_num / 50);
+					let i = 0;
+
+					function req (offset = "") {
+
+						self._request({
+							access_hash: "",
+							act: "load_section",
+							al: 1,
+							claim: 0,
+							offset: offset,
+							owner_id: owner_id,
+							playlist_id: playlist_id,
+							search_q: params.q,
+							type: "search"
+						}).then(res => {
+
+
+							let json, audios = [], audioWithoutURL = [];
+
+							json = self._parseJSON(res.body, reject);
+							// console.log(json);
+							if (json instanceof Promise) return;
+
+							if (i < countOffset && json.hasMore) {
+								i++;
+								return req(json.nextOffset);
+							}
+
+							audios = json.list;
+
+							if (!json.hasMore && i < countOffset) {
+								//return empty audios
+								audios = [];
+							}
+
+							self._getNormalAudiosWithURL(audios).then((audios) => {
+								resolve({
+									vk: self._vk,
+									json: json,
+									vkr: VKResponse(staticMethods, {
+										response: audios
+									})
+								});
+							}, () => {
+								reject(new Error('I don\t know what is this, in next releases it will be fixed'));
+							});
+
+						});
+					}
+
+					req();
+					
+
 				}, () => {
 					reject(new Error('I don\t know what is this, in next releases it will be fixed'));
 				});
@@ -628,6 +685,49 @@ class AudioAPI {
 		}
 
 		return r(e);
+	}
+
+
+	add (audio, params = {}) {
+		let self = this;
+
+		return new Promise((resolve, reject) => {
+
+			if (!staticMethods.isObject(params)) params = {}
+				
+			console.log(audio);	
+			if (!audio.can_add) {
+				return reject(new Error('user can\'t add this audio'));
+			}
+
+			params.act = "add";
+			params.al = 1;
+			params.audio_id =  audio.id;
+			params.audio_owner_id =  audio.owner_id;
+			params.from = "user_list";
+			params.hash = audio.add_hash;
+
+
+			self._request(params).then((res) => {
+				
+
+				let json = self._parseJSON(res.body, reject);
+				if (json instanceof Promise) return reject(new Error('Unknow error in add method'));
+
+				self._getNormalAudiosWithURL([json]).then(audios => {
+					resolve({
+						vkr: VKResponse(staticMethods, {
+							response: audios[0]
+						}),
+						vk: self._vk,
+						json: json
+					});
+				});
+
+			});
+			
+		});
+
 	}
 }
 

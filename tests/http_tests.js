@@ -43,54 +43,59 @@ easyVK({
 
 		// });
 
-		Client.readFeedStories().then(({count}) => {
-			console.log(count + ' [feed stories]');
-		});
+		// Client.readFeedStories().then(({count}) => {
+		// 	console.log(count + ' [feed stories]');
+		// });
 
-		Client.audio.get({
-			owner_id: -45703770,
-			offset: 0,
-			playlist_id: -1
-		}).then(({vkr}) => {
-			console.log(vkr);
-		});
+		// Client.audio.get({
+		// 	owner_id: -45703770,
+		// 	offset: 0,
+		// 	playlist_id: -1
+		// }).then(({vkr}) => {
+		// 	console.log(vkr);
+		// });
 
-		Client.audio.getCount({
-			owner_id: -45703770
-		}).then(({vkr}) => {
-			console.log(vkr);
-		})
+		// Client.audio.getCount({
+		// 	owner_id: -45703770
+		// }).then(({vkr}) => {
+		// 	console.log(vkr);
+		// })
 
-		Client.audio.getById({
-			ids: '47809103_456239660_96a005aadfc6090c04,47809103_456239659_0e83175853cacdb318,47809103_456239658_5bebe3aa60e930e08a,47809103_456239657_ccf60c6ac7a6f701df,47809103_456239656_bf45c6edbd80c695bb,47809103_456239660'
-		}).then(({vkr, json}) => {
+		// Client.audio.getById({
+		// 	ids: '47809103_456239660_96a005aadfc6090c04,47809103_456239659_0e83175853cacdb318,47809103_456239658_5bebe3aa60e930e08a,47809103_456239657_ccf60c6ac7a6f701df,47809103_456239656_bf45c6edbd80c695bb,47809103_456239660'
+		// }).then(({vkr, json}) => {
 			
-			console.log(vkr);
+		// 	console.log(vkr);
 
-		});
+		// });
 
 
-		Client.audio.getUploadServer().then(({vkr}) => {
+		// Client.audio.getUploadServer().then(({vkr}) => {
 		
-			let url = vkr.upload_url;
+		// 	let url = vkr.upload_url;
 
-			Client.audio.upload(url, __dirname + '/main.mp3').then(({vkr}) => {
+		// 	Client.audio.upload(url, __dirname + '/main.mp3').then(({vkr}) => {
 				
-				vkr.title = 'Новое название';
-				vkr.artist = 'Новый Артист';
+		// 		vkr.title = 'Новое название';
+		// 		vkr.artist = 'Новый Артист';
 
-				return Client.audio.save(vkr);
+		// 		return Client.audio.save(vkr);
 
-			}).then(({vkr}) => {
-				console.log(vkr, 'saved audio');
-			}).catch(console.error);
+		// 	}).then(({vkr}) => {
+		// 		console.log(vkr, 'saved audio');
+		// 	}).catch(console.error);
 
-		});
+		// });
 
 		Client.audio.search({
 			q: 'maroon 5',
-		}).then(({vkr}) => {
-			console.log(vkr);
+			offset: 50,
+		}).then(({vkr, json}) => {
+
+			Client.audio.add(vkr[0]).then(({vkr}) => {
+				console.log(vkr);
+			});
+
 		});
 
 	});
