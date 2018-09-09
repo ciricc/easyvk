@@ -86,11 +86,77 @@ easyvk({
 
 You can read documentation <a href="https://ciricc.github.io/">here</a>
 
-## Мини-гайд
+## Что дает EasyVK?
 
-Тут немного для русскоговорящих мини-гайд, чтобы сразу войти в курс дела.
+Узнайте, зачем Вам может понадобиться EasyVK, и что именно он может Вам дать!
 
-### LongPoll
+### Audio API
+
+Вам нужны аудиозаписи для личного использования? EasyVK предлагает объект для работы с аудио.
+Очень мощное Audio API, которое появилось в версии 1.6.0, практически полностью дублирует все методы из официальной документации Audio API, которое, к слову, уже закрыто, но в EasyVK работает.
+
+```javascript
+  
+  vk.http.loginByForm().then(({client: Client}) => {
+      
+    //Получение аудиозаписей группы, например
+    Client.audio.get({
+      owner_id: -45703770,
+      offset: 0,
+      playlist_id: -1
+    }).then(({vkr}) => {
+      console.log(vkr);
+    });
+  
+    //Загрузка файлов
+    Client.audio.getUploadServer().then(({vkr}) => {
+    
+      let url = vkr.upload_url;
+
+      Client.audio.upload(url, __dirname + '/main.mp3').then(({vkr}) => {
+        
+        vkr.title = 'Новое название';
+        vkr.artist = 'Новый Артист';
+
+        return Client.audio.save(vkr);
+
+      }).then(({vkr}) => {
+        console.log(vkr, 'saved audio');
+      }).catch(console.error);
+
+    });
+
+  });
+
+```
+
+### Stories API
+
+Используйте все возможности ВКонтакте.
+С недавних пор в EasyVK существует возможнсть "просматривать" истории.
+
+```javascript
+  
+  vk.http.loginByForm().then(({client: Client}) => {
+    
+    const user_id = 1;
+    
+    Client.readStories(user_id).then(({count, vk: EasyVK}) => {
+      console.log(count + ` [;user_id = ${user_id}, stories count]`);
+    });
+
+    Client.readFeedStories().then(({count}) => {
+      console.log(count + ' [feed stories]');
+    });
+
+  });
+
+```
+
+### LongPoll API
+
+Создавайте своих чат-ботов с помощью EasyVK и его возможностей LongPoll API
+
 ```javascript
   
   //bots
@@ -128,6 +194,9 @@ You can read documentation <a href="https://ciricc.github.io/">here</a>
 ```
 
 ### Streaming API
+
+Собирайте статистические данные о популярности тех или инных продуктов, проектов, чего угодно! Это позволит Вам знать, о чем пишут пользователи ВКонтакте, и кто Ваши клиенты!
+
 ```javascript
     
   vk.streamingAPI.connect(({connection: stream}) => {
@@ -155,6 +224,8 @@ You can read documentation <a href="https://ciricc.github.io/">here</a>
 
 ### Callback API
 
+Создавайте чат-ботов с помощью Callback API, имея собственный сервер с открытым доступом в интернете.
+
 ```javascript
 
   easyvk.callbackAPI.listen({
@@ -178,5 +249,6 @@ You can read documentation <a href="https://ciricc.github.io/">here</a>
   }).catch(console.error);
 
 ```
+
 
 Все остальное находится на <a href="https://ciricc.github.io/">сайте-документации</a> проекта.
