@@ -28,6 +28,8 @@ module.exports.debuggerRun = debuggerRun;
 module.exports.version = EasyVK.version;
 module.exports.callbackAPI = EasyVK.callbackAPI;
 module.exports.streamingAPI = EasyVK.streamingAPI;
+module.exports.classes = EasyVK.class;
+module.exports.is = EasyVK.is;
 
 
 

@@ -7,6 +7,26 @@ const encoding = require("encoding");
 const VKResponse = require("./VKResponse.js");
 
 
+class AudioItem extends Object {
+	constructor (audio) {
+		super();
+
+		let self = this;
+		let _props = audio;
+
+		//Use session data with methods
+		for (let prop in _props) {
+			Object.defineProperty(self, prop, {
+				enumerable: true,
+				configurable: true,
+				value: _props[prop],
+			});
+		}
+
+	}
+}
+
+
 class AudioAPI {
 
 	constructor (vk, http) {
@@ -45,6 +65,13 @@ class AudioAPI {
 		}
 
 	}
+
+
+	getURL (urlToken = "") {
+		let self = this;
+		return self.__UnmuskTokenAudio(urlToken);
+	}
+
 
 	get (params = {}) {
 		return new Promise((resolve, reject) => {
@@ -166,6 +193,7 @@ class AudioAPI {
 
 				let text = res.body;
 				text = text.split('<!>');
+				console.log(text);
 				text = text[text.length - 1];
 
 				resolve({
@@ -306,6 +334,10 @@ class AudioAPI {
 
 				res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString();
 				
+
+				let res2 = res.body.split('<!>');
+				console.log(self._parseResponse(res2));
+
 				if (!res.body.length) {
 					return reject(new Error('No have access on this'));
 				}
@@ -588,7 +620,8 @@ class AudioAPI {
 			audio_.lyrics_id = audio[19][1];
 		}
 
-		return audio_;
+
+		return new AudioItem(audio_);
 
 	}
 
@@ -729,6 +762,146 @@ class AudioAPI {
 		});
 
 	}
+
+	delete (audio) {
+		let self = this;
+
+		return new Promise((resolve, reject) => {
+
+			if (!audio.delete_hash) 
+				return reject(new Error('Need have delete hash, you can\'t do this without hash'));
+
+
+			self._request({
+				oid: audio.owner_id,
+				aid: audio.id,
+				hash: audio.delete_hash,
+				al: 1,
+				act: 'delete_audio',
+				restore: 1
+			}).then((res) => {
+				
+				resolve({
+					vkr: VKResponse(staticMethods, {
+						response: []
+					}),
+					json: res.body,
+					vk: self._vk
+				});
+
+			});
+
+		});
+
+	}
+
+	restore (audio) {
+		let self = this;
+
+		return new Promise((resolve, reject) => {
+				
+			if (audio.edit_hash) {
+
+				self._request({
+					act: 'restore_audio',
+					al: 1,
+					oid: audio.owner_id,
+					aid: audio.id,
+					hash: audio.edit_hash
+				}).then((res) => {
+					console.log(res.body);
+
+					return resolve(true);
+				});
+
+			} else {
+				return reject(new Error('You need have access to edit this audio!'));
+			}
+
+		});
+	}
+
+	edit (audio = {}, params = {}) {
+		let self = this;		
+
+		return new Promise((resolve, reject) => {
+			
+			if (!audio.can_edit || !audio.edit_hash) 
+				return reject(new Error('You need have access to edit this audio!'));
+
+			if (!staticMethods.isObject(params)) 
+				params = {}
+
+			params.act = "edit_audio";
+			params.aid = audio.id;
+			params.al = 1;
+			params.hash = audio.edit_hash;
+			params.oid = audio.owner_id;
+			params.performer = params.performer || audio.performer || "";
+			params.privacy = params.privacy || 0;
+			params.text = params.text || audio.text || "";
+			params.title = params.title || audio.title || "";
+
+			self._request(params).then(res => {
+				let json = self._parseJSON(res.body, reject);
+				if (json instanceof Promise) return reject(new Error('Unknow error in add method'));
+
+				self._getNormalAudiosWithURL([json]).then(audio => {
+					resolve({
+						vkr: VKResponse(staticMethods, {
+							response: audio
+						}),
+						vk: self._vk,
+						json: json
+					});
+				});
+
+			});
+
+		});
+	}
+
+	reorder () {
+
+	}
+
+	_parseResponse (e) {
+        for (var o = e.length - 1; o >= 0; --o) {
+            var n = e[o];
+            if ("<!" === n.substr(0, 2)) {
+                var i = n.indexOf(">"),
+                    r = n.substr(2, i - 2);
+                switch (n = n.substr(i + 1), r) {
+                    case "json":
+
+                        try {
+                        	e[o] = JSON.parse(n);
+                        } catch (e) {
+                        	e[o] = {}
+                        }
+
+                        break;
+                    case "int":
+                        e[o] = parseInt(n);
+                        break;
+                    case "float":
+                        e[o] = parseFloat(n);
+                        break;
+                    case "bool":
+                        e[o] = !!parseInt(n);
+                        break;
+                    case "null":
+                        e[o] = null;
+                        break;
+                    case "debug":
+                    	console.log('debug');
+                }
+            }
+        }
+
+        return e;
+    }
+
 }
 
 

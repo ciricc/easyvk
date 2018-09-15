@@ -1,4 +1,4 @@
-let VKResponseReturner = function(staticMethods, dataResponse_) {
+let VKResponseReturner = function(staticMethods, dataResponse_, returnConstructor) {
 	
 	let response_ = dataResponse_;
 
@@ -69,6 +69,10 @@ let VKResponseReturner = function(staticMethods, dataResponse_) {
 		}
 	}
 
+	if (returnConstructor) {
+		return VKResponse;
+	}
+	
 	return new VKResponse(res);
 }
 

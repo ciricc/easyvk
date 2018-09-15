@@ -472,7 +472,20 @@ class EasyVK {
 
 }
 
+function is (obj1, obj2) {
+	return obj1.__proto__.constructor.name === obj2;
+}
+
+
 module.exports = EasyVK;
+module.exports.is = is;
+module.exports.class = {
+	VKResponse: "VKResponse",
+	VKResponseError: "VKResponseError",
+	EasyVKError: "EasyVKError",
+	AudioItem: "AudioItem"
+}
+
 
 module.exports.version = "1.6.0";
 module.exports.callbackAPI = new easyVKCallbackAPI({});

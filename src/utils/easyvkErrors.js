@@ -131,3 +131,4 @@ class EasyVKErrors {
 }
 
 module.exports = new EasyVKErrors;
+module.exports.EasyVKError = EasyVKError;

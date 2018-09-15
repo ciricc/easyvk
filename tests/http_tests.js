@@ -11,6 +11,7 @@ const easyVK = require(`${_easyvk}`)
 
 const currentSessionFile = path.join(__dirname, '.vksession')
 
+
 /*
  *
  * This test is testing all my Http widgets
@@ -87,16 +88,60 @@ easyVK({
 
 		// });
 
-		Client.audio.search({
-			q: 'maroon 5',
-			offset: 50,
-		}).then(({vkr, json}) => {
+		let { classes: EasyVKClasses } = easyVK;
 
-			Client.audio.add(vkr[0]).then(({vkr}) => {
+		let handler = (err) => {
+
+			switch (err.constructor.name) {
+				case EasyVKClasses.EasyVKError: 
+					break;
+				case EasyVKClasses.VKResponseError:
+					break;
+				case "Error":
+					break;
+			}
+
+		}
+		
+
+		// Client.audio.search({
+		// 	q: 'maroon 5',
+		// 	offset: 50,
+		// }).then(({vkr, json}) => {
+			
+		// 	Client.audio.add(vkr[0]).then(({vkr}) => {
+		// 		console.log(vkr);
+		// 	});
+
+		// }, handler);
+
+
+
+		Client.audio.get().then(({vkr}) => {
+			
+			let audio = vkr[1];
+			console.log(audio.title);
+
+			Client.audio.getAudioText(audio).then(({vkr}) => {
 				console.log(vkr);
-			});
+			})
 
 		});
+
+
+
+
+
+		// vk.call('messages.getById', {
+		// 	message_ids: 355361
+		// }).then(({vkr}) => {
+		// 	let attach = vkr.items[0].attachments[0];
+		// 	let audio = attach.audio;
+		// 	console.log(Client.audio.__UnmuskTokenAudio(audio.url))
+		// });
+
+
+
 
 	});
 
