@@ -10,7 +10,7 @@ let VKResponseReturner = function(staticMethods, dataResponse_, returnConstructo
 	let Constructor = global[constructorName];
 
 
-	
+	if (!Constructor) Constructor = Object;
 
 	class VKResponse extends Constructor {
 		

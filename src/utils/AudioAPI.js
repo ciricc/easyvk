@@ -9,6 +9,26 @@ const VKResponse = require("./VKResponse.js");
 
 class AudioItem extends Object {
 	constructor (audio) {
+
+		super();
+
+		let self = this;
+		let _props = audio;
+
+		//Use session data with methods
+		for (let prop in _props) {
+			Object.defineProperty(self, prop, {
+				enumerable: true,
+				configurable: true,
+				value: _props[prop],
+			});
+		}
+
+	}
+}
+
+class PlayListItem extends Object {
+	constructor (audio) {
 		super();
 
 		let self = this;
@@ -65,27 +85,27 @@ class AudioAPI {
 		}
 
 		self.genres = {
-			1: "Rock"
-			2: "Pop"
-			3: "Rap & Hip-Hop"
-			4: "Easy Listening"
-			5: "Dance & House"
-			6: "Instrumental"
-			7: "Metal"
-			8: "Dubstep"
-			10: "Drum & Bass"
-			11: "Trance"
-			12: "Chanson"
-			13: "Ethnic"
-			14: "Acoustic &amp; Vocal"
-			15: "Reggae"
-			16: "Classical"
-			17: "Indie Pop"
-			18: "Other"
-			19: "Speech"
-			21: "Alternative"
-			22: "Electropop &amp; Disco"
-			1001: "Jazz & Blues"
+			1: "Rock",
+			2: "Pop",
+			3: "Rap & Hip-Hop",
+			4: "Easy Listening",
+			5: "Dance & House",
+			6: "Instrumental",
+			7: "Metal",
+			8: "Dubstep",
+			10: "Drum & Bass",
+			11: "Trance",
+			12: "Chanson",
+			13: "Ethnic",
+			14: "Acoustic & Vocal",
+			15: "Reggae",
+			16: "Classical",
+			17: "Indie Pop",
+			18: "Other",
+			19: "Speech",
+			21: "Alternative",
+			22: "Electropop & Disco",
+			1001: "Jazz & Blues",
 		}
 
 
@@ -961,6 +981,224 @@ class AudioAPI {
         return e;
     }
 
+    _getPlaylistAsObject (playlist = {}) {
+    	let self = this;
+
+    	let _playlist = {
+    		id: playlist.id,
+    		owner_id: playlist.owner_id,
+    		raw_id: playlist.raw_id,
+    		title: playlist.title,
+    		cover_url: playlist.thumb,
+    		last_updated: playlist.last_updated,
+    		explicit: playlist.is_explicit,
+    		followed: playlist.is_followed,
+    		official: playlist.is_official,
+    		listens: playlist.listens,
+    		size: playlist.size,
+    		follow_hash: playlist.follow_hash,
+    		edit_hash: playlist.edit_hash,
+    		covers: playlist.grid_covers,
+    		description: playlist.description,
+    		context: playlist.context,
+    		access_hash: playlist.access_hash,
+    		items: undefined
+    	}
+
+    	return new PlayListItem(_playlist);
+    }
+
+    _getPlaylistAsObjectOne (playlist = {}) {
+    	let self = this;
+
+    	return new Promise((resolve, reject) => {
+	    	let _playlist = {
+	    		id: playlist.id,
+	    		owner_id: playlist.ownerId,
+	    		raw_id: playlist.ownerId + '_' + playlist.id,
+	    		title: playlist.title,
+	    		cover_url: playlist.coverUrl,
+	    		last_updated: playlist.lastUpdated,
+	    		explicit: playlist.isExplicit,
+	    		followed: playlist.isFollowed,
+	    		official: playlist.isOfficial,
+	    		listens: playlist.listens,
+	    		size: playlist.size,
+	    		follow_hash: playlist.followHash,
+	    		edit_hash: playlist.editHash,
+	    		covers: playlist.grid_covers,
+	    		description: playlist.description,
+	    		raw_description: playlist.rawDescription,
+	    		context: playlist.context,
+	    		access_hash: playlist.accessHash,
+	    		list: playlist.list
+	    	}
+
+	    	self._getNormalAudiosWithURL(_playlist.list).then((audios) => {
+	    		_playlist.list = audios;
+	    		resolve(new PlayListItem(_playlist));
+	    	}, reject);
+    	})
+    }
+
+
+    getPlaylists (params = {}) {
+
+    	let self = this;
+
+    	return new Promise((resolve, reject) => {
+
+    		self._request({
+				act: "owner_playlists",
+				al: 1,
+				is_attach: 0,
+				offset: params.offset || 0,
+				owner_id: params.owner_id || self._vk.session.user_id
+    		}).then((res) => {
+
+    			let json = self._parseJSON(res.body, reject);
+				if (json instanceof Promise) return reject(new Error('Unknow error in getPlaylists method'));
+
+				let playlists = json;
+
+				for (let i = 0; i < playlists.length; i++) {
+					playlists[i] = self._getPlaylistAsObject(playlists[i]);
+				}
+
+				return resolve({
+					vkr: VKResponse(staticMethods, {
+						response: playlists
+					}),
+					vk: self._vk,
+					json: json
+				});
+
+    		});
+
+    	});
+
+    }
+
+    getPlaylistById (params = {}) {
+    	let self = this;
+
+    	return new Promise((resolve, reject) => {
+
+    		self._request({
+    			access_hash: params.access_hash || "",
+				act: "load_section",
+				al: 1,
+				claim: 0,
+				is_loading_all: 1,
+				offset: 0,
+				owner_id: params.owner_id,
+				playlist_id: params.playlist_id,
+				type: "playlist",
+    		}).then(res => {
+
+    			let json = self._parseJSON(res.body, reject);
+    			if (json instanceof Promise) return reject(new Error('Unknow error in getPlaylistById method'));
+
+    			self._getPlaylistAsObjectOne(json).then(playlist => {
+
+    				return resolve({
+    					vkr: VKResponse(staticMethods, {
+    						response: playlist
+    					}),
+    					vk: self._vk,
+    					json: json
+    				});
+
+    			});
+
+    		});
+
+    	});
+    }
+
+
+    followPlaylist (playlist = {}) {
+    	let self = this;
+
+    	return new Promise((resolve, reject) => {
+
+    		if (!playlist.follow_hash) {
+    			return reject(new Error('You haven\'t access to follow this playist'));
+    		}
+
+    		self._request({
+    			act: "follow_playlist",
+				al: 1,
+				hash: playlist.follow_hash,
+				playlist_id: playlist.id,
+				playlist_owner_id: playlist.owner_id,
+    		}).then(res => {
+    			return resolve({
+    				vkr: VKResponse(staticMethods, {
+    					response: true
+    				}),
+    				vk: self._vk,
+    			});
+    		});
+
+    	});
+    }
+
+
+    moveToPlaylist (audio = {}, playlist = {}) {
+    	let self = this;
+
+    	return new Promise((resolve, reject) => {
+
+    		console.log(playlist);
+    		if (!playlist.edit_hash) return reject(new Error('You haven\'t access to this playlist'));
+
+    		self._request({
+    			act: "playlists_by_audio",
+				al: 1,
+				audio_id: audio.id,
+				audio_owner_id: audio.owner_id,
+				owner_id: playlist.owner_id,
+    		}).then(res => {
+
+    			let json = self._parseJSON(res.body, reject);
+    			if (json instanceof Promise) return reject(new Error('Unknow error in moveToPlaylist method!'));
+
+
+    			for(let i = 0; i < json.length; i++) {
+    				let pid = json[i][1];
+
+    				if (pid === playlist.id) {
+	    				
+	    				self._request({
+			    			act: "add_audio_to_playlist",
+							al: 1,
+							audio_id: audio.id,
+							audio_owner_id: audio.owner_id,
+							do_add: 1,
+							hash: json[i][4],
+							playlist_id: playlist.id,
+							playlist_owner_id: playlist.owner_id,
+			    		}).then(res => {
+			    				
+			    			return resolve({
+			    				vkr: VKResponse(staticMethods, {
+			    					response: true
+			    				}),
+			    				vk: self._vk,
+			    				json: [[json], [res.body]]
+			    			})
+
+			    		});
+
+			    		break;
+    				}
+    			}
+
+    		});	
+
+    	});
+    }
 }
 
 

@@ -34,21 +34,32 @@ const currentSessionFile = path.join(__dirname, '.vksession')
 	const AudioAPI = Client.audio;
 
 
-	AudioAPI.reorder({
-		owner_id: 356607530,
-		audio_id: 456239545,
-		after_audio_id: 456239481
+	AudioAPI.getPlaylists().then(({vkr}) => {
+
+		let playlists = vkr;
+
+		AudioAPI.getPlaylistById({
+			owner_id: vkr[0].owner_id,
+			playlist_id: vkr[0].id
+		}).then(({vkr}) => {
+
+			// AudioAPI.followPlaylist() - подписаться на плейлист
+
+			AudioAPI.get().then(({vkr}) => {
+
+				let audio = vkr[6];
+				let playlist = playlists[1];
+
+				AudioAPI.moveToPlaylist(audio, playlist);
+
+			})
+
+		});
+
 	});
 
-	let {vkr: myAudios} = await (AudioAPI.get());
-	AudioAPI.edit(myAudios[0], {
-		title: 'New title'
-		performer: 'Bare Jams',
-		text: 'Bare Jams Text Body',
-		privacy: 0, //выводить при поиске
-		genre: AudioAPI.genres[1001], //ID жанра,этот, например, Jazz & Blues
-		autocover: 1 //Добавлять на основе информации облоку автоматически
-	});
+
+
 
 
 
