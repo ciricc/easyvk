@@ -64,7 +64,35 @@ class AudioAPI {
 	        AUDIO_ITEM_EXPLICIT_BIT: 1024
 		}
 
+		self.genres = {
+			1: "Rock"
+			2: "Pop"
+			3: "Rap & Hip-Hop"
+			4: "Easy Listening"
+			5: "Dance & House"
+			6: "Instrumental"
+			7: "Metal"
+			8: "Dubstep"
+			10: "Drum & Bass"
+			11: "Trance"
+			12: "Chanson"
+			13: "Ethnic"
+			14: "Acoustic &amp; Vocal"
+			15: "Reggae"
+			16: "Classical"
+			17: "Indie Pop"
+			18: "Other"
+			19: "Speech"
+			21: "Alternative"
+			22: "Electropop &amp; Disco"
+			1001: "Jazz & Blues"
+		}
+
+
+
 	}
+
+
 
 
 	getURL (urlToken = "") {
@@ -104,7 +132,7 @@ class AudioAPI {
 				type: 'playlist'
 			}).then(res => {
 
-				let json = self._parseJSON(res.body);
+				let json = self._parseJSON(res.body, reject);
 				if (json instanceof Promise) return;
 
 				let audios = json.list;
@@ -158,8 +186,7 @@ class AudioAPI {
 				ids: params.ids
 			}).then((res) => {
 
-
-				let audios = self._parseJSON(res.body);
+				let audios = self._parseJSON(res.body, reject);
 
 				if (audios instanceof Promise) return;
 				
@@ -193,7 +220,6 @@ class AudioAPI {
 
 				let text = res.body;
 				text = text.split('<!>');
-				console.log(text);
 				text = text[text.length - 1];
 
 				resolve({
@@ -334,9 +360,6 @@ class AudioAPI {
 
 				res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString();
 				
-
-				let res2 = res.body.split('<!>');
-				console.log(self._parseResponse(res2));
 
 				if (!res.body.length) {
 					return reject(new Error('No have access on this'));
@@ -839,8 +862,10 @@ class AudioAPI {
 			params.oid = audio.owner_id;
 			params.performer = params.performer || audio.performer || "";
 			params.privacy = params.privacy || 0;
-			params.text = params.text || audio.text || "";
 			params.title = params.title || audio.title || "";
+
+			//params.genre - Жанр, params.autocover - Автообложка
+			//params.text - Текст песни
 
 			self._request(params).then(res => {
 				let json = self._parseJSON(res.body, reject);
@@ -861,7 +886,41 @@ class AudioAPI {
 		});
 	}
 
-	reorder () {
+	reorder (params = {}) {
+		let self = this;
+
+		return new Promise((resolve, reject) => {
+
+			self._request({}).then(res => {
+				let reorderHash = res.body.match(/\"audiosReorderHash\":\"(.*?)\"/g);
+				
+				if (!reorderHash) reorderHash = [""];
+				reorderHash = (reorderHash[0].split(":")[1] || "").replace(/\"/g, "");
+
+				if (!reorderHash) {
+					return reject(new Error('Not parsed reorder hash'));
+				}
+
+				self._request({
+					al: 1,
+					act: 'reorder_audios',
+					next_audio_id: params.after_audio_id || 0,
+					audio_id: params.audio_id || -1,
+					hash: reorderHash || "",
+					owner_id: params.owner_id || self._vk.session.user_id || 0
+				}).then(res => {
+					return resolve({
+						vkr: VKResponse(staticMethods, {
+							response: res.body
+						}),
+						vk: self._vk
+					});
+				});
+
+
+			});
+
+		});
 
 	}
 

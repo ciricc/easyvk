@@ -204,58 +204,70 @@ class HTTPEasyVK {
 			if (!pass || !login) return reject(new Error('Need authenticate by password and username. This data not saving in session file!'));
 
 			
-			//Make first request, for know url for POST request
-			//parse from m.vk.com page
-			let jar = request.jar();
+			let easyvk = require('../index.js');
 
-			self._authjar = jar;
+			easyvk({
+				password: pass,
+				username: login,
+				save_session: false,
+				reauth: true
+			}).then(() => {
+				easyvk = null;
 
-			request.get({
-				headers: self.headersRequest,
-				url: 'https://m.vk.com/',
-				jar: self._authjar
-			}, (err, res, vkr) => {
-				
-				if (err) return reject(new Error(err));
+				//Make first request, for know url for POST request
+				//parse from m.vk.com page
+				let jar = request.jar();
 
-				let body = res.body;
+				self._authjar = jar;
 
-				let matches = body.match(/action\=\"(.*?)\"/);
-				let POSTLoginFormUrl = matches[1];
+				request.get({
+					headers: self.headersRequest,
+					url: 'https://m.vk.com/',
+					jar: self._authjar
+				}, (err, res, vkr) => {
+					
+					if (err) return reject(new Error(err));
 
-				if (!POSTLoginFormUrl.match(/login\.vk\.com/)) return reject(new Error('Library does not support this authentication way... sorry'));
+					let body = res.body;
 
-				actLogin(POSTLoginFormUrl).then(resolve, reject);
-			});
+					let matches = body.match(/action\=\"(.*?)\"/);
+					let POSTLoginFormUrl = matches[1];
 
+					if (!POSTLoginFormUrl.match(/login\.vk\.com/)) return reject(new Error('Library does not support this authentication way... sorry'));
 
-			function actLogin (loginURL) {
-				return new Promise((resolve, reject) => {
-					request.post({
-						url: loginURL,
-						jar: self._authjar,
-						followAllRedirects: true,
-						form: {
-							'email': login,
-							'pass': pass
-						}
-					}, (err, res, vkr) => {
-
-						if (err) return reject(new Error(err));
-
-						let HTTPClient = new HTTPEasyVKClient({
-							_jar: self._authjar,
-							vk: self._vk
-						});
-
-						return resolve({
-							client: HTTPClient,
-							vk: self._vk
-						});
-
-					});
+					actLogin(POSTLoginFormUrl).then(resolve, reject);
 				});
-			}
+
+
+				function actLogin (loginURL) {
+					return new Promise((resolve, reject) => {
+						request.post({
+							url: loginURL,
+							jar: self._authjar,
+							followAllRedirects: true,
+							form: {
+								'email': login,
+								'pass': pass
+							}
+						}, (err, res, vkr) => {
+
+							if (err) return reject(new Error(err));
+
+							let HTTPClient = new HTTPEasyVKClient({
+								_jar: self._authjar,
+								vk: self._vk
+							});
+
+							return resolve({
+								client: HTTPClient,
+								vk: self._vk
+							});
+
+						});
+					});
+				}
+
+			}, reject);
 
 		});
 	}
