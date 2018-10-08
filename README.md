@@ -29,6 +29,12 @@ Download and install Node.js. Create a project and install `easyvk` with `npm`:
 npm i easyvk --save
 ```
 
+### Yarn installation
+If you are using a yarn package manager, you can add easyvk to project so
+```
+yarn add easyvk
+```
+
 ## Example usage
 
 You can test the library without installing on [npm runkit](https://npm.runkit.com/easyvk).

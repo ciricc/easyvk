@@ -1199,6 +1199,34 @@ class AudioAPI {
 
     	});
     }
+
+    deletePlaylist (playlist = {}) {
+    	let self = this;
+
+    	return new Promise((resolve, reject) => {
+
+    		if (!playlist.edit_hash) return reject(new Error('You have not access to edit this playlist'));
+
+    		self._request({
+    			act: "delete_playlist",
+				al: 1,
+				hash: playlist.edit_hash,
+				page_owner_id: playlist.owner_id,
+				playlist_id: playlist.id,
+				playlist_owner_id: playlist.owner_id,
+    		}).then((res) => {
+
+    			return resolve({
+    				vkr: VKResponse(staticMethods, {
+    					response: true
+    				}),
+    				json: res.body,
+    				vk: self._vk
+    			});
+
+    		});
+    	});
+    }
 }
 
 

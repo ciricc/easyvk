@@ -24,8 +24,8 @@ const currentSessionFile = path.join(__dirname, '.vksession')
 		api_v: '5.73',
 		save_session: true,
 		session_file: currentSessionFile,
-		username: '{ВАШ_ЛОГИН}',
-		password: '{ВАШ_ПАРОЛЬ}',
+		username: '{USERNAME}',
+		password: '{PASSWORD}',
 		platform: ['ios', 'android', 'windows'][0],
 	}))
 
@@ -35,27 +35,31 @@ const currentSessionFile = path.join(__dirname, '.vksession')
 
 
 	AudioAPI.getPlaylists().then(({vkr}) => {
-
 		let playlists = vkr;
+		let i = 0;
+		
+		function deleteP () {
+			if (i < playlists.length) {
+				if (playlists[i].followed) {
+					return AudioAPI.followPlaylist(playlists[i]);
+				}
 
-		AudioAPI.getPlaylistById({
-			owner_id: vkr[0].owner_id,
-			playlist_id: vkr[0].id
-		}).then(({vkr}) => {
+				return AudioAPI.deletePlaylist(playlists[i]);
+			} else {
+				return false;
+			}
+		}
 
-			// AudioAPI.followPlaylist() - подписаться на плейлист
+		let go = () => {	
+			let k;
+			(k = deleteP()) ? k.then(() => {
+				i++;
+				setTimeout(go, 400)
+			}) : null;
+			return k;
+		}
 
-			AudioAPI.get().then(({vkr}) => {
-
-				let audio = vkr[6];
-				let playlist = playlists[1];
-
-				AudioAPI.moveToPlaylist(audio, playlist);
-
-			})
-
-		});
-
+		go();
 	});
 
 
