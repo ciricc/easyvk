@@ -6,7 +6,7 @@
 
 # EasyVK (VKontakte API Manager) v2.0
 
-This library helps you easily create apps with vk api!
+This library helps you easily create a javascript application with VKontakte API!
 Official VK API: [vk.com/dev/](https://vk.com/dev/)
 
 | [Community](https://vk.com/club162208999) | [Документация на русском](https://ciricc.github.io/) |

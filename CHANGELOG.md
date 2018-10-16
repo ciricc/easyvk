@@ -4,6 +4,52 @@ This file started from 0.2.8 version.
 So, in older versions you need see changes in a commits.
 
 
+## 2.0
+
+### Добавленные методы (21):
++ easyvk.is(foor, obj2) - проверка объектов
++ easyvk.http.loginByForm() - исправлена проблема авторизации без пароля, не было проверки, что данные верны
++ httpClient.audio.get() - получить аудиозаписи группы или пользователя
++ httpClient.audio.getById() - получить несколько аудиозаписей по их ID,
++ httpClient.audio.search() - получить аудиозаписи по поисковому запросу
++ httpClient.audio.getCount() - получить количество аудиозаписей группы/юзера
++ httpClient.audio.getLyrics() - получить слова песни (старый способ)
++ httpClient.audio.getUploadServer() - получить URL Для загрузки аудио
++ httpClient.audio.upload() - загрузить аудиозапись
++ httpClient.audio.getURL() - получить разобранный URL аудиозаписи, Mp3
++ httpClient.audio.save() - сохранить загруженную аудиозапись, чтобы дальше ею манипулировать
++ httpClient.audio.add() - добавить аудиозапись
++ httpClient.audio.delete() - удалить аудиозапись с возможностью восстановить
++ httpClient.audio.reorder() - восстановить удаленную запись
++ httpClient.audio.edit() - редактировать аудиозапись
++ httpClient.audio.reorder() - переместить аудиозапись на другую позицию
+
+#### —- ДЛЯ ПРОДВИНУТЫХ —
++ httpClient.audio._getAudioAsObject() - получение из массива аудиозаписи объекта аудиозаписи
++ httpClient.audio._parseResponse() - спарсить ответ сервера POST запроса вк, пока что не используется, но будет переписано на это
++ httpClient.audio._getAdi() - получение хешей для работы с аудио
++ httpClietn.audio._getNormalAudiosWithURL() - более массивный метод для получения сразу нескольких аудио из массива в объект
++ httpClient.audio._request() - сделать POST запрос на адрес vk.com/al_audio.php
++ httpClietn.audio._parseJSON() - спарсить JSON из ответа сервера, скоро будет удален ввиду переписи под метод parseResponse
+
+
+### Исправленные баги:
+- Исправлена ошибка авторизации по HTTP сессии без пароля и логина
+- Исправлена ошибка объекта VKResponse, бывало, что он был пустым
+- Исправлены ошибки метода parseJSON, в некоторых местах он не принимал основных аргументов
+- Исправлена ошибка парсинга JSON из ответа сервера, когда тот в конце
+- Исправлена ошибка пустых src аудиозаписей
+- Исправлена ошибка загрузки аудиозаписи
+- Исправлена ошибка несуществующего метода error() в HTTP клиенте
+
+Добавленные объекты и свойства:
++ easyvk.http.audio - AudioAPI
++ AudioAPI.genres - жанры аудиозаписей
++ AudioAPI._authjar - JAR сессия HTTP клиента
++ easyvk.classes - названия внутренних классов EasyVK
++ AudioItem - объект аудиозаписи
+
+
 ## [1.0] 
 
 ## Login
