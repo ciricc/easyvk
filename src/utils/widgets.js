@@ -138,9 +138,9 @@ class Widgets {
 					});
 
 				} else {
-					reject(self._vk.error('live_not_streaming', {
+					reject(self._vk.error("widgets", {
 						video: video
-					}));
+					}, "live_not_streaming"));
 				}
 			});
 		});

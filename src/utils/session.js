@@ -63,7 +63,7 @@ class EasyVKSession {
 			let s;	
 
 			if (!(self.path)) {
-				return reject(new Error('You need set path for session file!'));
+				return reject(self.vk._error("session", {}, "need_path"));
 			}
 
 			s = JSON.stringify(self);

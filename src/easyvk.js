@@ -487,6 +487,6 @@ module.exports.class = {
 }
 
 
-module.exports.version = "1.6.0";
+module.exports.version = "2.0.0";
 module.exports.callbackAPI = new easyVKCallbackAPI({});
 module.exports.streamingAPI = new easyVKStreamingAPI({});

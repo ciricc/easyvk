@@ -193,7 +193,7 @@ class LongPollConnection extends EventEmitter {
 				return resolve(self.lpConnection.abort());
 
 			} else {
-				return reject(new Error("LongPoll not connected"));
+				return reject(self._vk._error("longpoll_api", {}, "not_connected"));
 			}
 
 		});
@@ -258,7 +258,10 @@ class LongPollConnector {
 		return new Promise ((resolve, reject) => {
 			
 			if (!staticMethods.isObject(params)) {
-				reject(new Error("LongPoll parameters mast be an object!"));
+				reject(self._vk._error("is_not_object", {
+					"where": "BotsLongPoll.connect",
+					"parameter": "params"
+				}));
 			} else {
 				
 				if (params.forGetLongPollServer) {

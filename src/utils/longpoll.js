@@ -205,9 +205,15 @@ class LongPollConnection extends EventEmitter {
 		return new Promise((resolve, reject) => {
 			
 			if (isNaN(eventCode)) {
-				return reject(new Error("eventCode must be numeric"));
+				return reject(self._vk._error("is_not_number", {
+					"where": "LongPoll.addEventCodeListener",
+					"parameter": "eventCode"
+				}));
 			} else if (Object.prototype.toString.call(handler) !== "[object Function]") {
-				return reject(new Error("callback function must be function"));
+				return reject(self._vk._error("is_not_function", {
+					"where": "LongPoll.addEventCodeListener",
+					"parameter": "handler"
+				}));
 			} else {
 				
 				eventCode = eventCode.toString();
@@ -218,7 +224,7 @@ class LongPollConnection extends EventEmitter {
 					self.userListeners[eventCode] = handler;
 
 				} else {
-					return reject(new Error("This eventCode already have"));
+					return reject(self._vk._error("longpoll_api", {}, "event_already_have"));
 				}
 
 			}
@@ -241,7 +247,7 @@ class LongPollConnection extends EventEmitter {
 				return resolve(self.lpConnection.abort());
 
 			} else {
-				return reject(new Error("LongPoll not connected"));
+				return reject(self._vk._error("longpoll_api", {}, "not_connected"));
 			}
 
 		});
@@ -273,7 +279,10 @@ class LongPollConnector {
 
 		return new Promise ((resolve, reject) => {
 			if (!staticMethods.isObject(params)) {
-				return reject(new Error("LongPoll parameters mast be an object!"));
+				return reject(self._vk._error("is_not_object", {
+					"where": "LongPoll.connect",
+					"parameter": "params"
+				}));
 			} else {
 				
 				if (params.forGetLongPollServer) {
