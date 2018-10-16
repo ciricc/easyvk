@@ -201,7 +201,7 @@ class HTTPEasyVK {
 			let pass = self._vk.params.password;
 			let login = self._vk.params.username;
 
-			if (!pass || !login) return reject(new Error('Need authenticate by password and username. This data not saving in session file!'));
+			if (!pass || !login) return reject(self._vk._error("http_client", {}, "need_auth"));
 
 			
 			let easyvk = require('../index.js');
@@ -233,7 +233,7 @@ class HTTPEasyVK {
 					let matches = body.match(/action\=\"(.*?)\"/);
 					let POSTLoginFormUrl = matches[1];
 
-					if (!POSTLoginFormUrl.match(/login\.vk\.com/)) return reject(new Error('Library does not support this authentication way... sorry'));
+					if (!POSTLoginFormUrl.match(/login\.vk\.com/)) return reject(self._vk._error("http_client", {}, "not_supported"));
 
 					actLogin(POSTLoginFormUrl).then(resolve, reject);
 				});

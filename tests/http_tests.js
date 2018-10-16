@@ -24,15 +24,15 @@ const currentSessionFile = path.join(__dirname, '.vksession')
 		api_v: '5.73',
 		save_session: true,
 		session_file: currentSessionFile,
-		username: '{USERNAME}',
-		password: '{PASSWORD}',
+		username: '{USERNAME_HERE}',
+		password: '{PASSWORD_HERE}',
 		platform: ['ios', 'android', 'windows'][0],
-	}))
+		lang: "ru"
+	}));
 
 	let { client: Client } = await (VKontakte.http.loginByForm());
 
 	const AudioAPI = Client.audio;
-
 
 	AudioAPI.getPlaylists().then(({vkr}) => {
 		let playlists = vkr;
@@ -112,3 +112,6 @@ const currentSessionFile = path.join(__dirname, '.vksession')
 	// }));
 
 })();
+
+//Handle all rejects and errors
+process.on('unhandledRejection', console.error)

@@ -51,6 +51,7 @@ class AudioAPI {
 
 	constructor (vk, http) {
 		let self = this;
+
 		self._vk = vk;
 		self._http = http;
 		self._authjar = self._http._authjar;
@@ -140,7 +141,9 @@ class AudioAPI {
 				if (!isNaN(params.offset)) offset = params.offset;
 			}
 
-			if (!params.owner_id) return reject(new Error('User id not defined in your session, use vk.sesion.user_id = X'));
+			if (!params.owner_id) return reject(
+				self._vk._error("audio_api", {}, "owner_id_not_defined")
+			);
 
 			self._request({
 				act: 'load_section',
@@ -340,7 +343,7 @@ class AudioAPI {
 				try {
 					json = JSON.parse(json);
 				} catch (e) {
-					return reject(new Error('Not founded sounds, may be algorythm changed or just user blocked access for you'));
+					return reject(self._vk._error("audio_api", {}, "not_founded"));
 				}
 
 
@@ -382,7 +385,7 @@ class AudioAPI {
 				
 
 				if (!res.body.length) {
-					return reject(new Error('No have access on this'));
+					return reject(self._vk._error("audio_api", {}, "not_have_access"));
 				}
 
 				return resolve(res);
@@ -400,14 +403,14 @@ class AudioAPI {
 		let json = body.match(/<!json>(.*?)<!>/);
 		
 		if (body.match(/<\!bool><\!>/)) {
-			return reject(new Error('Blocked access for you'));
+			return reject(self._vk._error("audio_api", {}, "not_have_access"));
 		}
 
 		if (!json) {
 			json = body.match(/<!json>(.*)/);
 
 			if (!json) {
-				return reject(new Error('Not founded audios, maybe algorythm changed'));
+				return reject(self._vk._error("audio_api", {}, "not_founded"));
 			}
 		}
 
@@ -416,7 +419,7 @@ class AudioAPI {
 			json = JSON.parse(json[1]);
 
 		} catch (e) {
-			return reject(new Error('Not founded sounds, may be algorythm changed or just user blocked access for you'));
+			return reject(self._vk._error("audio_api", {}, "not_founded"));
 		}
 
 		return json;
@@ -773,7 +776,10 @@ class AudioAPI {
 				
 			console.log(audio);	
 			if (!audio.can_add) {
-				return reject(new Error('user can\'t add this audio'));
+				return reject(self._vk._error("audio_api", {
+					"where": "audio.add",
+					"parameters": params
+				}, "not_have_access"));
 			}
 
 			params.act = "add";
@@ -788,7 +794,11 @@ class AudioAPI {
 				
 
 				let json = self._parseJSON(res.body, reject);
-				if (json instanceof Promise) return reject(new Error('Unknow error in add method'));
+				if (json instanceof Promise) return reject(self._vk._error("audio_api", {
+					"where": "audio.add",
+					"parameters": params,
+					"response": Buffer.from(res.body)
+				}, "unknow_error"));
 
 				self._getNormalAudiosWithURL([json]).then(audios => {
 					resolve({
@@ -812,7 +822,10 @@ class AudioAPI {
 		return new Promise((resolve, reject) => {
 
 			if (!audio.delete_hash) 
-				return reject(new Error('Need have delete hash, you can\'t do this without hash'));
+				return reject(self._vk._error("audio_api", {
+					"where": "audio.delete",
+					"sub_description": "Need AudioItem.delete_hash for delete this AudioItem"
+				}, "not_have_access"));
 
 
 			self._request({
@@ -858,7 +871,10 @@ class AudioAPI {
 				});
 
 			} else {
-				return reject(new Error('You need have access to edit this audio!'));
+				return reject(self._vk._error("audio_api", {
+					"where": "audio.restore",
+					"sub_description": "Need AudioItem.edit_hash for restore this AudioItem"
+				}, "not_have_access"));
 			}
 
 		});
@@ -870,7 +886,10 @@ class AudioAPI {
 		return new Promise((resolve, reject) => {
 			
 			if (!audio.can_edit || !audio.edit_hash) 
-				return reject(new Error('You need have access to edit this audio!'));
+				return reject(self._vk._error("audio_api", {
+					"where": "audio.restore",
+					"sub_description": "Need AudioItem.edit_hash for edit this AudioItem"
+				}, "not_have_access"));
 
 			if (!staticMethods.isObject(params)) 
 				params = {}
@@ -889,7 +908,9 @@ class AudioAPI {
 
 			self._request(params).then(res => {
 				let json = self._parseJSON(res.body, reject);
-				if (json instanceof Promise) return reject(new Error('Unknow error in add method'));
+				if (json instanceof Promise) return reject(self._vk._error("audio_api", {
+					"where": "audio.add"
+				}, "unknow_error"));
 
 				self._getNormalAudiosWithURL([json]).then(audio => {
 					resolve({
@@ -918,7 +939,10 @@ class AudioAPI {
 				reorderHash = (reorderHash[0].split(":")[1] || "").replace(/\"/g, "");
 
 				if (!reorderHash) {
-					return reject(new Error('Not parsed reorder hash'));
+					return reject(self._vk._error("audio_api", {
+						"where": "audio.reorder",
+						"sub_description": "Not parsed reorder hash"
+					}, "unknow_error"));
 				}
 
 				self._request({
@@ -1057,7 +1081,9 @@ class AudioAPI {
     		}).then((res) => {
 
     			let json = self._parseJSON(res.body, reject);
-				if (json instanceof Promise) return reject(new Error('Unknow error in getPlaylists method'));
+				if (json instanceof Promise) return reject(self._vk._error("audio_api", {
+					"where": "audio.getPlaylists"
+				}, "unknow_error"));
 
 				let playlists = json;
 
@@ -1097,7 +1123,9 @@ class AudioAPI {
     		}).then(res => {
 
     			let json = self._parseJSON(res.body, reject);
-    			if (json instanceof Promise) return reject(new Error('Unknow error in getPlaylistById method'));
+    			if (json instanceof Promise) return reject(self._vk._error("audio_api", {
+					"where": "audio.getPlaylistsById"
+				}, "unknow_error"));
 
     			self._getPlaylistAsObjectOne(json).then(playlist => {
 
@@ -1123,7 +1151,9 @@ class AudioAPI {
     	return new Promise((resolve, reject) => {
 
     		if (!playlist.follow_hash) {
-    			return reject(new Error('You haven\'t access to follow this playist'));
+    			return reject(self._vk._error("audio_api", {
+    				"where": "audio.followPlaylist"
+    			}, "not_have_access"));
     		}
 
     		self._request({
@@ -1151,7 +1181,9 @@ class AudioAPI {
     	return new Promise((resolve, reject) => {
 
     		console.log(playlist);
-    		if (!playlist.edit_hash) return reject(new Error('You haven\'t access to this playlist'));
+    		if (!playlist.edit_hash) return reject(self._vk._error("audio_api", {
+    			"where": "audio.moveToPlaylist"
+    		}, "not_have_access"));
 
     		self._request({
     			act: "playlists_by_audio",
@@ -1162,7 +1194,9 @@ class AudioAPI {
     		}).then(res => {
 
     			let json = self._parseJSON(res.body, reject);
-    			if (json instanceof Promise) return reject(new Error('Unknow error in moveToPlaylist method!'));
+    			if (json instanceof Promise) return reject(self._vk._error("audio_api", {
+    			"where": "audio.moveToPlaylist"
+    		}, "unknow_error"));
 
 
     			for(let i = 0; i < json.length; i++) {
@@ -1205,7 +1239,9 @@ class AudioAPI {
 
     	return new Promise((resolve, reject) => {
 
-    		if (!playlist.edit_hash) return reject(new Error('You have not access to edit this playlist'));
+    		if (!playlist.edit_hash) return reject(self._vk._error("audio_api", {
+    			"where": "audio.deletePlaylist"
+    		}, "not_have_access"));
 
     		self._request({
     			act: "delete_playlist",
