@@ -4,7 +4,7 @@
   <img alt="EasyVK logo" title="EasyVK can help you create applications on VKontakte API easy!" src="https://i.imgur.com/COiRjJL.png" width="200"/>
 </p>
 
-# EasyVK (VKontakte API Manager)
+# EasyVK (VKontakte API Manager) v2.0
 
 This library helps you easily create apps with vk api!
 Official VK API: [vk.com/dev/](https://vk.com/dev/)
