@@ -194,7 +194,17 @@ async function checkInitParams (params = {}) {
 			params.lang = "ru";
 		}
 
-		resolve(params)
+		if (staticMethods.isString(params.fields)) {
+			params.fields = params.fields.split(",");
+		}
+
+		if (!params.fields || !Array.isArray(params.fields)) {
+			params.fields = [];
+		} else {
+			params.fields = params.fields.map(a => String(a));
+		}
+
+		resolve(params);
 
 
 

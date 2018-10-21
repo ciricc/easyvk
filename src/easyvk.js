@@ -138,12 +138,12 @@ class EasyVK {
 					}
 
 					if (vkr) {
-						console.log(vkr);
 						let json = staticMethods.checkJSONErrors(vkr, reject);						
 						
 						if (json) {
-							self.session = new easyVKSession(self, json);
-							initResolve(self);
+							session = JSON.parse(JSON.stringify(json));
+							session.user_id = null;
+							initToken();
 						}
 
 					} else {
@@ -167,7 +167,8 @@ class EasyVK {
 
 				getData = {
 					access_token: token,
-					v: params.api_v
+					v: params.api_v,
+					fields: params.fields.join(",")
 				};
 
 				getData = staticMethods.urlencode(getData);
@@ -197,6 +198,13 @@ class EasyVK {
 								session.user_id = json[0].id;
 								session.first_name = json[0].first_name;
 								session.last_name = json[0].last_name;
+
+								for (let i = 0; i < params.fields.length; i++) {
+									if (json[0][params.fields[i]]) {
+										session[params.fields[i]] = json[0][params.fields[i]];
+									}
+								}
+
 								self.session = session;
 								initResolve(self);
 							}
@@ -228,7 +236,8 @@ class EasyVK {
 			getData = staticMethods.urlencode({
 				access_token: params.access_token,
 				v: params.api_v,
-				lang: params.lang
+				lang: params.lang,
+				fields: params.fields.join(",")
 			});
 
 			if (self.debuggerRun) {
@@ -265,9 +274,16 @@ class EasyVK {
 						if (Array.isArray(json) && json.length === 0) {
 							reject(self._error("access_token_not_valid"));
 						} else {
+							
 							session.group_id = json[0].id,
 							session.group_name = json[0].name;
 							session.group_screen =  json[0].screen_name;
+							
+							for (let i = 0; i < params.fields.length; i++) {
+								if (json[0][params.fields[i]]) {
+									session[params.fields[i]] = json[0][params.fields[i]];
+								}
+							}
 
 							self.session = session;
 							initResolve(self);
