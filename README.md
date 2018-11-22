@@ -1,6 +1,6 @@
 
 
-<p align="center">
+<p>
   <img alt="EasyVK logo" title="EasyVK can help you create applications on VKontakte API easy!" src="https://i.imgur.com/5P6VNOq.png" width="200"/>
 </p>
 
