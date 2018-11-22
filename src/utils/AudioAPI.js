@@ -123,8 +123,10 @@ class AudioAPI {
 
 
 	get (params = {}) {
+		
+		let self = this;
+
 		return new Promise((resolve, reject) => {
-			let self = this;
 
 			let uid = self._vk.session.user_id,
 				playlist_id = -1, 
@@ -160,8 +162,7 @@ class AudioAPI {
 
 				let audios = json.list;
 
-				return self._getNormalAudiosWithURL(audios).then(audios => {
-					
+				return self._getNormalAudiosWithURL(audios).then(audios => {		
 					if (!params.needAll) {
 						json.list = undefined;
 					}
@@ -202,13 +203,12 @@ class AudioAPI {
 		let self = this;
 
 		return new Promise((resolve, reject) => {
-
+			
 			self._request({
 				act: 'reload_audio',
 				al: 1,
 				ids: params.ids
 			}).then((res) => {
-
 				let audios = self._parseJSON(res.body, reject);
 
 				if (audios instanceof Promise) return;
@@ -400,18 +400,22 @@ class AudioAPI {
 
 	_parseJSON (body, reject) {
 		
+		let self = this;
+
 		let json = body.match(/<!json>(.*?)<!>/);
 		
-		if (body.match(/<\!bool><\!>/)) {
-			return reject(self._vk._error("audio_api", {}, "not_have_access"));
-		}
 
 		if (!json) {
 			json = body.match(/<!json>(.*)/);
 
 			if (!json) {
-				return reject(self._vk._error("audio_api", {}, "not_founded"));
+				if (body.match(/<\!bool><\!>/)) {
+					return reject(self._vk._error("audio_api", {}, "not_have_access"));
+				} else {
+					return reject(self._vk._error("audio_api", {}, "not_founded"));
+				}
 			}
+
 		}
 
 		try {
@@ -458,8 +462,6 @@ class AudioAPI {
 					__audioWithoutURL[i] = self._getAdi(audios[_audioWithoutURL[i]]).join('_');
 				}
 
-
-
 				self.getById({
 					ids: __audioWithoutURL.join(',')
 				}).then(({json: _audios}) => {
@@ -484,12 +486,16 @@ class AudioAPI {
 
 					}
 					
-				}).catch(() => {
-					console.log('Something error occured... I don\'t know what is this. (/src/utils/http.js:search[method])');
+				}).catch((e) => {
+					console.log('Something error occured... I don\'t know what is this. (/src/utils/http.js:search[method])', e);
 				});
 			}
 
-			nextAudios();
+			if (withoutURL.length) {
+				nextAudios();
+			} else {
+				resolve(audios_);
+			}
 
 		});
 
@@ -545,7 +551,6 @@ class AudioAPI {
 							let json, audios = [], audioWithoutURL = [];
 
 							json = self._parseJSON(res.body, reject);
-							// console.log(json);
 							if (json instanceof Promise) return;
 
 							if (i < countOffset && json.hasMore) {
@@ -595,9 +600,11 @@ class AudioAPI {
 			editHash = e[1]||"", 
 			actionHash = e[2]||"", 
 			deleteHash = e[3]||"", 
-			replaceHash = e[4]||"";
+			replaceHash = e[4]||"",
+			otherHash = e[5]||"";
 
 		if (actionHash) adi[2] = actionHash;
+		if (otherHash) adi[3] = otherHash;
 
 		return adi;
 
@@ -608,7 +615,7 @@ class AudioAPI {
 		let self = this;
 
 		let source = self.__UnmuskTokenAudio(audio[self.AudioObject.AUDIO_ITEM_INDEX_URL], self._vk.session.user_id);
-		
+
 		if (!source || source.length == 0) {
 			//need get reloaded audio
 			async function getAudioWithURL() {
@@ -665,7 +672,6 @@ class AudioAPI {
 		if (audio[19]) {
 			audio_.lyrics_id = audio[19][1];
 		}
-
 
 		return new AudioItem(audio_);
 
@@ -773,8 +779,6 @@ class AudioAPI {
 		return new Promise((resolve, reject) => {
 
 			if (!staticMethods.isObject(params)) params = {}
-				
-			console.log(audio);	
 			if (!audio.can_add) {
 				return reject(self._vk._error("audio_api", {
 					"where": "audio.add",
@@ -865,8 +869,6 @@ class AudioAPI {
 					aid: audio.id,
 					hash: audio.edit_hash
 				}).then((res) => {
-					console.log(res.body);
-
 					return resolve(true);
 				});
 
@@ -1180,7 +1182,6 @@ class AudioAPI {
 
     	return new Promise((resolve, reject) => {
 
-    		console.log(playlist);
     		if (!playlist.edit_hash) return reject(self._vk._error("audio_api", {
     			"where": "audio.moveToPlaylist"
     		}, "not_have_access"));

@@ -10,7 +10,7 @@ const currentSessionFile = path.join(__dirname, '.vksession')
 
 
 easyVK({
-	access_token: "{TOKEN_HERE}",
+	access_token: "{TOKEN}",
 	save_session: false,
 	session_file: currentSessionFile,
 	lang: "ru",

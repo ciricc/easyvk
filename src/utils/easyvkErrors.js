@@ -30,8 +30,6 @@ class EasyVKErrors {
 	error(name = "", data = {}, parent = "") {
 		
 		let self = this;
-
-		console.log(name, parent);
 		
 		name = String(name);
 		parent = String(parent);
@@ -39,7 +37,7 @@ class EasyVKErrors {
 		if (self._errors[name]) {
 			let err;
 
-			if (self._errors[name]["errors"][parent]) {
+			if (self._errors[name]["errors"] && self._errors[name]["errors"][parent]) {
 				
 				err = self._errors[name]["errors"][parent];
 				err.code += (self._errors[name]["parent_hash"] || -100000);
@@ -54,7 +52,7 @@ class EasyVKErrors {
 
 			let string_id = name;
 				
-			if (self._errors[name]["errors"][parent]) {
+			if (self._errors[name]["errors"] && self._errors[name]["errors"][parent]) {
 				string_id = name + "\\" + parent;
 			}
 

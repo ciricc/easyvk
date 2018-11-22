@@ -17,9 +17,11 @@ const encoding = require("encoding");
 const VKResponse = require("./VKResponse.js");
 const AudioAPI = require("./AudioAPI.js");
 
+
+
 class HTTPEasyVKClient {
 
-	constructor ({_jar, vk}) {
+	constructor ({_jar, vk, http_vk}) {
 		
 		let self = this;
 
@@ -32,6 +34,7 @@ class HTTPEasyVKClient {
 		self.LOGIN_ERROR = 'Need login by form, use .loginByForm() method';
 		self._vk = vk;
 		self._authjar = _jar;
+		self._http_token = http_vk.session.access_token;
 
 		self.audio = new AudioAPI(self._vk, self);
 	}
@@ -65,6 +68,8 @@ class HTTPEasyVKClient {
 					if (Array.isArray(story.items)) {
 						story.items.forEach(item => {
 							
+							self._story_read_hash = story.read_hash;
+
 							if (story_id) {
 									
 								//Only one story
@@ -124,7 +129,7 @@ class HTTPEasyVKClient {
 		return stories;
 	}
 
-	__readStory (read_hash = '', stories = '', source = 'feed') {
+	__readStory (read_hash = '', stories = '', source = 'feed', cb) {
 		let self = this;
 
 		request.post({
@@ -137,7 +142,7 @@ class HTTPEasyVKClient {
 				'stories': stories
 			},
 			jar: self._authjar
-		});
+		}, cb);
 	}
 
 	async readFeedStories ()
@@ -211,7 +216,10 @@ class HTTPEasyVK {
 				username: login,
 				save_session: false,
 				reauth: true
-			}).then(() => {
+			}).then((vkHtpp) => {
+
+				let vHttp = vkHtpp;
+
 				easyvk = null;
 
 				//Make first request, for know url for POST request
@@ -255,7 +263,8 @@ class HTTPEasyVK {
 
 							let HTTPClient = new HTTPEasyVKClient({
 								_jar: self._authjar,
-								vk: self._vk
+								vk: self._vk,
+								http_vk: vHttp
 							});
 
 							return resolve({
