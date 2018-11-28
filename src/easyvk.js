@@ -57,7 +57,7 @@ class EasyVK {
 						initToken();
 					} else {
 						
-						if (!(params.username && params.password) && !params.access_token) {
+						if (!(params.username && params.password) && !params.access_token && !params.client_id && params.client_secret) {
 							return reject(self._error("empty_session"));
 						}
 
@@ -155,29 +155,44 @@ class EasyVK {
 
 				});
 
-			}
-		}
+			} else if (params.client_id) {
 
-		function initToken() {
-			if (!session.user_id && !session.group_id) {
-				
-				let token, getData;
-
-				token = session.access_token || params.access_token;
-
-				getData = {
-					access_token: token,
+				let getData = {
+					client_id: params.client_id || configuration.WINDOWS_CLIENT_ID,
+					client_secret: params.client_secret || configuration.WINDOWS_CLIENT_SECRET,
+					grant_type: "client_credentials",
 					v: params.api_v,
-					fields: params.fields.join(",")
+					lang: params.lang
 				};
+
+				if (params.captcha_key) {
+					getData.captcha_sid = params.captcha_sid;
+					getData.captcha_key = params.captcha_key;
+				}
+
+
+				if (params.code && params.code.toString().length != 0) {
+					getData["2fa_supported"] = 1;
+					getData.code = params.code;
+				}
 
 				getData = staticMethods.urlencode(getData);
 
-				request.get(configuration.BASE_CALL_URL + "users.get?" + getData, (err, res) => {
-					
-					if (err) {
-						return reject(new Error(err));
+				if (self.debuggerRun) {
+					try {
+						self.debuggerRun.push("request", configuration.BASE_OAUTH_URL + "token/?" + getData);
+					} catch (e) {
+						//Ignore
 					}
+				}
+
+				request.get(configuration.BASE_OAUTH_URL + "token/?" + getData, (err, res) => {
+					
+
+					if (err) {
+						return reject(new Error(`Server was down or we don't know what happaned [responseCode ${res.statusCode}]`));
+					}
+
 
 					let vkr = res.body;
 
@@ -190,42 +205,198 @@ class EasyVK {
 					}
 
 					if (vkr) {
-						let json = staticMethods.checkJSONErrors(vkr, reject);
+						let json = staticMethods.checkJSONErrors(vkr, reject);						
+						
 						if (json) {
-							if (Array.isArray(json) && json.length === 0) {
-								groupToken();
-							} else {
-								session.user_id = json[0].id;
-								session.first_name = json[0].first_name;
-								session.last_name = json[0].last_name;
-
-								for (let i = 0; i < params.fields.length; i++) {
-									if (json[0][params.fields[i]]) {
-										session[params.fields[i]] = json[0][params.fields[i]];
-									}
-								}
-
-								self.session = session;
-								initResolve(self);
-							}
-
+							session = JSON.parse(JSON.stringify(json));
+							session.user_id = null;
+							session.credentials_flow = 1;
+							initToken();
 						}
 
 					} else {
-
+						
 						return reject(self._error("empty_response", {
-							response: vkr,
-							where: 'in auth with token (user)'
+							response: vkr
 						}));
-
 					}
 
 				});
+
+			}
+		}
+
+		function initToken() {
+			if (!session.user_id && !session.group_id) {
+				
+				let token, getData;
+				
+
+				token = session.access_token || params.access_token;
+
+				if (session.credentials_flow) {
+
+					self.__credentials_flow_type = true;
+					self.session = session;
+					
+					initResolve(self);
+
+				} else {
+					getData = {
+						access_token: token,
+						v: params.api_v,
+						fields: params.fields.join(",")
+					};
+
+					getData = staticMethods.urlencode(getData);
+
+					request.get(configuration.BASE_CALL_URL + "users.get?" + getData, (err, res) => {
+						
+						if (err) {
+							return reject(new Error(err));
+						}
+
+						let vkr = res.body;
+
+						if (self.debuggerRun) {
+							try {
+								self.debuggerRun.push("response", vkr);
+							} catch (e) {
+								//Ignore
+							}
+						}
+
+						if (vkr) {
+							let json = staticMethods.checkJSONErrors(vkr, reject);
+							if (json) {
+								if (Array.isArray(json) && json.length === 0) {
+									appToken();
+								} else {
+									session.user_id = json[0].id;
+									session.first_name = json[0].first_name;
+									session.last_name = json[0].last_name;
+
+									for (let i = 0; i < params.fields.length; i++) {
+										if (json[0][params.fields[i]]) {
+											session[params.fields[i]] = json[0][params.fields[i]];
+										}
+									}
+
+									self.session = session;
+									initResolve(self);
+								}
+
+							}
+
+						} else {
+
+							return reject(self._error("empty_response", {
+								response: vkr,
+								where: 'in auth with token (user)'
+							}));
+
+						}
+
+					});
+				}
 
 			} else {
 				self.session = session;
 				initResolve(self);
 			}
+		}
+
+		function appToken () {
+			let getData;
+
+			getData = staticMethods.urlencode({
+				access_token: params.access_token,
+				v: params.api_v,
+				lang: params.lang,
+				fields: params.fields.join(",")
+			});
+
+
+			if (self.debuggerRun) {
+				try {
+					self.debuggerRun.push("request", configuration.BASE_CALL_URL + "groups.getById?" + getData);
+				} catch (e) {
+					//Ignore
+				}
+			}
+
+			request.get(configuration.BASE_CALL_URL + "apps.get?" + getData, (err, res) => {
+				
+				if (err) {
+					return reject(new Error(err));
+				}
+
+				let vkr = res.body;
+				
+				if (self.debuggerRun) {
+					try {
+						self.debuggerRun.push("response", vkr);
+					} catch (e) {
+						//Ignore
+					}
+				}
+				
+				if (vkr) {
+					
+					let json;
+
+					json = staticMethods.checkJSONErrors(vkr, (e) => {
+						if (e.error_code == 5) {
+							groupToken();
+						} else {
+							reject(e);
+						}
+					});
+					
+
+
+					if (json) {
+						
+						json = json.items[0];
+
+						if (Array.isArray(json) && json.length === 0) {
+							groupToken();
+						} else {
+
+							
+							session.app_id = json.id;
+							session.app_title = json.title;
+							session.app_type = json.type;
+							session.app_icons = [json.icon_75,json.icon_150];
+							session.author = {
+								id: json.author_id
+							}
+
+							session.app_members = json.members_count;
+
+							for (let i = 0; i < params.fields.length; i++) {
+								if (json[params.fields[i]]) {
+									session[params.fields[i]] = json[params.fields[i]];
+								}
+							}
+
+							self.session = session;
+
+							initResolve(self);
+
+						}
+
+					}
+
+				} else {
+					return reject(self._error("empty_response", {
+						response: vkr,
+						where: 'in auth with token (group)'
+					}));
+				}
+
+			});
+
 		}
 
 		function groupToken () {

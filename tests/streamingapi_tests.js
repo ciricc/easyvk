@@ -24,11 +24,11 @@ easyVK({
 	session_file: currentSessionFile,
 
 	//Access token whcch you need get from your group settings
-	access_token: '{TOKEN_FIELD}',
+	access_token: 'a5c8b067a5c8b067a5c8b067c6a5aa6013aa5c8a5c8b067ff3d25a5c6a9c0f19f1128bd',
 }).then((vk) => {
 
-	const myApplicationId = '{MY_APPLICATION_ID_FIELD}'
-	const myApplicationSecret = '{MY_APPLICATION_SECRET_KEY_FIELD}'
+	const myApplicationId = '6475892'
+	const myApplicationSecret = 'klaSsMgcCXmzSEB03gDl'
 
 	const StreamingAPI = vk.streamingAPI
 

@@ -478,73 +478,95 @@ class StreamingAPIConnector {
 
 			}
 
+			if (!applicationParams.clientId || !applicationParams.clientSecret) {
+				if (self._vk && self._vk.__credentials_flow_type) {
+					applicationParams.clientId = self._vk.params.client_id;
+					applicationParams.clientSecret = self._vk.params.client_secret;
+				}
+
+			}
+
 			if (applicationParams.clientId && applicationParams.clientSecret) {
 				
-				let getParams = {
-					client_id: applicationParams.clientId,
-					client_secret: applicationParams.clientSecret, 
-					v: self.api_v,
-					grant_type: "client_credentials",
-				};
-
-				getParams = staticMethods.urlencode(getParams);
-
-				request.get(`${configuration.BASE_OAUTH_URL}access_token?${getParams}`, (err, res) => {
-					
-					if (err) {
-						return reject(new Error(err));
-					}
-
-					let vkr = res.body;
-					if(self._vk.debugger) {
-						try {
-							self._vk.debugger.push("response", vkr);
-						} catch (e) {
-							//Ignore
-						}
-					}
-					
-					if (vkr) {
-						let json = staticMethods.checkJSONErrors(vkr, reject);
+				if (self._vk && self._vk.__credentials_flow_type) {
 						
-						if (json) {
+					initConnect(self._vk.session);
 
-							staticMethods.call("streaming.getServerUrl", {
-								access_token: json.access_token
-							}).then((vkrURL) => {
-								let streamingSession, wsc;
+				} else {
 
-								streamingSession = {
-									server: vkrURL,
-									client: json
-								}
+					let getParams = {
+						client_id: applicationParams.clientId,
+						client_secret: applicationParams.clientSecret, 
+						v: self.api_v,
+						grant_type: "client_credentials",
+					};
 
-								wsc = new WS(`wss://${streamingSession.server.endpoint}/stream?key=${streamingSession.server.key}`);
-								
-								wsc.on("open", () => {
-									
-									let _StreamingAPIConnecton = 
-									new StreamingAPIConnection(self._vk, streamingSession, wsc);
-									
-									return resolve({
-										connection: _StreamingAPIConnecton,
-										vk: self._vk
-									});
+					getParams = staticMethods.urlencode(getParams);
 
-								});
+					request.get(`${configuration.BASE_OAUTH_URL}access_token?${getParams}`, (err, res) => {
+						
+						if (err) {
+							return reject(new Error(err));
+						}
 
+						let vkr = res.body;
+						if(self._vk.debugger) {
+							try {
+								self._vk.debugger.push("response", vkr);
+							} catch (e) {
+								//Ignore
+							}
+						}
+						
+						if (vkr) {
+							let json = staticMethods.checkJSONErrors(vkr, reject);
+							
+							if (json) {
 
-							}, reject);
+								initConnect(json);
+
+							} else {
+								return reject(new Error("JSON is not valid... oor i don't know"));
+							}
 
 						} else {
-							return reject(new Error("JSON is not valid... oor i don't know"));
+							return reject(new Error(`Empty response ${vkr}`));
 						}
 
-					} else {
-						return reject(new Error(`Empty response ${vkr}`));
-					}
+					});
+				}
 
-				});
+				function initConnect (json = {}) {
+					
+					console.log('Getting url...');
+
+					staticMethods.call("streaming.getServerUrl", {
+						access_token: json.access_token
+					}).then((vkrURL) => {
+						let streamingSession, wsc;
+
+						streamingSession = {
+							server: vkrURL,
+							client: json
+						}
+
+						wsc = new WS(`wss://${streamingSession.server.endpoint}/stream?key=${streamingSession.server.key}`);
+						
+						wsc.on("open", () => {
+							
+							let _StreamingAPIConnecton = 
+							new StreamingAPIConnection(self._vk, streamingSession, wsc);
+							
+							return resolve({
+								connection: _StreamingAPIConnecton,
+								vk: self._vk
+							});
+
+						});
+
+
+					}, reject);
+				}
 
 			} else {
 				return reject(new Error("clientId and clientSecret not declared"));
