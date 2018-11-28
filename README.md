@@ -136,6 +136,31 @@ You can read documentation <a href="https://ciricc.github.io/">here</a>
 
 ```
 
+### Client Credentials Flow и авторизация по приложению
+
+```javascript
+
+  easyvk({
+    client_id: '{APP_SECRET_CODE}',
+    client_secret: '{CLIENT_SECRET_CODE}',
+  }).then((vk) => {
+
+    const StreamingAPI = vk.streamingAPI
+
+    return StreamingAPI.connect().then(({connection}) => {
+
+      connection.getRules().then(({vkr}) => {
+        console.log(vkr.rules);
+      });
+
+      connection.on("post", console.log)
+
+    });
+
+  });
+
+```
+
 ### Stories API
 
 Используйте все возможности ВКонтакте.

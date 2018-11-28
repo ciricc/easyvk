@@ -21,7 +21,6 @@ easyvk({
 
 	const StreamingAPI = vk.streamingAPI
 
-
 	return StreamingAPI.connect().then(({connection}) => {
 
 		connection.getRules().then(({vkr}) => {
@@ -30,8 +29,6 @@ easyvk({
 
 		connection.on("post", console.log)
 
-	})
-
-
+	});
 
 });
