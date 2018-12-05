@@ -100,10 +100,6 @@ async function checkInitParams (params = {}) {
 		
 		if (params.reauth) {
 			
-			if (!(params.password && params.username) && !params.access_token) {
-				return reject(new Error("You want reauth, but you don't puted username and pass or only access_token"));
-			}
-
 			if (params.access_token && params.username) {
 				return reject(new Error("Select only one way auth: access_token XOR username"));
 			}

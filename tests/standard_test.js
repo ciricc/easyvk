@@ -10,13 +10,15 @@ const currentSessionFile = path.join(__dirname, '.vksession')
 
 
 easyVK({
-	access_token: '{GROUP_HERE}',
+	access_token: 'f7f46cc4d923e6ca0cdea7b271bbf716f7946c0bbc39119d18ccdd8d209416509caa10d2b6376fe273eff',
 	save_session: false,
 	session_file: currentSessionFile,
 	lang: "ru",
 	reauth: true
 }).then(async (vk) => {
 
+	console.log(vk.session);
+	
 	let group = await (vk.call('groups.getById', {
 		group_ids: vk.session.group_id
 	}));

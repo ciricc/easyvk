@@ -9,7 +9,7 @@
 
 const request = require("request");
 const staticMethods = require("./staticMethods.js");
-const EventEmitter = require("events");
+const EventEmitter = require("fast-event-emitter");
 
 
 
@@ -30,6 +30,16 @@ class LongPollConnection extends EventEmitter {
 		function init () {
 
 			let server, forLongPollServer, _w;
+
+			let httpsPref = 'https://';
+			if (self.config.longpollServer.substr(0, httpsPref.length) !== httpsPref) { 
+				console.log(self.config.longpollServer);
+				self.config.longpollServer = httpsPref + self.config.longpollServer; 
+				console.log(self.config.longpollServer, 'changed');
+				return;
+			} else {
+				console.log('normal', self.config.longpollServer);
+			}
 
 			server = `${self.config.longpollServer}?`;
 			forLongPollServer = {};
@@ -65,7 +75,7 @@ class LongPollConnection extends EventEmitter {
 
 
 			self.lpConnection = request.get(params, (err, res) => {
-
+				
 				if (err) {
 					self.emit("error", err);
 				} else {

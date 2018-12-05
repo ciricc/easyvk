@@ -13,7 +13,7 @@ class RequestsDebugger extends EventEmitter {
 	}
 
 	//Push to debugger
-	push (type = "response", data) {
+	async push (type = "response", data) {
 		let self = this;
 		
 		let logData = {
