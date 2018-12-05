@@ -24,21 +24,15 @@
     "vkontakte"
   ],
   "dependencies": {
-    "@babel/core": "^7.1.6",
     "body-parser": "^1.18.2",
     "encoding": "^0.1.12",
     "express": "^4.16.3",
     "fast-event-emitter": "0.0.2",
-    "forever-agent": "^0.6.1",
     "request": "^2.85.0",
     "ws": "^4.1.0"
   },
   "files": [
     "src",
     "index.js"
-  ],
-  "devDependencies": {
-    "rollup": "^0.67.4",
-    "rollup-plugin-babel": "^4.0.3"
-  }
+  ]
 }
