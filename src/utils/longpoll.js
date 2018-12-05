@@ -37,7 +37,7 @@ class LongPollConnection extends EventEmitter {
 				self.config.longpollServer = httpsPref + self.config.longpollServer; 
 			}
 
-			server = `${self.config.longpollServer}?`;
+			server = `${self.config.longpollServer}`;
 			
 
 			forLongPollServer = {};

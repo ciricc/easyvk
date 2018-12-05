@@ -24,7 +24,7 @@ easyVK({
 	session_file: currentSessionFile,
 
 	//Access token whcch you need get from your group settings
-	access_token: 'a5c8b067a5c8b067a5c8b067c6a5aa6013aa5c8a5c8b067ff3d25a5c6a9c0f19f1128bd',
+	access_token: 'app_token',
 }).then((vk) => {
 
 	const myApplicationId = '6475892'

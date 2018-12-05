@@ -8,6 +8,7 @@
 "use strict";
 
 const request = require("request");
+const https = require("https");
 const staticMethods = require("./staticMethods.js");
 const EventEmitter = require("fast-event-emitter");
 
@@ -25,6 +26,11 @@ class LongPollConnection extends EventEmitter {
 		self._vk = vk;
 		self.userListeners = {};
 
+		self._Agent = new https.Agent({
+		    keepAlive: true,
+		    keepAliveMsecs: self.config.userConfig.forLongPollServer.wait * 2 * 1000,
+		});
+
 		init();
 
 		async function init () {
@@ -36,7 +42,7 @@ class LongPollConnection extends EventEmitter {
 				self.config.longpollServer = httpsPref + self.config.longpollServer; 
 			}
 
-			server = `${self.config.longpollServer}?`;
+			server = `${self.config.longpollServer}`;
 			
 			forLongPollServer = {};
 			_w = null;
@@ -53,15 +59,14 @@ class LongPollConnection extends EventEmitter {
 
 			_w = forLongPollServer.wait;
 
-			forLongPollServer = staticMethods.urlencode(forLongPollServer);
-			
 			let params = {
 				url: server,
 				qs: forLongPollServer,
 				timeout: (_w * 1000) + (1000 * 3),
 				headers: {
 					'connection': 'keep-alive'
-				}
+				},
+				agent: self._Agent
 			}
 
 			if (self._debug) {
