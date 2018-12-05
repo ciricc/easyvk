@@ -140,9 +140,7 @@ class LongPollConnection extends EventEmitter {
 							return init(); //reconnect with new parameters
 
 						}).catch((err) => {
-							
 							self.emit("reconnectError", new Error(err));
-
 						});
 
 					} else {
