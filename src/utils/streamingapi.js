@@ -12,7 +12,8 @@
 
 const request = require("request");
 const staticMethods = require("./staticMethods.js");
-const EventEmitter = require("events");
+const EventEmitter = require("fast-event-emitter");
+
 const configuration = require("./configuration.js");
 const WS = require("ws");
 

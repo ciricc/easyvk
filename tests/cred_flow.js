@@ -13,22 +13,24 @@ const easyvk = require(`${_easyvk}`)
 const currentSessionFile = path.join(__dirname, '.vksession')
 
 
-easyvk({
-	client_id: '{APP_SECRET_CODE}',
-	client_secret: '{CLIENT_SECRET_CODE}',
-	reauth: true,
-}).then((vk) => {
+			easyvk({
+				access_token: 'token_app',
+				reauth: true,
+			}).then((vk) => {
 
-	const StreamingAPI = vk.streamingAPI
+				console.log(vk.session);
 
-	return StreamingAPI.connect().then(({connection}) => {
+				const StreamingAPI = vk.streamingAPI
 
-		connection.getRules().then(({vkr}) => {
-			console.log(vkr.rules);
-		});
+				return StreamingAPI.connect().then(({connection}) => {
 
-		connection.on("post", console.log)
+					connection.getRules().then(({vkr}) => {
+						console.log(vkr.rules);
+					});
 
-	});
+					connection.on("post", console.log)
 
-});
+				});
+
+			});
+

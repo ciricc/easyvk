@@ -12,7 +12,7 @@
 const http = require("http");
 const express = require("express");
 const staticMethods = require("./staticMethods.js");
-const EventEmitter = require("events");
+const EventEmitter = require("fast-event-emitter");
 const bodyParser = require("body-parser");
 
 

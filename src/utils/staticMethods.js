@@ -1,252 +1,206 @@
 "use strict";
 
-const configuration = require("./configuration.js");
+const https = require("https");
 const request = require("request");
-const VKResponseError = require('./VKResponseError.js');
+const querystring = require("querystring");
 const VKResponse = require('./VKResponse.js');
+const configuration = require("./configuration.js");
+const VKResponseError = require('./VKResponseError.js');
+
+let Agent = new https.Agent({
+    keepAlive: true,
+    keepAliveMsecs: 15000,
+});
 
 
-class EasyVKStaticMethods {
+module.exports.isString = function (n) {
+	return Object.prototype.toString.call(n) === "[object String]";
+}
 
-	/**
-	 *
-	 *	This function return a GET url with parameters. If you want get url encoded string from object you can use it.
-	 *
-	 *	@param {Object} object it is clear, man! it just a object.................. :(
-	 *	
-	 *	@return {String}
-     *
-	 */
+module.exports.isObject = function (n) {
+	return Object.prototype.toString.call(n) === "[object Object]";
+}
 
-	static urlencode(object = {}) { 
+
+module.exports.checkJSONErrors = function (vkr, reject) {
+
+	let self = this;
+
+	try {
+
+		vkr = JSON.parse(vkr);
 		
-		let self = this;
+		let err = self.checkErrors(vkr);
+		
+		if (err) {
 
-		return Object.keys(object)
-		.map(prop => 
-			prop + '=' + (
-				(self.isObject(object[prop])) ? 
-					(encodeURIComponent(JSON.stringify(object[prop]))) : encodeURIComponent(object[prop])
-			)
+			if (typeof err == "string") {
+				//new error
+				err = new Error(err);
+			} else if (err instanceof Error) {
+				err = err; //ok? :D
+			}
+
+			reject(err);
+			return false;
+		}
+
+		return VKResponse(self, vkr);
+
+	} catch (e) {
+		return reject(new Error(e));
+	}
+
+	return false;
+}
+
+module.exports.urlencode = function (object = {}) { 
+	let self = this;
+
+	return Object.keys(object)
+	.map(prop => 
+		prop + '=' + (
+			(self.isObject(object[prop])) ? 
+				(encodeURIComponent(JSON.stringify(object[prop]))) : encodeURIComponent(object[prop])
 		)
-		.join('&');
+	)
+	.join('&');
 
-	}
+}
 
-	static async call (methodName, data, methodType, debuggerIS) {
-		let self = this;
-		return new Promise ((resolve, reject) => {
-			
-			if (!methodType) {
-				methodType = "get";
-			}
+module.exports.checkErrors = function (vkr) {
+	try {
 
-			let methodType__lower = methodType.toString().toLocaleLowerCase();
+		if (vkr.error) {
+			if (vkr.error === "need_captcha" || vkr.error.error_code === 14) {
+				return JSON.stringify(vkr);
+			} else if (vkr.error === "need_validation") {
 
-			if (["get", "post", "delete", "put"].indexOf(methodType__lower) === -1) {
-				methodType = "get";
-			}	
-
-			
-			if (!self.isObject(configuration)) {
-				return reject(new Error("configuration must be an object"));
-			}
-
-			if (!configuration.BASE_CALL_URL) {
-				return reject(new Error("BASE_CALL_URL must be declared in configuration parameter"));
-			}
-
-			
-			if (methodName) {
-				methodName = methodName.toString();
-			} else {
-				return reject(new Error("Put method name in your call request!"));
-			}
-
-			if (data) {
-				
-				if (!self.isObject(data)) {
-					return reject(new Error("Data params must be an object"));
-				}
-
-			}
-
-			if (!data.v) {
-				data.v = configuration.api_v;
-			}
-
-			
-			
-			let callParams = {
-				url: configuration.BASE_CALL_URL + methodName,
-			};
-
-			if (methodType.toLocaleLowerCase() === "post") {
-				
-				callParams.form = data;
-				callParams.headers = {
-					"content-type" : "application/x-www-form-urlencoded",
-				};
-
-				//Nice request recommendtion
-				for (let i in callParams.form) {
-					if (self.isObject(callParams.form[i])) {
-						callParams.form[i] = JSON.stringify(callParams.form[i]);
-					}
-				}
-
-			} else {
-				
-				let encoded = self.urlencode(data);
-				callParams.url += "?" + encoded;
-			}
-
-			if (debuggerIS) {
-				try {
-					debuggerIS.push("request", callParams.url);
-				} catch (e) {
-					return reject(new Error("Not a normal debugger"));
-				}
-			}
-
-			if (debuggerIS) {
-				try {
-					debuggerIS.push("fullRequest", callParams);
-				} catch (e) {
-					//Ignore
-				}
-			}
-			
-			request[methodType](callParams, (err, res) => {
-				if (err) {
-					return reject(new Error(err));
-				}
-
-				let vkr = res.body;
-
-				if (debuggerIS) {
-					try {
-						debuggerIS.push("response", vkr);
-					} catch (e) {
-						return reject(new Error("Not a normal debugger"));
-					}
-				} 
-
-				if (vkr) {
-					
-					let json = self.checkJSONErrors(vkr, reject);					
-					if (json) {
-						return resolve(json);
-					} else {
-						return reject(new Error("JSON is not valid... oor i don't know"));
-					}
-
+				if (vkr.ban_info) {
+					return vkr.error_description;
 				} else {
-					return reject(new Error(`Empty response ${vkr}`));
-				}
-
-			});
-
-		});
-	}
-
-	// Only for me, but you can use it if understand how
-
-	static checkErrors(vkr) {
-		try {
-			if (vkr.error) {
-				
-
-				if (vkr.error === "need_captcha" || vkr.error.error_code === 14) {
-					return JSON.stringify(vkr);
-				} else if (vkr.error === "need_validation") {
-
-					if (vkr.ban_info) {
-						return vkr.error_description;
-					} else {
-						let type = "sms";
-						if (vkr.validation_type.match('app')) {
-							type = "app";
-						}
+					let type = "sms";
+					if (vkr.validation_type.match('app')) {
+						type = "app";
 					}
-
-					return `Please, enter your ${type} code in code parameter!`;
-
-				} else if (vkr.error.error_code === 17) {
-					return JSON.stringify({
-						redirect_uri: vkr.error.redirect_uri,
-						error: vkr.error.error_msg,
-						error_code: vkr.error.error_code
-					});
 				}
 
-				if (vkr.error.error_msg) {
-					return new VKResponseError(vkr.error.error_msg, vkr.error.error_code, vkr.error.request_params);
-				} else if (vkr.error.message) {
-					return new VKResponseError(vkr.error.message, vkr.error.code, vkr.error.params);
-				} else {
-					return new VKResponseError(vkr.error_description, vkr.error);
-				}
+				return `Please, enter your ${type} code in code parameter!`;
 
-			}
-		} catch (e) {
-			return e;
-		}
-	}
-
-	/* 
-	 *	
-	 *  @deprecated
-	 *
-	 */
-	static encodeHTML (text) {
-		throw new Error('This method was deprecated from 2.0 version!');
-	}
-
-	static isString (n) {
-		
-		if (n === undefined) {
-			n = this;
-		}
-
-		return Object.prototype.toString.call(n) === "[object String]";
-	}
-
-	static isObject (n) {
-		return Object.prototype.toString.call(n) === "[object Object]";
-	}
-
-	static checkJSONErrors (vkr, reject) {
-		let self = this;
-
-		try {
-			vkr = JSON.parse(vkr);
-			
-			let err = self.checkErrors(vkr);
-			
-			if (err) {
-
-				if (self.isString(err)) {
-					//new error
-					err = new Error(err);
-				} else if (err instanceof Error) {
-
-					err = err; //ok? :D
-				}
-
-				reject(err);
-
-				return false;
+			} else if (vkr.error.error_code === 17) {
+				return JSON.stringify({
+					redirect_uri: vkr.error.redirect_uri,
+					error: vkr.error.error_msg,
+					error_code: vkr.error.error_code
+				});
 			}
 
-			return VKResponse(self, vkr);
+			if (vkr.error.error_msg) {
+				return new VKResponseError(vkr.error.error_msg, vkr.error.error_code, vkr.error.request_params);
+			} else if (vkr.error.message) {
+				return new VKResponseError(vkr.error.message, vkr.error.code, vkr.error.params);
+			} else {
+				return new VKResponseError(vkr.error_description, vkr.error);
+			}
 
-		} catch (e) {
-			return reject(new Error(e));
 		}
 
-		return false;
+	} catch (e) {
+		return e;
 	}
 }
 
-module.exports = EasyVKStaticMethods;
+
+module.exports.call = async function call (methodName, data = {}, methodType = "get", debuggerIS = null) {
+
+	let self = this;
+
+	return new Promise ((resolve, reject) => {
+
+		let req;
+		let methodType__lower = methodType.toString().toLocaleLowerCase();
+		
+		if (methodType__lower != "post") {
+			methodType = "get";
+		}
+
+		if (!methodName) {
+			return reject(new Error("Put method name in your call request!"));
+		}
+
+		if (!data.v) {
+			data.v = configuration.api_v;
+		}
+		
+		let callParams = {
+			url: configuration.BASE_CALL_URL + methodName,
+		};
+
+
+		if (methodType == "post") {
+			// prepare post request
+			callParams.agent = Agent;
+
+			callParams.form = data;
+			callParams.headers = {
+				"Content-Type" : "application/x-www-form-urlencoded"
+			};
+
+			//Nice request recommendtion
+			for (let i in callParams.form) {
+				if (self.isObject(callParams.form[i])) {callParams.form[i] = JSON.stringify(callParams.form[i]);}
+			}
+			
+			req = request.post;
+		}
+
+		if (debuggerIS) {
+			try {
+				debuggerIS.push("fullRequest", callParams);
+			} catch (e) {}
+		}
+
+        if (methodType == "get") {
+        	
+        	data = querystring.stringify(data);
+        	return https.get(`${callParams.url}?${data}`, {
+        		agent: Agent
+        	}, (res) => {
+        		let vkr = "";
+        		res.on("data", (chu) => vkr += chu);
+        		res.on("end", () => {return parseResponse(vkr);});
+        		res.on("error", reject);
+        	});
+
+        } else {
+        	req(callParams, (err, res) => {
+				if (err) {return reject(new Error(err));}
+				return parseResponse(res.body);
+			});
+        }
+
+		async function  parseResponse (vkr) {
+			if (vkr) {
+				
+				if (debuggerIS) {
+					try {
+						debuggerIS.push("response", vkr);
+					} catch (e) {}
+				}
+
+				let json = self.checkJSONErrors(vkr, reject);	
+
+				if (json) {
+					return resolve(json);
+				} else {
+					return reject(new Error("JSON is not valid... oor i don't know"));
+				}
+
+			} else {
+				return reject(new Error(`Empty response ${vkr}`));
+			}
+
+		}
+
+	});
+}

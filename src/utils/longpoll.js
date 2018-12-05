@@ -2,7 +2,7 @@
 
 const request = require("request");
 const staticMethods = require("./staticMethods.js");
-const EventEmitter = require("events");
+const EventEmitter = require("fast-event-emitter");
 
 
 class LongPollConnection extends EventEmitter { 
@@ -28,10 +28,18 @@ class LongPollConnection extends EventEmitter {
 
 		init();
 
-		function init () {
+		async function init () {
+			
 			let server, forLongPollServer, _w;
+			let httpsPref = 'https://';
 
-			server = `${self._vk.config.PROTOCOL}://${self.config.longpollServer}?`;
+			if (self.config.longpollServer.substr(0, httpsPref.length) !== httpsPref) { 
+				self.config.longpollServer = httpsPref + self.config.longpollServer; 
+			}
+
+			server = `${self.config.longpollServer}?`;
+			
+
 			forLongPollServer = {};
 			_w = null;
 
@@ -44,7 +52,7 @@ class LongPollConnection extends EventEmitter {
 			forLongPollServer.wait = self.config.userConfig.forLongPollServer.wait;
 
 			if (isNaN(forLongPollServer.mode)) {
-				forLongPollServer.mode = (128 + 32 + 2);
+				forLongPollServer.mode = 8 | 2;
 			}
 
 			if (isNaN(forLongPollServer.version)) {
@@ -53,93 +61,92 @@ class LongPollConnection extends EventEmitter {
 
 			
 			_w = Number(forLongPollServer.wait);
-
-			forLongPollServer = staticMethods.urlencode(forLongPollServer);
 			
 			let params = {
-				url: server + forLongPollServer,
-				timeout: (_w * 1000) + (1000 * 3)
+				url: server,
+				qs: forLongPollServer,
+				timeout: (_w * 1000) + (1000 * 3),
+				headers: {
+					'connection': 'keep-alive'
+				}
 			}
 
-			if (self._debug) {
-				
-				self._debug({
-					type: "longPollParamsQuery",
-					data: params
-				});
-
-			}
+			self._debug({
+				type: "longPollParamsQuery",
+				data: params
+			});
 
 			self.lpConnection = request.get(params, (err, res) => {
 
 				if (err) {
-					self.emit("error", err);
-				} else {
+					return self.emit("error", err);
+				}
 
-					if (self._vk.debugger) {
-						try {
-							self._vk.debugger.push("response", res.body);
-						} catch (e) {
-							//Ignore
-						}
+				if (self._vk.debugger) {
+					try {
+						self._vk.debugger.push("response", res.body);
+					} catch (e) {
+						//Ignore
+					}
+				}
+				
+				self._debug({
+					type: "pollResponse",
+					data: res.body
+				});
+
+				let vkr = res.body;
+
+				try {
+					vkr = JSON.parse(vkr);
+				} catch (e) {
+					self.emit("error", new Error("LongPoll server sended not a json object"));
+					self.emit("failure",vkr);
+					return;
+				}
+
+
+				if (vkr.ts) {
+
+					if (vkr.ts) {
+						self.config.longpollTs = vkr.ts;
 					}
 					
-					if (self._debug) self._debug({
-						type: "pollResponse",
-						data: res.body
-					});
+					if (vkr.updates && vkr.updates.length) {
+						self._checkUpdates(vkr.updates);
+					}
 
-					let vkr = staticMethods.checkJSONErrors(res.body, (vkrError) => {
-						self.emit("error", vkrError);
-					});
+					return init();
+				}
 
-					if (vkr) {
-						//Ok
-						if (vkr.failed) {
+				if (vkr.failed) {
 							
-							if (vkr.failed === 1) { //update ts
-								
-								if (vkr.ts) {
-									self.config.longpollTs = vkr.ts;
-								}
-
-								init();
-
-							} else if ([2,3].indexOf(vkr.failed) != -1) { //need reconnect
-								
-								self._vk.call("messages.getLongPollServer", self.config.userConfig.forGetLongPollServer).then(({vkr}) => {
-									
-									self.config.longpollServer = vkr.server;
-									self.config.longpollTs = vkr.ts;
-									self.config.longpollKey =  vkr.key;
-
-									init(); //reconnect with new parameters
-
-								}).catch((err) => {
-									
-									self.emit("reconnectError", new Error(err));
-
-								});
-
-							} else {
-								self.emit("failure", vkr);
-							}
-
-						} else {
-							if (vkr.ts) {
-								self.config.longpollTs = vkr.ts;
-							}
-							
-							if (vkr.updates) {
-								if (vkr.updates.length > 0) {
-									self._checkUpdates(vkr.updates);
-								}
-							}
-
-							init();
-
+					if (vkr.failed === 1) { //update ts
+						
+						if (vkr.ts) {
+							self.config.longpollTs = vkr.ts;
 						}
 
+						return init();
+
+					} else if ([2,3].indexOf(vkr.failed) != -1) { //need reconnect
+						
+						self._vk.call("messages.getLongPollServer", self.config.userConfig.forGetLongPollServer).then(({vkr}) => {
+							
+							self.config.longpollServer = vkr.server;
+							self.config.longpollTs = vkr.ts;
+							self.config.longpollKey =  vkr.key;
+
+							return init(); //reconnect with new parameters
+
+						}).catch((err) => {
+							
+							self.emit("reconnectError", new Error(err));
+
+						});
+
+					} else {
+						return self.emit("failure", vkr);
 					}
 
 				}
@@ -150,38 +157,35 @@ class LongPollConnection extends EventEmitter {
 
 	}
 
-	_checkUpdates(updates) {
+	async _debug () {
+		if (this._debugg) {
+			this._debugg(...arguments);
+		}
+	}
+
+	
+	async _checkUpdates(updates) {
 		let self = this;
 		
-		if (Array.isArray(updates)) {
-			for (let updateIndex = 0; updateIndex < updates.length; updateIndex++) {
+		let len = updates.length;
 
-				let typeEvent = updates[updateIndex][0].toString();
-				
-				if (self.supportEventTypes[typeEvent]) {
-					
-					typeEvent = self.supportEventTypes[typeEvent];
-					
-					try {
-						
-						if (self.userListeners[typeEvent]) {
-							self.userListeners[typeEvent](updates[updateIndex]);
-						} else {
-							self.emit(typeEvent, updates[updateIndex]);
-						}
+		for (let updateIndex = 0; updateIndex < len; updateIndex++) {
+			
+			let typeEvent = updates[updateIndex][0].toString();
 
-					} catch (e) {
-						self.emit("error", e);
-					}
+			if (self.supportEventTypes[typeEvent]) {
+				typeEvent = self.supportEventTypes[typeEvent];
+				self.emit(typeEvent, updates[updateIndex]);
 
-				} else {
-					self.emit("update", updates[updateIndex]);
-				}
-
+				return self.emit("update", updates[updateIndex]);
 			}
 
-		} else {
-			return "Is not array!";
+			try {
+				if (self.userListeners[typeEvent]) {self.userListeners[typeEvent](updates[updateIndex]);}
+			} catch (e) {
+				self.emit("error", e);
+			}
+
 		}
 
 	}
@@ -258,7 +262,7 @@ class LongPollConnection extends EventEmitter {
 		let self = this;
 
 		if (Object.prototype.toString.call(debugg).match(/function/i)) {
-			self._debug = debugg;
+			self._debugg = debugg;
 		} else {
 			return false;
 		}
