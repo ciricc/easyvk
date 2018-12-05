@@ -12,11 +12,11 @@
 
 const configuration = require("./configuration.js");
 const staticMethods = require("./staticMethods.js");
+
 const request = require("request");
 const encoding = require("encoding");
 const VKResponse = require("./VKResponse.js");
 const AudioAPI = require("./AudioAPI.js");
-
 
 
 class HTTPEasyVKClient {

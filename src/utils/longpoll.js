@@ -37,8 +37,7 @@ class LongPollConnection extends EventEmitter {
 				self.config.longpollServer = httpsPref + self.config.longpollServer; 
 			}
 
-			server = `${self.config.longpollServer}?`;
-			
+			server = `${self.config.longpollServer}`;			
 
 			forLongPollServer = {};
 			_w = null;
@@ -140,11 +139,8 @@ class LongPollConnection extends EventEmitter {
 							return init(); //reconnect with new parameters
 
 						}).catch((err) => {
-							
 							self.emit("reconnectError", new Error(err));
-
 						});
-
 					} else {
 						return self.emit("failure", vkr);
 					}

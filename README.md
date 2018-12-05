@@ -92,6 +92,42 @@ easyvk({
 
 You can read documentation <a href="https://ciricc.github.io/">here</a>
 
+## Рекомендации по производительности ботов
+Чтобы Ваши боты работали еще быстрее, я рекомендую использовать не Bots Longpoll API, а обычный LongPoll API.
+Обновление, которое повышает производтельность находится на версии 2.1.1, версии ниже работают в два раза медленнее, поэтому проверьте, какая версия у Вас установлена.
+
+```javascript
+
+easyvk({
+  access_token: "{GROUP_TOKEN}",
+  reauth: true
+}).then(async (vk) => {
+  
+  let { connection } = await (vk.longpoll.connect());
+
+  connection.on("message", (msg) => {
+
+    let _msg = {
+      out: msg[2] & 2,
+      peer_id: msg[3],
+      text: msg[5],
+      payload: msg[6].payload
+    }
+
+    if (!_msg.out) {
+      vk.call("messages.send", {
+        peer_id: _msg.peer_id,
+        message: "Hi!"
+      })
+    }
+
+  });
+
+});
+
+```
+
+
 ## Что дает EasyVK?
 
 Узнайте, зачем Вам может понадобиться EasyVK, и что именно он может Вам дать!
