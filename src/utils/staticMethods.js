@@ -156,6 +156,7 @@ module.exports.call = async function call (methodName, data = {}, methodType = "
 
 		if (debuggerIS) {
 			try {
+				callParams.qs = data;
 				debuggerIS.push("fullRequest", callParams);
 			} catch (e) {}
 		}
@@ -169,8 +170,13 @@ module.exports.call = async function call (methodName, data = {}, methodType = "
         		let vkr = "";
         		res.on("data", (chu) => vkr += chu);
         		res.on("end", () => {return parseResponse(vkr);});
-        		res.on("error", reject);
-        	});
+        	}).on("error", (e) => {
+    			try {
+    				reject(e)
+    			} catch (err) {
+    				throw e;
+    			}
+    		});
 
         } else {
         	req(callParams, (err, res) => {
