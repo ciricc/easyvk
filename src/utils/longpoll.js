@@ -24,6 +24,7 @@ class LongPollConnection extends EventEmitter {
 			"51": "editChat",
 			"61": "typeInDialog",
 			"62": "typeInChat",
+			"3": "changeFlags"
 		};
 
 		init();
@@ -167,17 +168,20 @@ class LongPollConnection extends EventEmitter {
 
 		for (let updateIndex = 0; updateIndex < len; updateIndex++) {
 			
+
 			let typeEvent = updates[updateIndex][0].toString();
 
+			self.emit("update", updates[updateIndex]);
 			if (self.supportEventTypes[typeEvent]) {
 				typeEvent = self.supportEventTypes[typeEvent];
 				self.emit(typeEvent, updates[updateIndex]);
-
-				return self.emit("update", updates[updateIndex]);
 			}
 
 			try {
-				if (self.userListeners[typeEvent]) {self.userListeners[typeEvent](updates[updateIndex]);}
+				// console.log(self.userListeners, typeEvent, updates);
+				if (self.userListeners[typeEvent]) {
+					self.userListeners[typeEvent](updates[updateIndex]);
+				}
 			} catch (e) {
 				self.emit("error", e);
 			}
