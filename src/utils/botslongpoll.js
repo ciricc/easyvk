@@ -133,18 +133,18 @@ class LongPollConnection extends EventEmitter {
 
 					} else if ([2,3].indexOf(vkr.failed) != -1) { //need reconnect
 						
-						self._vk.call("messages.getLongPollServer", self.config.userConfig.forGetLongPollServer).then(({vkr}) => {
-							
+						self._vk.call("groups.getLongPollServer", self.config.userConfig.forGetLongPollServer).then(({vkr}) => {
+					
 							self.config.longpollServer = vkr.server;
 							self.config.longpollTs = vkr.ts;
 							self.config.longpollKey =  vkr.key;
-							
+
 							return init(); //reconnect with new parameters
 
 						}).catch((err) => {
 							self.emit("reconnectError", new Error(err));
 						});
-
+						
 					} else {
 						return self.emit("failure", vkr);
 					}
