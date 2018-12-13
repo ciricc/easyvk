@@ -560,8 +560,8 @@ class EasyVK {
 					data.lang = self.params.lang;
 				}
 				
-
-				return staticMethods.call(methodName, data, methodType, self.debugger).then((vkr) => {				
+				return staticMethods.call(methodName, data, methodType, self.debugger).then((vkr) => {
+					
 					if (_needSolve) {
 						try {
 							_resolverReCall(true);
@@ -677,6 +677,6 @@ module.exports.class = {
 }
 
 
-module.exports.version = "2.1.13";
+module.exports.version = "2.1.14";
 module.exports.callbackAPI = new easyVKCallbackAPI({});
 module.exports.streamingAPI = new easyVKStreamingAPI({});

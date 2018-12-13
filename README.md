@@ -48,7 +48,8 @@ var easyvk = require("easyvk")
 easyvk({
    username: 'your_login',
    password: 'your_password',
-   save_session: false
+   save_session: false,
+   reauth: true
 }).then(vk => {
   
    //Getting user id from authenticated session

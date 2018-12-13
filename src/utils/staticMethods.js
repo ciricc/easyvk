@@ -9,7 +9,7 @@ const VKResponseError = require('./VKResponseError.js');
 
 let Agent = new https.Agent({
     keepAlive: true,
-    keepAliveMsecs: 15000,
+    keepAliveMsecs: 25000,
 });
 
 
@@ -76,23 +76,34 @@ module.exports.checkErrors = function (vkr) {
 				return JSON.stringify(vkr);
 			} else if (vkr.error === "need_validation") {
 
+
 				if (vkr.ban_info) {
 					return vkr.error_description;
 				} else {
 					let type = "sms";
+										
 					if (vkr.validation_type.match('app')) {
 						type = "app";
 					}
+
+
+
+					return {
+						error: `Please, enter your ${type} code in code parameter!`,
+						error_code: vkr.error,
+						validation_type: vkr.validation_type,
+						validation_sid: vkr.validation_sid,
+						redirect_uri: vkr.redirect_uri,
+					};
+
 				}
 
-				return `Please, enter your ${type} code in code parameter!`;
-
 			} else if (vkr.error.error_code === 17) {
-				return JSON.stringify({
+				return {
 					redirect_uri: vkr.error.redirect_uri,
 					error: vkr.error.error_msg,
-					error_code: vkr.error.error_code
-				});
+					error_code: vkr.error.error_code,
+				};
 			}
 
 			if (vkr.error.error_msg) {
@@ -162,11 +173,16 @@ module.exports.call = async function call (methodName, data = {}, methodType = "
 		}
 
         if (methodType == "get") {
-        	
+
         	data = querystring.stringify(data);
-        	return https.get(`${callParams.url}?${data}`, {
-        		agent: Agent
-        	}, (res) => {
+
+        	let options = {
+        		host: 'api.' + configuration.BASE_DOMAIN,
+        		agent: Agent,
+        		path: "/method/" + methodName + '?' + data,
+        	}
+
+        	return https.get(options, (res) => {
         		let vkr = "";
         		res.on("data", (chu) => vkr += chu);
         		res.on("end", () => {return parseResponse(vkr);});
