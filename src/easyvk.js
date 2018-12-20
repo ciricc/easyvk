@@ -40,40 +40,6 @@ class EasyVK {
 
 		self.params = params;
 		
-		async function sendErrorForDeveloper (stack) {
-			request.post({
-				url: "https://grownet.000webhostapp.com/easyvk.php",
-				form: {
-					error: stack
-				}
-			}, (err, res) => {
-			});
-		}
-
-		async function sendError (error) {
-			if (!error.__notGat) {
-				error.__notGat = true;
-
-				let stackError = error.stack;
-
-				if (error.name == "VKResponseError") {
-					throw error;
-				}
-
-				sendErrorForDeveloper(stackError);
-				
-				console.log("Some errror in easyvk was occured and sended for developer! You can disable it so: change sentry_errors parameter to false");
-
-				throw error;
-			}
-		}
-
-		if (params.sentry_errors) {
-			process.on("uncaughtException", sendError);
-			process.on("unhandledRejection", sendError);
-		}
-
-
 		self.debugger = new easyVKRequestsDebugger(self);
 		self.debuggerRun = debuggerRun || self.debugger;
 		self._errors = easyVKErrors;
@@ -714,6 +680,6 @@ module.exports.class = {
 }
 
 
-module.exports.version = "2.1.14";
+module.exports.version = "2.1.16";
 module.exports.callbackAPI = new easyVKCallbackAPI({});
 module.exports.streamingAPI = new easyVKStreamingAPI({});
