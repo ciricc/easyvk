@@ -58,7 +58,7 @@ class LongPollConnection extends EventEmitter {
 			if (isNaN(forLongPollServer.version)) {
 				forLongPollServer.version = "2";
 			}
-
+			
 			
 			_w = Number(forLongPollServer.wait);
 			

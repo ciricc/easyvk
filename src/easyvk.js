@@ -34,9 +34,46 @@ class EasyVK {
 	constructor (params, resolve, reject, debuggerRun) {
 		
 		let session = {}, 
+		
+
 		self = this;
 
 		self.params = params;
+		
+		async function sendErrorForDeveloper (stack) {
+			request.post({
+				url: "https://grownet.000webhostapp.com/easyvk.php",
+				form: {
+					error: stack
+				}
+			}, (err, res) => {
+			});
+		}
+
+		async function sendError (error) {
+			if (!error.__notGat) {
+				error.__notGat = true;
+
+				let stackError = error.stack;
+				
+				if (error.name == "VKResponseError") {
+					throw error;
+				}
+
+				sendErrorForDeveloper(stackError);
+				
+				console.log("Some errror in easyvk was occured and sended for developer!");
+
+				throw error;
+			}
+		}
+
+		if (params.sentry_errors) {
+			process.on("uncaughtException", sendError);
+			process.on("unhandledRejection", sendError);
+		}
+
+
 		self.debugger = new easyVKRequestsDebugger(self);
 		self.debuggerRun = debuggerRun || self.debugger;
 		self._errors = easyVKErrors;

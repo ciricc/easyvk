@@ -10,6 +10,7 @@ class VKResponseError extends Error {
 		this.error_code = code;
 		this.request_params = request;
 		this.error_msg = message;
+		this.name = "VKResponseError";
 		//done
 	}
 }

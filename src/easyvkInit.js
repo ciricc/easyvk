@@ -15,7 +15,6 @@
 const staticMethods = require("./utils/staticMethods.js");
 const configuration = require("./utils/configuration.js");
 const easyVKRequestsDebugger = require("./utils/debugger.js");
-
 const EasyVK = require("./easyvk.js");
 
 let debuggerRun = new easyVKRequestsDebugger(Boolean(false));
@@ -51,6 +50,7 @@ module.exports.is = EasyVK.is;
 async function checkInitParams (params = {}) {
 	return new Promise((resolve, reject) => {
 		
+
 		if (params.save_session !== false) {
 			params.save_session = configuration.save_session;
 		}
@@ -200,9 +200,13 @@ async function checkInitParams (params = {}) {
 			params.fields = params.fields.map(a => String(a));
 		}
 
+
+
+		if (params.sentry_errors !== false) {
+			params.sentry_errors = true;
+		}
+
 		resolve(params);
-
-
 
 	});
 }
@@ -238,11 +242,9 @@ async function checkInitParams (params = {}) {
 
 async function createSession (params = {}) {
 	return new Promise((resolve, reject) => {
-		
+
 		checkInitParams(params).then((p) => {
 			
-			
-
 			return new EasyVK(p, resolve, reject, debuggerRun);
 
 		}, reject);
