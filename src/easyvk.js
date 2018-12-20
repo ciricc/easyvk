@@ -55,14 +55,14 @@ class EasyVK {
 				error.__notGat = true;
 
 				let stackError = error.stack;
-				
+
 				if (error.name == "VKResponseError") {
 					throw error;
 				}
 
 				sendErrorForDeveloper(stackError);
 				
-				console.log("Some errror in easyvk was occured and sended for developer!");
+				console.log("Some errror in easyvk was occured and sended for developer! You can disable it so: change sentry_errors parameter to false");
 
 				throw error;
 			}
