@@ -29,6 +29,21 @@ class LongPollConnection extends EventEmitter {
 
 		init();
 
+		
+		async function reconnect () {
+			return self._vk.call("groups.getLongPollServer", self.config.userConfig.forGetLongPollServer).then(({vkr}) => {
+		
+				self.config.longpollServer = vkr.server;
+				self.config.longpollTs = vkr.ts;
+				self.config.longpollKey =  vkr.key;
+
+				return init(); //reconnect with new parameters
+
+			}).catch((err) => {
+				self.emit("reconnectError", new Error(err));
+			});
+		}
+
 		async function init () {
 
 			let server, forLongPollServer, _w;
@@ -78,6 +93,11 @@ class LongPollConnection extends EventEmitter {
 			self.lpConnection = request.get(params, (err, res) => {
 				
 				if (err) {
+					
+					if (err.toString().match("TIMEDOUT") || err.toString().match("ENOENT")) {
+						return reconnect(true);
+					}
+
 					return self.emit("error", err);
 				} 
 
@@ -132,19 +152,7 @@ class LongPollConnection extends EventEmitter {
 						return init();
 
 					} else if ([2,3].indexOf(vkr.failed) != -1) { //need reconnect
-						
-						self._vk.call("groups.getLongPollServer", self.config.userConfig.forGetLongPollServer).then(({vkr}) => {
-					
-							self.config.longpollServer = vkr.server;
-							self.config.longpollTs = vkr.ts;
-							self.config.longpollKey =  vkr.key;
-
-							return init(); //reconnect with new parameters
-
-						}).catch((err) => {
-							self.emit("reconnectError", new Error(err));
-						});
-						
+						return reconnect();
 					} else {
 						return self.emit("failure", vkr);
 					}
