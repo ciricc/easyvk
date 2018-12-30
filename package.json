@@ -29,6 +29,7 @@
     "express": "^4.16.3",
     "fast-event-emitter": "0.0.2",
     "request": "^2.85.0",
+    "tough-cookie-file-store": "^1.2.0",
     "ws": "^4.1.0"
   },
   "files": [

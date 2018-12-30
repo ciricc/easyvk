@@ -13,7 +13,10 @@
 const configuration = require("./configuration.js");
 const staticMethods = require("./staticMethods.js");
 
+const fs = require("fs");
 const request = require("request");
+const FileCookieStore = require('tough-cookie-file-store');
+
 const VKResponse = require("./VKResponse.js");
 const AudioAPI = require("./AudioAPI.js");
 
@@ -33,7 +36,7 @@ class HTTPEasyVKClient {
 		self.LOGIN_ERROR = 'Need login by form, use .loginByForm() method';
 		self._vk = vk;
 		self._authjar = _jar;
-		self._http_token = http_vk.session.access_token;
+		// self._http_token = http_vk.session.access_token;
 
 		self.audio = new AudioAPI(self._vk, self);
 	}
@@ -207,6 +210,39 @@ class HTTPEasyVK {
 
 			if (!pass || !login) return reject(self._vk._error("http_client", {}, "need_auth"));
 
+			let cookiepath = __dirname + "/evk_cookies.json";
+
+			if (!self._vk.params.reauth) {
+				let data;
+
+				if(!fs.existsSync(cookiepath)){
+				    fs.closeSync(fs.openSync(cookiepath, 'w'));
+				}	
+
+				data = fs.readFileSync(cookiepath).toString();
+
+				try {
+					data = JSON.parse(data);
+				} catch (e) {
+					data = null;
+				}
+
+				if (data) {
+					let jar = request.jar(new FileCookieStore(cookiepath));
+					
+					self._authjar = jar;
+
+					let HTTPClient = new HTTPEasyVKClient({
+						_jar: self._authjar,
+						vk: self._vk,
+					});
+					
+					return resolve({
+						client: HTTPClient,
+						vk: self._vk
+					});
+				}
+			}
 			
 			let easyvk = require('../index.js');
 
@@ -223,7 +259,7 @@ class HTTPEasyVK {
 
 				//Make first request, for know url for POST request
 				//parse from m.vk.com page
-				let jar = request.jar();
+				let jar = request.jar(new FileCookieStore(cookiepath));
 
 				self._authjar = jar;
 
