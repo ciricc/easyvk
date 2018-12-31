@@ -95,7 +95,7 @@ class LongPollConnection extends EventEmitter {
 				if (err) {
 					
 					if (err.toString().match("TIMEDOUT") || err.toString().match("ENOENT")) {
-						return reconnect(true);
+						return reconnect();
 					}
 
 					return self.emit("error", err);

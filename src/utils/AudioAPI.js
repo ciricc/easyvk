@@ -157,10 +157,6 @@ class AudioAPI {
 				type: 'playlist'
 			}).then(res => {
 
-				let response = self._parseResponse(res.body.split('<!>'));
-
-				console.log(require("fs").writeFileSync("./log.txt", JSON.stringify(response)));
-
 				let json = self._parseJSON(res.body, reject);
 				if (json instanceof Promise) return;
 
