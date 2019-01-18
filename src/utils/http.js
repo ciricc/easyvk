@@ -23,12 +23,14 @@ const AudioAPI = require("./AudioAPI.js");
 
 class HTTPEasyVKClient {
 
-	constructor ({_jar, vk, http_vk}) {
+	constructor ({_jar, vk, http_vk, config}) {
 		
 		let self = this;
 
+		self._config = config;
+
 		self.headersRequest = {
-			"user-agent": "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36",
+			"user-agent": self._config.user_agent,
 			"content-type": "application/x-www-form-urlencoded",
 		};
 
@@ -36,6 +38,7 @@ class HTTPEasyVKClient {
 		self.LOGIN_ERROR = 'Need login by form, use .loginByForm() method';
 		self._vk = vk;
 		self._authjar = _jar;
+
 		// self._http_token = http_vk.session.access_token;
 
 		self.audio = new AudioAPI(self._vk, self);
@@ -59,7 +62,8 @@ class HTTPEasyVKClient {
 
 			request.get({
 				url: `${configuration.PROTOCOL}://m.${configuration.BASE_DOMAIN}/fv?to=/id${vk_id}?_fm=profile&_fm2=1`,
-				jar: self._authjar
+				jar: self._authjar,
+				headers: self.headersRequest
 			}, (err, res, vkr) => {
 				if (err) return reject(new Error(err));
 
@@ -143,7 +147,8 @@ class HTTPEasyVKClient {
 				'source': source,
 				'stories': stories
 			},
-			jar: self._authjar
+			jar: self._authjar,
+			headers: self.headersRequest
 		}, cb);
 	}
 
@@ -158,7 +163,8 @@ class HTTPEasyVKClient {
 
 			request.get({
 				url: `${configuration.PROTOCOL}://m.${configuration.BASE_DOMAIN}/fv?to=%2Ffeed%3F_fm%3Dfeed%26_fm2%3D1`,
-				jar: self._authjar
+				jar: self._authjar,
+				headers: self.headersRequest
 			}, (err, res, vkr) => {
 				if (err) return reject(new Error(err));
 
@@ -192,15 +198,72 @@ class HTTPEasyVK {
 		let self = this;
 
 		self.headersRequest = {
-			"user-agent": "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36",
 			"content-type": "application/x-www-form-urlencoded",
 		};
 
 		self._vk = vk;
 	}
 
+	async __checkHttpParams (params = {}) {
+		return new Promise((resolve, reject) => {
+			
 
-	async loginByForm () {
+			if (!params.user_agent) {
+				params.user_agent = configuration["HTTP_CLIENT"]["USER_AGENT"];
+			}
+
+			params.user_agent = String(params.user_agent);
+
+			if (!params.cookies) {
+				params.cookies = configuration["HTTP_CLIENT"]["COOKIE_PATH"];
+			}
+
+			params.cookies = String(params.cookies);
+
+
+			return resolve(params);
+
+		});
+	}
+
+	_parseResponse (e) {
+        for (var o = e.length - 1; o >= 0; --o) {
+            var n = e[o];
+            if ("<!" === n.substr(0, 2)) {
+                var i = n.indexOf(">"),
+                    r = n.substr(2, i - 2);
+                switch (n = n.substr(i + 1), r) {
+                    case "json":
+
+                        try {
+                        	e[o] = JSON.parse(n);
+                        } catch (e) {
+                        	e[o] = {}
+                        }
+
+                        break;
+                    case "int":
+                        e[o] = parseInt(n);
+                        break;
+                    case "float":
+                        e[o] = parseFloat(n);
+                        break;
+                    case "bool":
+                        e[o] = !!parseInt(n);
+                        break;
+                    case "null":
+                        e[o] = null;
+                        break;
+                    case "debug":
+                    	console.log('debug');
+                }
+            }
+        }
+
+        return e;
+    }
+
+	async loginByForm (params = {}) {
 		let self = this;
 
 		return new Promise((resolve, reject) => {
@@ -210,106 +273,171 @@ class HTTPEasyVK {
 
 			if (!pass || !login) return reject(self._vk._error("http_client", {}, "need_auth"));
 
-			let cookiepath = __dirname + "/evk_cookies.json";
+			self.__checkHttpParams(params).then((p) => {
+				let params = p;
+				
+				self._config = params;
 
-			if (!self._vk.params.reauth) {
-				let data;
+				self.headersRequest["user-agent"] = self._config.user_agent;
+				let cookiepath = self._config.cookies;
 
-				if(!fs.existsSync(cookiepath)){
-				    fs.closeSync(fs.openSync(cookiepath, 'w'));
-				}	
 
-				data = fs.readFileSync(cookiepath).toString();
+				if (!self._vk.params.reauth) {
+					let data;
 
-				try {
-					data = JSON.parse(data);
-				} catch (e) {
-					data = null;
+					if(!fs.existsSync(cookiepath)){
+					    fs.closeSync(fs.openSync(cookiepath, 'w'));
+					}	
+
+					data = fs.readFileSync(cookiepath).toString();
+
+					try {
+						data = JSON.parse(data);
+					} catch (e) {
+						data = null;
+					}
+
+					if (data) {
+						let jar = request.jar(new FileCookieStore(cookiepath));
+						
+						self._authjar = jar;
+
+						return createClient(resolve);
+					}
 				}
+				
+				let easyvk = require('../index.js');
 
-				if (data) {
+				easyvk({
+					password: pass,
+					username: login,
+					save_session: false,
+					reauth: true
+				}).then((vkHtpp) => {
+
+					let vHttp = vkHtpp;
+
+					easyvk = null;
+
+					//Make first request, for know url for POST request
+					//parse from m.vk.com page
+
 					let jar = request.jar(new FileCookieStore(cookiepath));
-					
+
 					self._authjar = jar;
 
+					if (Object.keys(jar._jar.store.idx).length) {
+
+						return actCheckLogin().then(() => {
+							return createClient(resolve, vHttp);
+						}, (err) => {
+							return goLogin();
+						});
+					}
+
+					return goLogin();
+
+					function goLogin() {
+						request.get({
+							headers: self.headersRequest,
+							url: 'https://m.vk.com/',
+							jar: self._authjar
+						}, (err, res, vkr) => {
+							
+							if (err) return reject(new Error(err));
+
+							let body = res.body;
+
+							let matches = body.match(/action\=\"(.*?)\"/);
+
+							if (!matches) { // Если пользовтаель уже авторизован по кукисам, чекаем сессию
+								return actCheckLogin().then(() => {
+									return createClient(resolve, vHttp);
+								}, reject);
+							}
+
+							let POSTLoginFormUrl = matches[1];
+
+							if (!POSTLoginFormUrl.match(/login\.vk\.com/)) return reject(self._vk._error("http_client", {}, "not_supported"));
+
+							actLogin(POSTLoginFormUrl).then(resolve, reject);
+						});
+					}
+
+					async function actCheckLogin () {
+						return new Promise((resolve, reject) => {
+
+							request.post({
+								url: "https://vk.com/al_im.php",
+								jar: self._authjar,
+								followAllRedirects: true,
+								form: {
+									act: "a_dialogs_preload",
+									al: 1,
+									gid: 0,
+									im_v: 2,
+									rs: "",
+								}
+							}, (err, res) => {
+
+								if (err) return reject(err);
+								
+								res = res.body.split('<!>');
+								res = self._parseResponse(res[5]);
+
+								if (res.match(/\<\!json\>/)) {
+									res = res.replace("<!json>", "");
+									try {
+										res = JSON.parse(res);
+									} catch (e) {
+										// 
+										return reject("Need update session not valid json");
+									}
+									return resolve(true);
+								}
+								return reject("Need update session");
+
+							});
+
+						});
+					}
+					async function actLogin (loginURL) {
+						return new Promise((resolve, reject) => {
+							request.post({
+								url: loginURL,
+								jar: self._authjar,
+								followAllRedirects: true,
+								form: {
+									'email': login,
+									'pass': pass
+								}
+							}, (err, res, vkr) => {
+
+								if (err) return reject(new Error(err));
+
+								return createClient(resolve, vHttp);
+							});
+						});
+					}
+
+				}, reject);
+				
+				function createClient (r, vHttp) {
+					
 					let HTTPClient = new HTTPEasyVKClient({
 						_jar: self._authjar,
 						vk: self._vk,
+						http_vk: vHttp,
+						config: self._config,
+						parser: self._parseResponse
 					});
-					
-					return resolve({
+
+					return r({
 						client: HTTPClient,
 						vk: self._vk
 					});
 				}
-			}
-			
-			let easyvk = require('../index.js');
 
-			easyvk({
-				password: pass,
-				username: login,
-				save_session: false,
-				reauth: true
-			}).then((vkHtpp) => {
-
-				let vHttp = vkHtpp;
-
-				easyvk = null;
-
-				//Make first request, for know url for POST request
-				//parse from m.vk.com page
-				let jar = request.jar(new FileCookieStore(cookiepath));
-
-				self._authjar = jar;
-
-				request.get({
-					headers: self.headersRequest,
-					url: 'https://m.vk.com/',
-					jar: self._authjar
-				}, (err, res, vkr) => {
-					
-					if (err) return reject(new Error(err));
-
-					let body = res.body;
-
-					let matches = body.match(/action\=\"(.*?)\"/);
-					let POSTLoginFormUrl = matches[1];
-
-					if (!POSTLoginFormUrl.match(/login\.vk\.com/)) return reject(self._vk._error("http_client", {}, "not_supported"));
-
-					actLogin(POSTLoginFormUrl).then(resolve, reject);
-				});
-
-
-				function actLogin (loginURL) {
-					return new Promise((resolve, reject) => {
-						request.post({
-							url: loginURL,
-							jar: self._authjar,
-							followAllRedirects: true,
-							form: {
-								'email': login,
-								'pass': pass
-							}
-						}, (err, res, vkr) => {
-
-							if (err) return reject(new Error(err));
-
-							let HTTPClient = new HTTPEasyVKClient({
-								_jar: self._authjar,
-								vk: self._vk,
-								http_vk: vHttp
-							});
-
-							return resolve({
-								client: HTTPClient,
-								vk: self._vk
-							});
-
-						});
-					});
-				}
 
 			}, reject);
 

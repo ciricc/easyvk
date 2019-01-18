@@ -157,8 +157,9 @@ class AudioAPI {
 				type: 'playlist'
 			}).then(res => {
 
-				let json = self._parseJSON(res.body, reject);
-				if (json instanceof Promise) return;
+				let json;
+				
+				json = self._parseJSON(res.body, reject);
 
 				let audios = json.list;
 
@@ -211,9 +212,6 @@ class AudioAPI {
 			}).then((res) => {
 				let audios = self._parseJSON(res.body, reject);
 
-				if (audios instanceof Promise) return;
-				
-
 				for (let i = 0; i < audios.length; i++) audios[i] = self._getAudioAsObject(audios[i]);
 
 
@@ -239,7 +237,7 @@ class AudioAPI {
 				act: 'get_lyrics',
 				al: 1,
 				lid: params.lyrics_id
-			}).then((res) => {
+			}, true).then((res) => {
 
 				let text = res.body;
 				text = text.split('<!>');
@@ -266,7 +264,7 @@ class AudioAPI {
 				act: 'new_audio',
 				al: 1,
 				gid: params.group_id
-			}).then(res => {
+			}, true).then(res => {
 
 				let matches = res.body.match(/Upload\.init\((.*)/)[0];
 				matches = String(matches).replace(/Upload\.init\(/, "").split(', ');
@@ -363,7 +361,7 @@ class AudioAPI {
 	}
 
 
-	_request (form = {}) {
+	_request (form = {}, ignoreStringError = false) {
 
 		let self = this;
 
@@ -374,7 +372,10 @@ class AudioAPI {
 				jar: self._authjar,
 				url: `${configuration.PROTOCOL}://${configuration.BASE_DOMAIN}/al_audio.php`,
 				form: form,
-				encoding: "binary"
+				encoding: "binary",
+				headers: {
+					"user-agent": self._http._config.user_agent
+				}
 			}, (err, res, vkr) => {
 
 				if (err) {
@@ -388,6 +389,17 @@ class AudioAPI {
 					return reject(self._vk._error("audio_api", {}, "not_have_access"));
 				}
 
+				
+				let json = self._parseResponse(res.body.split('<!>'));
+
+    			if (typeof json[5] == "string" && !ignoreStringError) {
+    				return reject(new Error(json[5]));
+    			}
+
+    			if (!json[5]) {
+    				return reject(self._vk._error("audio_api", {}, "not_have_access"));
+    			}
+
 				return resolve(res);
 
 			});
@@ -399,32 +411,21 @@ class AudioAPI {
 	}
 
 	_parseJSON (body, reject) {
-		
 		let self = this;
 
-		let json = body.match(/<!json>(.*?)<!>/);
-		
 
-		if (!json) {
-			json = body.match(/<!json>(.*)/);
+		let json = self._parseResponse(body.split('<!>'));
 
-			if (!json) {
-				if (body.match(/<\!bool><\!>/)) {
-					return reject(self._vk._error("audio_api", {}, "not_have_access"));
-				} else {
-					return reject(self._vk._error("audio_api", {}, "not_founded"));
-				}
-			}
 
+		if (typeof json[5] == "string") {
+			return reject(new Error(json[5]));
 		}
 
-		try {
-			
-			json = JSON.parse(json[1]);
-
-		} catch (e) {
-			return reject(self._vk._error("audio_api", {}, "not_founded"));
+		if (!json[5]) {
+			return reject(self._vk._error("audio_api", {}, "not_have_access"));
 		}
+
+		json = json[5];
 
 		return json;
 	}
@@ -518,7 +519,6 @@ class AudioAPI {
 				let json, audios = [], audioWithoutURL = [];
 
 				json = self._parseJSON(res.body, reject);
-				if (json instanceof Promise) return;
 
 				audios = json.playlists[0].list;
 
@@ -551,7 +551,6 @@ class AudioAPI {
 							let json, audios = [], audioWithoutURL = [];
 
 							json = self._parseJSON(res.body, reject);
-							if (json instanceof Promise) return;
 
 							if (i < countOffset && json.hasMore) {
 								i++;
@@ -798,11 +797,6 @@ class AudioAPI {
 				
 
 				let json = self._parseJSON(res.body, reject);
-				if (json instanceof Promise) return reject(self._vk._error("audio_api", {
-					"where": "audio.add",
-					"parameters": params,
-					"response": Buffer.from(res.body)
-				}, "unknow_error"));
 
 				self._getNormalAudiosWithURL([json]).then(audios => {
 					resolve({
@@ -909,15 +903,8 @@ class AudioAPI {
 			//params.text - Текст песни
 
 			self._request(params).then(res => {
-				
-				let response = self._parseResponse(res.body.split('<!>'));
-
-				console.log(require("fs").writeFileSync("./log.txt", JSON.stringify(response)));
 
 				let json = self._parseJSON(res.body, reject);
-				if (json instanceof Promise) return reject(self._vk._error("audio_api", {
-					"where": "audio.add"
-				}, "unknow_error"));
 
 				self._getNormalAudiosWithURL([json]).then(audio => {
 					resolve({
@@ -1033,7 +1020,8 @@ class AudioAPI {
     		description: playlist.description,
     		context: playlist.context,
     		access_hash: playlist.access_hash,
-    		items: undefined
+    		items: undefined,
+    		playlist_id: playlist.id
     	}
 
     	return new PlayListItem(_playlist);
@@ -1062,7 +1050,8 @@ class AudioAPI {
 	    		raw_description: playlist.rawDescription,
 	    		context: playlist.context,
 	    		access_hash: playlist.accessHash,
-	    		list: playlist.list
+	    		list: playlist.list,
+	    		playlist_id: playlist.id
 	    	}
 
 	    	self._getNormalAudiosWithURL(_playlist.list).then((audios) => {
@@ -1088,10 +1077,7 @@ class AudioAPI {
     		}).then((res) => {
 
     			let json = self._parseJSON(res.body, reject);
-				if (json instanceof Promise) return reject(self._vk._error("audio_api", {
-					"where": "audio.getPlaylists"
-				}, "unknow_error"));
-
+				
 				let playlists = json;
 
 				for (let i = 0; i < playlists.length; i++) {
@@ -1128,14 +1114,10 @@ class AudioAPI {
 				playlist_id: params.playlist_id,
 				type: "playlist",
     		}).then(res => {
-
+    			
     			let json = self._parseJSON(res.body, reject);
-    			if (json instanceof Promise) return reject(self._vk._error("audio_api", {
-					"where": "audio.getPlaylistsById"
-				}, "unknow_error"));
 
     			self._getPlaylistAsObjectOne(json).then(playlist => {
-
     				return resolve({
     					vkr: VKResponse(staticMethods, {
     						response: playlist
@@ -1200,9 +1182,6 @@ class AudioAPI {
     		}).then(res => {
 
     			let json = self._parseJSON(res.body, reject);
-    			if (json instanceof Promise) return reject(self._vk._error("audio_api", {
-    			"where": "audio.moveToPlaylist"
-    		}, "unknow_error"));
 
 
     			for(let i = 0; i < json.length; i++) {

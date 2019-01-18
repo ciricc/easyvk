@@ -98,7 +98,9 @@ class EasyVK {
 					client_secret: params.client_secret || configuration.WINDOWS_CLIENT_SECRET,
 					grant_type: "password",
 					v: params.api_v,
-					lang: params.lang
+					lang: params.lang,
+					device_id: '',
+					libverify_support: 1
 				};
 
 
@@ -123,7 +125,12 @@ class EasyVK {
 					}
 				}
 
-				request.get(configuration.BASE_OAUTH_URL + "token/?" + getData, (err, res) => {
+				request.get({
+					url: configuration.BASE_OAUTH_URL + "token/?" + getData,
+					headers: {
+						'User-Agent': "KateMobileAndroid/52.2.1 lite-447 (Android 6.0; SDK 23; arm64-v8a; alps Razar; ru)"
+					}
+				}, (err, res) => {
 					
 
 					if (err) {
@@ -526,6 +533,15 @@ class EasyVK {
 		}
 	}
 
+	async post (methodName, data) {
+		let self = this;
+
+		return new Promise((resolve, reject) => {
+			return self.call(methodName, data, "post").then(resolve, reject);
+		});
+
+	}
+
 	/**
 	 *	
 	 *	Function for calling to methods and get anything form VKontakte API
@@ -680,6 +696,6 @@ module.exports.class = {
 }
 
 
-module.exports.version = "2.1.2";
+module.exports.version = "2.1.3";
 module.exports.callbackAPI = new easyVKCallbackAPI({});
 module.exports.streamingAPI = new easyVKStreamingAPI({});

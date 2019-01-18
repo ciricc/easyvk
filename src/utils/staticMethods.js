@@ -167,7 +167,6 @@ module.exports.call = async function call (methodName, data = {}, methodType = "
 
 		if (debuggerIS) {
 			try {
-				callParams.qs = data;
 				debuggerIS.push("fullRequest", callParams);
 			} catch (e) {}
 		}
@@ -180,6 +179,9 @@ module.exports.call = async function call (methodName, data = {}, methodType = "
         		host: 'api.' + configuration.BASE_DOMAIN,
         		agent: Agent,
         		path: "/method/" + methodName + '?' + data,
+        		headers: {
+        			'User-Agent': "KateMobileAndroid/52.2.1 lite-447 (Android 6.0; SDK 23; arm64-v8a; alps Razar; ru)"
+        		}
         	}
 
         	return https.get(options, (res) => {

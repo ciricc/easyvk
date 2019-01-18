@@ -39,5 +39,10 @@ configuration.platformIds = {
 	"4": "ANDROID"
 };
 
+configuration.HTTP_CLIENT = {
+	USER_AGENT: "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36",
+	COOKIE_PATH: __dirname + "/.evk-cookies.json"
+}
+
 
 module.exports = configuration;

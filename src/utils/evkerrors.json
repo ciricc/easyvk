@@ -96,7 +96,12 @@
    	  		"code": 4,
    	  		"description": "Unknow error",
    	  		"ru_description": "Неизвестная ошибка"
-   	  	}
+   	  	},
+         "not_have_access_audios": {
+            "code": 5,
+            "description": "Not have access to audios of this user",
+            "ru_description": "Пользователь закрыл доступ к аудиозаписям"
+         }
    	  }
    },
    "http_client": {
