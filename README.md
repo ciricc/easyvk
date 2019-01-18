@@ -140,7 +140,9 @@ easyvk({
 
 ```javascript
   
-  vk.http.loginByForm().then(({client: Client}) => {
+  vk.http.loginByForm({
+    cookies: __dirname + "/mycookies.json"
+  }).then(({client: Client}) => {
       
     //Получение аудиозаписей группы, например
     Client.audio.get({
