@@ -28,7 +28,6 @@ class LongPollConnection extends EventEmitter {
 
 
 		init();
-
 		
 		async function reconnect () {
 			return self._vk.call("groups.getLongPollServer", self.config.userConfig.forGetLongPollServer).then(({vkr}) => {
@@ -77,7 +76,8 @@ class LongPollConnection extends EventEmitter {
 				timeout: (_w * 1000) + (1000 * 3),
 				headers: {
 					'connection': 'keep-alive'
-				}
+				},
+				agent: self._vk.agent
 			}
 
 			if (self._debug) {

@@ -4,7 +4,6 @@ const request = require("request");
 const staticMethods = require("./staticMethods.js");
 const EventEmitter = require("fast-event-emitter");
 
-
 class LongPollConnection extends EventEmitter { 
 
 	constructor (lpSettings, vk) {
@@ -68,7 +67,8 @@ class LongPollConnection extends EventEmitter {
 				timeout: (_w * 1000) + (1000 * 3),
 				headers: {
 					'connection': 'keep-alive'
-				}
+				},
+				agent: self._vk.agent
 			}
 
 			self._debug({
@@ -76,6 +76,7 @@ class LongPollConnection extends EventEmitter {
 				data: params
 			});
 
+			let d = new Date().getTime();
 			self.lpConnection = request.get(params, (err, res) => {
 
 				if (err) {
@@ -130,7 +131,7 @@ class LongPollConnection extends EventEmitter {
 						return init();
 
 					} else if ([2,3].indexOf(vkr.failed) != -1) { //need reconnect
-						
+
 						self._vk.call("messages.getLongPollServer", self.config.userConfig.forGetLongPollServer).then(({vkr}) => {
 							
 							self.config.longpollServer = vkr.server;
@@ -317,6 +318,10 @@ class LongPollConnector {
 
 				if (isNaN(params.forLongPollServer.wait)) {
 					params.forLongPollServer.wait = "25";
+				}
+
+				if (params.forGetLongPollServer.use_ssl != 0) {
+					params.forGetLongPollServer.use_ssl = 1;
 				}
 
 

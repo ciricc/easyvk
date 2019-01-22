@@ -7,11 +7,6 @@ const VKResponse = require('./VKResponse.js');
 const configuration = require("./configuration.js");
 const VKResponseError = require('./VKResponseError.js');
 
-let Agent = new https.Agent({
-    keepAlive: true,
-    keepAliveMsecs: 25000,
-});
-
 
 module.exports.isString = function (n) {
 	return Object.prototype.toString.call(n) === "[object String]";
@@ -122,7 +117,7 @@ module.exports.checkErrors = function (vkr) {
 }
 
 
-module.exports.call = async function call (methodName, data = {}, methodType = "get", debuggerIS = null) {
+module.exports.call = async function call (methodName, data = {}, methodType = "get", debuggerIS = null, Agent) {
 
 	let self = this;
 
@@ -154,7 +149,9 @@ module.exports.call = async function call (methodName, data = {}, methodType = "
 
 			callParams.form = data;
 			callParams.headers = {
-				"Content-Type" : "application/x-www-form-urlencoded"
+				"Content-Type" : "application/x-www-form-urlencoded",
+				"Connection": "keep-alive",
+				"User-Agent": "KateMobileAndroid/52.2.1 lite-447 (Android 6.0; SDK 23; arm64-v8a; alps Razar; ru)"
 			};
 
 			//Nice request recommendtion
@@ -180,7 +177,8 @@ module.exports.call = async function call (methodName, data = {}, methodType = "
         		agent: Agent,
         		path: "/method/" + methodName + '?' + data,
         		headers: {
-        			'User-Agent': "KateMobileAndroid/52.2.1 lite-447 (Android 6.0; SDK 23; arm64-v8a; alps Razar; ru)"
+        			"User-Agent": "KateMobileAndroid/52.2.1 lite-447 (Android 6.0; SDK 23; arm64-v8a; alps Razar; ru)",
+        			"Connection": "keep-alive"
         		}
         	}
 

@@ -28,7 +28,9 @@
     "encoding": "^0.1.12",
     "express": "^4.16.3",
     "fast-event-emitter": "0.0.2",
+    "https-proxy-agent": "^2.2.1",
     "request": "^2.85.0",
+    "socks-proxy-agent": "^4.0.1",
     "tough-cookie-file-store": "^1.2.0",
     "ws": "^4.1.0"
   },

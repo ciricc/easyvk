@@ -245,7 +245,9 @@ async function createSession (params = {}) {
 
 		checkInitParams(params).then((p) => {
 			
-			return new EasyVK(p, resolve, reject, debuggerRun);
+			let vk =  new EasyVK(p, resolve, reject, debuggerRun);
+			
+			return resolve(vk);
 
 		}, reject);
 

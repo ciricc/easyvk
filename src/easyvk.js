@@ -17,7 +17,7 @@ const easyVKBotsLongPoll = require("./utils/botslongpoll.js");
 const easyVKSession = require("./utils/session.js");
 const easyVKHttp = require("./utils/http.js");
 const easyVKErrors = require("./utils/easyvkErrors.js");
-
+const https = require("https");
 
 /**
  *  EasyVK module. In this module creates session by your params
@@ -34,7 +34,7 @@ class EasyVK {
 	constructor (params, resolve, reject, debuggerRun) {
 		
 		let session = {}, 
-		
+
 
 		self = this;
 
@@ -129,7 +129,8 @@ class EasyVK {
 					url: configuration.BASE_OAUTH_URL + "token/?" + getData,
 					headers: {
 						'User-Agent': "KateMobileAndroid/52.2.1 lite-447 (Android 6.0; SDK 23; arm64-v8a; alps Razar; ru)"
-					}
+					},
+					proxy: params.proxy
 				}, (err, res) => {
 					
 
@@ -430,7 +431,10 @@ class EasyVK {
 				}
 			}
 
-			request.get(configuration.BASE_CALL_URL + "groups.getById?" + getData, (err, res) => {
+			request.get({
+				url: configuration.BASE_CALL_URL + "groups.getById?" + getData,
+				proxy: params.proxy
+			}, (err, res) => {
 				
 				if (err) {
 					return reject(new Error(err));
@@ -510,9 +514,15 @@ class EasyVK {
 			self.bots = {};
 			self.bots.longpoll = new easyVKBotsLongPoll(self);
 
+			// Here is a middlewares will be saved
+			self.middleWares = [];
+
 			//http module for http requests from cookies and jar session
 			self.http = new easyVKHttp(self);
-
+			self.agent = new https.Agent({
+			    keepAlive: true,
+			    keepAliveMsecs: 30000,
+			});
 			
 			//Re init all cases
 			self.session = new easyVKSession(self, self.session);
@@ -542,6 +552,14 @@ class EasyVK {
 
 	}
 
+	registerMiddleWare (middleWare = null) {
+
+		if (middleWare && typeof middleWare == "function") {
+			this.middleWares.push(middleWare);
+		}
+
+	}
+
 	/**
 	 *	
 	 *	Function for calling to methods and get anything form VKontakte API
@@ -561,12 +579,16 @@ class EasyVK {
      *
 	 */
 
-	async call(methodName, data = {}, methodType="get") {
+	async call(methodName, data = {}, methodType="get", other = {}) {
 		let self = this;
+
+		let {
+			middleWare
+		} = other;
 
 		return new Promise((resolve, reject) => {
 
-			function reCall (_needSolve, _resolverReCall, _rejecterReCall) {
+			async function reCall (_needSolve, _resolverReCall, _rejecterReCall) {
 
 				if (!staticMethods.isObject(data)) reject(new Error("Data must be an object"));
 				if (!data.access_token) data.access_token = self.session.access_token;
@@ -579,7 +601,27 @@ class EasyVK {
 					data.lang = self.params.lang;
 				}
 				
-				return staticMethods.call(methodName, data, methodType, self.debugger).then((vkr) => {
+
+				if (middleWare && typeof middleWare == "function") {
+					data = await middleWare(data);
+				}
+
+				if (self.middleWares.length) {
+					let setupedMiddleware = 0;
+					
+					async function next (data) {
+						setupedMiddleware += 1;
+						if (self.middleWares[setupedMiddleware]) {
+							return await self.middleWares[setupedMiddleware](data, next);
+						} else {
+							return data;
+						}
+					}
+
+					data = await self.middleWares[setupedMiddleware](data, next);
+				}
+
+				return staticMethods.call(methodName, data, methodType, self.debugger, self.agent).then((vkr) => {
 					
 					if (_needSolve) {
 						try {
