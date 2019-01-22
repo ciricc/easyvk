@@ -555,7 +555,13 @@ class EasyVK {
 	registerMiddleWare (middleWare = null) {
 
 		if (middleWare && typeof middleWare == "function") {
-			this.middleWares.push(middleWare);
+			this.middleWares.push(async ({data, next, method}) => {
+				let resNext = await middleWare({data, next, method});
+
+				if (resNext) return resNext;
+				
+				return {data, method}
+			});
 		}
 
 	}
@@ -609,16 +615,46 @@ class EasyVK {
 				if (self.middleWares.length) {
 					let setupedMiddleware = 0;
 					
-					async function next (data) {
+
+					async function next ({data: prevData, method: prevMethod}) {
+						
 						setupedMiddleware += 1;
+
 						if (self.middleWares[setupedMiddleware]) {
-							return await self.middleWares[setupedMiddleware](data, next);
+							
+							data = prevData;
+							methodName = prevMethod;
+
+							return await self.middleWares[setupedMiddleware]({
+								data: (prevData || data),
+								next,
+								method: (prevMethod || methodName),
+								_needSolve, _resolverReCall, _rejecterReCall
+							});
+
 						} else {
-							return data;
+							return {
+								data: (prevData || data),
+								method: (prevMethod || methodName)
+							};
 						}
 					}
 
-					data = await self.middleWares[setupedMiddleware](data, next);
+					let {data: dataMd, method} = (await self.middleWares[setupedMiddleware]({
+						data, 
+						next, 
+						_needSolve: _needSolve,
+						method: methodName,
+					}));
+
+					methodName = method;
+
+					if (methodName == "null") {
+						// middleware want to stop
+						return;
+					}
+					
+					data = dataMd;
 				}
 
 				return staticMethods.call(methodName, data, methodType, self.debugger, self.agent).then((vkr) => {
@@ -660,9 +696,10 @@ class EasyVK {
 							//Captcha error, handle it
 							const captcha_sid = vkr.error.captcha_sid || vkr.captcha_sid;
 							const captcha_img = vkr.error.captcha_img || vkr.captcha_img;
-							let paramsForHandler = {captcha_sid, captcha_img, vk: self};
+							let paramsForHandler = {captcha_sid, captcha_img, vk: self, params: data};
 
 							paramsForHandler.resolve = (captcha_key) => {
+
 								return new Promise((resolvedCaptcha, rejectCaptcha) => {
 									data.captcha_key = captcha_key;
 									data.captcha_sid = captcha_sid;

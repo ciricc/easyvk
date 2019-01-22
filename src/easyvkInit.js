@@ -243,11 +243,11 @@ async function checkInitParams (params = {}) {
 async function createSession (params = {}) {
 	return new Promise((resolve, reject) => {
 
-		checkInitParams(params).then((p) => {
+		return checkInitParams(params).then((p) => {
 			
 			let vk =  new EasyVK(p, resolve, reject, debuggerRun);
 			
-			return resolve(vk);
+			return vk;
 
 		}, reject);
 
