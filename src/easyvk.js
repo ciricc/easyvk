@@ -555,8 +555,8 @@ class EasyVK {
 	registerMiddleWare (middleWare = null) {
 
 		if (middleWare && typeof middleWare == "function") {
-			this.middleWares.push(async ({data, next, method}) => {
-				let resNext = await middleWare({data, next, method});
+			this.middleWares.push(async ({data, next, method, other}) => {
+				let resNext = await middleWare({data, next, method, other});
 
 				if (resNext) return resNext;
 				
@@ -616,7 +616,7 @@ class EasyVK {
 					let setupedMiddleware = 0;
 					
 
-					async function next ({data: prevData, method: prevMethod}) {
+					async function next ({data: prevData, method: prevMethod, other}) {
 						
 						setupedMiddleware += 1;
 
@@ -629,7 +629,8 @@ class EasyVK {
 								data: (prevData || data),
 								next,
 								method: (prevMethod || methodName),
-								_needSolve, _resolverReCall, _rejecterReCall
+								_needSolve, _resolverReCall, _rejecterReCall,
+								other
 							});
 
 						} else {
@@ -639,13 +640,16 @@ class EasyVK {
 							};
 						}
 					}
-
-					let {data: dataMd, method} = (await self.middleWares[setupedMiddleware]({
+					
+					let P = {
 						data, 
 						next, 
 						_needSolve: _needSolve,
 						method: methodName,
-					}));
+						other
+					}
+
+					let {data: dataMd, method} = (await self.middleWares[setupedMiddleware](P));
 
 					methodName = method;
 
@@ -658,7 +662,6 @@ class EasyVK {
 				}
 
 				return staticMethods.call(methodName, data, methodType, self.debugger, self.agent).then((vkr) => {
-					
 					if (_needSolve) {
 						try {
 							_resolverReCall(true);

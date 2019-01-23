@@ -142,6 +142,7 @@ module.exports.call = async function call (methodName, data = {}, methodType = "
 			url: configuration.BASE_CALL_URL + methodName,
 		};
 
+		let data2 = JSON.parse(JSON.stringify(data));
 
 		if (methodType == "post") {
 			// prepare post request
@@ -213,6 +214,7 @@ module.exports.call = async function call (methodName, data = {}, methodType = "
 				let json = self.checkJSONErrors(vkr, reject);	
 
 				if (json) {
+					json.data = data2;
 					return resolve(json);
 				} else {
 					return reject(new Error("JSON is not valid... oor i don't know"));
