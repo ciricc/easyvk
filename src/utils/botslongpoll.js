@@ -274,13 +274,7 @@ class LongPollConnector {
 				}));
 			} else {
 				
-				if (params.forGetLongPollServer) {
-					
-					if (!staticMethods.isObject(params.forGetLongPollServer)) {
-						params.forGetLongPollServer = {};
-					}
-
-				} else {
+				if (!staticMethods.isObject(params.forGetLongPollServer)) {
 					params.forGetLongPollServer = {};
 				}
 
@@ -303,6 +297,10 @@ class LongPollConnector {
 				if (isNaN(params.forLongPollServer.wait)) {
 					params.forLongPollServer.wait = "25";
 				}
+
+				if (!params.forGetLongPollServer.group_id && self._vk.session.group_id) {
+					params.forGetLongPollServer.group_id = self._vk.session.group_id;
+				} 
 
 
 				self._vk.call("groups.getLongPollServer", params.forGetLongPollServer).then(({vkr}) => {
