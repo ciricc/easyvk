@@ -149,12 +149,12 @@ class CallbackAPI extends EventEmitter {
 				app = express()
 				app.use(bodyParser.json());
 
-				app.post("/", (req, res) => {
+				app.post(params.path, (req, res) => {
 					self.__initVKRequest(req, res);
 				});
 				
 		
-				app.get("/", (req, res) => {
+				app.get(params.path, (req, res) => {
 					self.__init404Error(req, res);
 				});
 
@@ -230,10 +230,15 @@ class CallbackAPIConnector {
 				callbackParams.groups = [];
 			}
 
+			if (!callbackParams.groupId) {
+				if (self._vk.session.group_id) {
+					callbackParams.groupId = self._vk.session.group_id
+				}
+			}
 
 			if (callbackParams.groupId) {//If user wants only one group init
 				
-				if (!callbackParams.confirmCode) {
+				if (!callbackParams.confirmCode && (self._vk.session.group_id && callbackParams.groupId != self._vk.session.group_id)) {
 					return reject(new Error("You don't puted confirmation code"));
 				}
 
@@ -254,16 +259,36 @@ class CallbackAPIConnector {
 			} else {
 
 				let gr_temp = {};
+				let registered = [];
 
-				callbackParams.groups.forEach((elem, index) => {
+				callbackParams.groups.forEach(async (elem, index) => {
 					let group = callbackParams.groups[index];
 
 					if (!staticMethods.isObject(group)) {
 						return reject(new Error(`Group settings is not an object (in ${index} index)`));
 					}
-
+					
 					if (!group.groupId) {
+						if (self._vk.session.group_id) {
+							group.groupId = self._vk.session.group_id
+						}
+					}
+
+					if (!group.groupId || registered.indexOf(group.groupId) != -1) {
 						return reject(new Error(`Group id must be (groupId in ${index} index)`));
+					}
+
+					registered.push(group.groupId);
+
+					if (!group.confirmCode) {
+						if (group.groupId == self._vk.session.group_id) {
+							
+							let {vkr: confirmToken} = await self._vk.call("groups.getCallbackConfirmationCode", {
+								group_id: group.groupId
+							});
+							
+							group.confirmCode = confirmToken.code;	
+						}
 					}
 
 					if (!group.confirmCode) {
@@ -277,6 +302,10 @@ class CallbackAPIConnector {
 				callbackParams.groups = gr_temp;
 
 			}
+
+			if (!callbackParams.path) {
+				callbackParams.path = "/";
+			};
 
 			let cbserver = new CallbackAPI(self._vk);
 
