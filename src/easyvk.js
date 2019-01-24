@@ -515,7 +515,12 @@ class EasyVK {
 			self.bots.longpoll = new easyVKBotsLongPoll(self);
 
 			// Here is a middlewares will be saved
-			self.middleWares = [];
+			self.middleWares = [async (data) => {
+				let next = data.next;
+
+				data.next = undefined;
+				return await next(data);
+			}];
 
 			//http module for http requests from cookies and jar session
 			self.http = new easyVKHttp(self);
@@ -552,15 +557,25 @@ class EasyVK {
 
 	}
 
-	registerMiddleWare (middleWare = null) {
+	use (middleWare = null, rejectMiddleware = Function) {
 
 		if (middleWare && typeof middleWare == "function") {
-			this.middleWares.push(async ({data, next, method, other}) => {
-				let resNext = await middleWare({data, next, method, other});
+			this.middleWares.push(async ({data, next, other}) => {
 
-				if (resNext) return resNext;
-				
-				return {data, method}
+				return new Promise((resolve, reject) => {
+					return middleWare({data, next, other}).then(resNext => {
+						if (resNext) return resNext;
+						return {data}
+					}).catch(async (e) => {
+						if (rejectMiddleware && typeof rejectMiddleware == "function") {
+							rejectMiddleware(e)
+						} else {
+							console.log(e);
+						}
+
+						return await next();
+					});
+				});
 			});
 		}
 
@@ -616,49 +631,61 @@ class EasyVK {
 					let setupedMiddleware = 0;
 					
 
-					async function next ({data: prevData, method: prevMethod, other}) {
-						
+					async function next (p = {}) {
+						console.log(p);
+
+						if (!p.data) {
+							p.data = consilus
+						}
+
+						p.data.query = p.data.query || data;
+						p.data.method  = p.data.method || methodName;
+
 						setupedMiddleware += 1;
 
-						if (self.middleWares[setupedMiddleware]) {
-							
-							data = prevData;
-							methodName = prevMethod;
+						data = p.data.query;
+						methodName = p.data.method;
 
-							return await self.middleWares[setupedMiddleware]({
-								data: (prevData || data),
+						if (self.middleWares[setupedMiddleware]) {
+
+
+							self.middleWares[setupedMiddleware]({
+								data: p.data,
 								next,
-								method: (prevMethod || methodName),
 								_needSolve, _resolverReCall, _rejecterReCall,
 								other
 							});
 
 						} else {
 							return {
-								data: (prevData || data),
-								method: (prevMethod || methodName)
+								data: p.data,
 							};
 						}
 					}
 					
+					let consilus = {
+						query: data,
+						method: methodName
+					}
+
 					let P = {
-						data, 
+						data: consilus, 
 						next, 
 						_needSolve: _needSolve,
-						method: methodName,
+						// method: methodName,
 						other
 					}
 
-					let {data: dataMd, method} = (await self.middleWares[setupedMiddleware](P));
-
-					methodName = method;
+					P = (await self.middleWares[setupedMiddleware](P));
+					P = {} || P.data;
+					methodName = P.method || methodName;
 
 					if (methodName == "null") {
 						// middleware want to stop
 						return;
 					}
 					
-					data = dataMd;
+					data = P.query || data;
 				}
 
 				return staticMethods.call(methodName, data, methodType, self.debugger, self.agent).then((vkr) => {

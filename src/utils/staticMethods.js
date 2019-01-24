@@ -43,6 +43,13 @@ module.exports.checkJSONErrors = function (vkr, reject) {
 		return VKResponse(self, vkr);
 
 	} catch (e) {
+		
+		if (e.name == "SyntaxError") {
+			let err = new Error("Server sent not a json object (" + vkr + ")");
+
+			return reject(err);
+		}
+
 		return reject(new Error(e));
 	}
 
@@ -214,8 +221,11 @@ module.exports.call = async function call (methodName, data = {}, methodType = "
 				let json = self.checkJSONErrors(vkr, reject);	
 
 				if (json) {
-					json.data = data2;
+					
+					json.queryData = data2;
+
 					return resolve(json);
+
 				} else {
 					return reject(new Error("JSON is not valid... oor i don't know"));
 				}

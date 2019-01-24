@@ -31,7 +31,8 @@ let VKResponseReturner = function(staticMethods, dataResponse_, returnConstructo
 					response: res
 				}
 
-				let canChanged = [];
+				
+				let canChanged = ["response"];
 				
 				for (let prop in _props) {
 					
