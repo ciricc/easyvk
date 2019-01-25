@@ -10,6 +10,8 @@
 const request = require("request");
 const https = require("https");
 const staticMethods = require("./staticMethods.js");
+const easyVKMiddlewares = require("./middlewares.js");
+
 const EventEmitter = require("fast-event-emitter");
 
 
@@ -26,6 +28,7 @@ class LongPollConnection extends EventEmitter {
 		self._vk = vk;
 		self.userListeners = {};
 
+		self._middlewaresController = new easyVKMiddlewares(self);
 
 		init();
 		
@@ -135,7 +138,9 @@ class LongPollConnection extends EventEmitter {
 				if (vkr.updates) {
 					
 					if (vkr.updates.length > 0) {
-						self._checkUpdates(vkr.updates);
+						self._middlewaresController.run(vkr).then(() => {
+							self._checkUpdates(vkr.updates);
+						});
 					}
 
 					return init();

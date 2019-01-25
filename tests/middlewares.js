@@ -28,26 +28,19 @@ evk({
 }).then(vk => {
 
 	async function myMiddleWare ({ next, other, data}) {
-
-		console.log('Used 1 middleware');
 		data.query.passprt = 1;
+
 		await next();
 	}
 
 	async function myMiddleWare2 ({ next, other, data}) {
-		console.log('Used 2 middleware');
-
 		data.query.passprt2 = 1;
 		data.method = "callbe";
 		await next();
 	}
 
 	async function myMiddleWare3 ({ next, other, data}) {
-		console.log('Used 3 middleware ', data);
-		
 		data.method = "execute";
-
-
 		await next();
 	}
 

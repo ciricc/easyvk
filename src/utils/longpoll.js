@@ -3,6 +3,7 @@
 const request = require("request");
 const staticMethods = require("./staticMethods.js");
 const EventEmitter = require("fast-event-emitter");
+const easyVKMiddlewares = require("./middlewares.js");
 
 class LongPollConnection extends EventEmitter { 
 
@@ -25,6 +26,8 @@ class LongPollConnection extends EventEmitter {
 			"62": "typeInChat",
 			"3": "changeFlags"
 		};
+
+		self._middlewaresController = new easyVKMiddlewares(self);
 
 		init();
 
@@ -175,7 +178,13 @@ class LongPollConnection extends EventEmitter {
 			self.emit("update", updates[updateIndex]);
 			if (self.supportEventTypes[typeEvent]) {
 				typeEvent = self.supportEventTypes[typeEvent];
-				self.emit(typeEvent, updates[updateIndex]);
+				let updates_ = {
+					updates: [updates[updateIndex]]
+				};
+
+				self._middlewaresController.run(updates_).then(() => {
+					self.emit(typeEvent, updates_.updates[0]);
+				});
 			}
 
 			try {

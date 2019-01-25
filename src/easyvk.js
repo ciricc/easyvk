@@ -17,6 +17,8 @@ const easyVKBotsLongPoll = require("./utils/botslongpoll.js");
 const easyVKSession = require("./utils/session.js");
 const easyVKHttp = require("./utils/http.js");
 const easyVKErrors = require("./utils/easyvkErrors.js");
+const easyVKMiddlewares = require("./utils/middlewares.js");
+
 const https = require("https");
 
 /**
@@ -522,6 +524,9 @@ class EasyVK {
 				return await next(data);
 			}];
 
+			self._middlewaresController = new easyVKMiddlewares(self);
+
+
 			//http module for http requests from cookies and jar session
 			self.http = new easyVKHttp(self);
 			self.agent = new https.Agent({
@@ -548,14 +553,28 @@ class EasyVK {
 		}
 	}
 
-	async post (methodName, data) {
+	async post (methodName, data, other) {
 		let self = this;
 
 		return new Promise((resolve, reject) => {
-			return self.call(methodName, data, "post").then(resolve, reject);
+			return self.call(methodName, data, "post", other).then(resolve, reject);
 		});
 
 	}
+
+
+
+	/**
+	 *	
+	 *	Function adds new middleware for requests to VK API methods
+	 *
+	 *	@param {Function} middleware - Is just a function-middleware,
+	 *  for example: async ({data, next}) => { data.query.v = 5.75; return await next() }
+	 *	@param {rejectMiddleware} [data={}] - Function for listen middleware errors, when in middleware uccrs new error, it will be called.
+	 * 
+	 *  @return {Object} - Easy VK selfish object .use().use().use()
+     *
+	 */
 
 	use (middleWare = null, rejectMiddleware = Function) {
 
@@ -578,6 +597,8 @@ class EasyVK {
 				});
 			});
 		}
+
+		return this;
 
 	}
 
@@ -610,6 +631,12 @@ class EasyVK {
 		return new Promise((resolve, reject) => {
 
 			async function reCall (_needSolve, _resolverReCall, _rejecterReCall) {
+				
+				methodType = String(methodType).toLowerCase();
+
+				if (methodType != "get" || methodType != "post") {
+					methodType = "get";
+				}
 
 				if (!staticMethods.isObject(data)) reject(new Error("Data must be an object"));
 				if (!data.access_token) data.access_token = self.session.access_token;
@@ -627,66 +654,21 @@ class EasyVK {
 					data = await middleWare(data);
 				}
 
-				if (self.middleWares.length) {
-					let setupedMiddleware = 0;
-					
-
-					async function next (p = {}) {
-						console.log(p);
-
-						if (!p.data) {
-							p.data = consilus
-						}
-
-						p.data.query = p.data.query || data;
-						p.data.method  = p.data.method || methodName;
-
-						setupedMiddleware += 1;
-
-						data = p.data.query;
-						methodName = p.data.method;
-
-						if (self.middleWares[setupedMiddleware]) {
-
-
-							self.middleWares[setupedMiddleware]({
-								data: p.data,
-								next,
-								_needSolve, _resolverReCall, _rejecterReCall,
-								other
-							});
-
-						} else {
-							return {
-								data: p.data,
-							};
-						}
-					}
-					
-					let consilus = {
-						query: data,
-						method: methodName
-					}
-
-					let P = {
-						data: consilus, 
-						next, 
-						_needSolve: _needSolve,
-						// method: methodName,
-						other
-					}
-
-					P = (await self.middleWares[setupedMiddleware](P));
-					P = {} || P.data;
-					methodName = P.method || methodName;
-
-					if (methodName == "null") {
-						// middleware want to stop
-						return;
-					}
-					
-					data = P.query || data;
+				let thread = {
+					data: { 
+						method: methodName, 
+						methodType
+					},
+					query: data,
+					_needSolve
 				}
+
+				let FromMiddleWare = await self._middlewaresController.run(thread);
+				
+				methodName = FromMiddleWare.data.method;
+				methodType = FromMiddleWare.data.methodType;
+
+				data = FromMiddleWare.query;
 
 				return staticMethods.call(methodName, data, methodType, self.debugger, self.agent).then((vkr) => {
 					if (_needSolve) {
