@@ -117,7 +117,17 @@ class LongPollConnection extends EventEmitter {
 					}
 					
 					if (vkr.updates && vkr.updates.length) {
-						self._checkUpdates(vkr.updates);
+						
+						vkr.updates.forEach((upd, i) => {
+							vkr.updates[i] = {
+								type: upd[0],
+								object: upd
+							}
+						});
+
+						self._middlewaresController.run(vkr).then(() => {
+							self._checkUpdates(vkr.updates);
+						});
 					}
 
 					return init();
@@ -173,24 +183,18 @@ class LongPollConnection extends EventEmitter {
 		for (let updateIndex = 0; updateIndex < len; updateIndex++) {
 			
 
-			let typeEvent = updates[updateIndex][0].toString();
+			let typeEvent = updates[updateIndex].type.toString();
 
-			self.emit("update", updates[updateIndex]);
+			self.emit("update", updates[updateIndex].object);
 			if (self.supportEventTypes[typeEvent]) {
 				typeEvent = self.supportEventTypes[typeEvent];
-				let updates_ = {
-					updates: [updates[updateIndex]]
-				};
-
-				self._middlewaresController.run(updates_).then(() => {
-					self.emit(typeEvent, updates_.updates[0]);
-				});
+				self.emit(typeEvent, updates[updateIndex].object);
 			}
 
 			try {
 				// console.log(self.userListeners, typeEvent, updates);
 				if (self.userListeners[typeEvent]) {
-					self.userListeners[typeEvent](updates[updateIndex]);
+					self.userListeners[typeEvent](updates[updateIndex].object);
 				}
 			} catch (e) {
 				self.emit("error", e);

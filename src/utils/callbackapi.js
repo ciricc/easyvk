@@ -14,7 +14,7 @@ const express = require("express");
 const staticMethods = require("./staticMethods.js");
 const EventEmitter = require("fast-event-emitter");
 const bodyParser = require("body-parser");
-
+const easyVKMiddlewares = require("./middlewares.js");
 
 class CallbackAPI extends EventEmitter {
 	
@@ -22,6 +22,7 @@ class CallbackAPI extends EventEmitter {
 		super();
 		let self = this;
 		self._vk = vk;
+		self._middlewaresController = new easyVKMiddlewares(self);
 	}
 
 	__initVKRequest (req, res) {
