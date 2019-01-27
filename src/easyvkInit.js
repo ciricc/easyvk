@@ -200,12 +200,6 @@ async function checkInitParams (params = {}) {
 			params.fields = params.fields.map(a => String(a));
 		}
 
-
-
-		if (params.sentry_errors !== false) {
-			params.sentry_errors = true;
-		}
-
 		resolve(params);
 
 	});

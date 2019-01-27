@@ -83,6 +83,7 @@ class EasyVKUploader {
 				request.post({
 					url: url,
 					formData: _data,
+					agent: self._agent
 				}, (err, response) => {
 
 					if (err) {

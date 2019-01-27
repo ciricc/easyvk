@@ -106,7 +106,8 @@ class StreamingAPIConnection extends EventEmitter {
 				let queryParams = {
 					method: method.toLocaleUpperCase(),
 					uri: `${self._urlHttp}/rules?key=${self._key}`,
-					json: json
+					json: json,
+					agent: self._vk.agent
 				}
 
 
@@ -504,7 +505,10 @@ class StreamingAPIConnector {
 
 					getParams = staticMethods.urlencode(getParams);
 
-					request.get(`${configuration.BASE_OAUTH_URL}access_token?${getParams}`, (err, res) => {
+					request.get({
+						url: `${configuration.BASE_OAUTH_URL}access_token?${getParams}`,
+						agent: self._vk.agent
+					}, (err, res) => {
 						
 						if (err) {
 							return reject(new Error(err));
@@ -551,7 +555,9 @@ class StreamingAPIConnector {
 							client: json
 						}
 
-						wsc = new WS(`wss://${streamingSession.server.endpoint}/stream?key=${streamingSession.server.key}`);
+						wsc = new WS(`wss://${streamingSession.server.endpoint}/stream?key=${streamingSession.server.key}`, {
+							agent: self._vk.agent
+						});
 						
 						wsc.on("open", () => {
 							

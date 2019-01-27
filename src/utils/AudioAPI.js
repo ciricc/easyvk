@@ -375,7 +375,8 @@ class AudioAPI {
 				encoding: "binary",
 				headers: {
 					"user-agent": self._http._config.user_agent
-				}
+				},
+				agent: self._vk.agent
 			}, (err, res, vkr) => {
 
 				if (err) {

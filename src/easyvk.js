@@ -1,6 +1,7 @@
 
 const request = require("request");
 const encoding = require("encoding");
+const url = require("url");
 const fs = require("fs");
 
 //Modules
@@ -18,6 +19,10 @@ const easyVKSession = require("./utils/session.js");
 const easyVKHttp = require("./utils/http.js");
 const easyVKErrors = require("./utils/easyvkErrors.js");
 const easyVKMiddlewares = require("./utils/middlewares.js");
+
+const HttpsProxyAgent = require("https-proxy-agent");
+const SocksProxyAgent = require('socks-proxy-agent');
+
 
 const https = require("https");
 
@@ -48,6 +53,24 @@ class EasyVK {
 
 
 		self._errors.setLang(params.lang);
+
+		if (params.proxy) {
+
+			let options = url.parse(params.proxy);
+			
+			options.keepAlive = true;
+			options.keepAliveMsecs = 30000;
+
+			if (options.protocol.match('socks')) {
+				self.agent = new SocksProxyAgent(options, true);
+			} else {self.agent = new HttpsProxyAgent(options);}
+
+		} else {
+			self.agent = new https.Agent({
+			    keepAlive: true,
+			    keepAliveMsecs: 30000,
+			});
+		}
 
 		if (!params.reauth) {
 			
@@ -132,7 +155,7 @@ class EasyVK {
 					headers: {
 						'User-Agent': "KateMobileAndroid/52.2.1 lite-447 (Android 6.0; SDK 23; arm64-v8a; alps Razar; ru)"
 					},
-					proxy: params.proxy
+					agent: self.agent
 				}, (err, res) => {
 					
 
@@ -200,7 +223,10 @@ class EasyVK {
 					}
 				}
 
-				request.get(configuration.BASE_OAUTH_URL + "token/?" + getData, (err, res) => {
+				request.get({
+					url: configuration.BASE_OAUTH_URL + "token/?" + getData,
+					agent: self.agent
+				}, (err, res) => {
 					
 
 					if (err) {
@@ -264,7 +290,10 @@ class EasyVK {
 
 					getData = staticMethods.urlencode(getData);
 
-					request.get(configuration.BASE_CALL_URL + "users.get?" + getData, (err, res) => {
+					request.get({
+						url: configuration.BASE_CALL_URL + "users.get?" + getData,
+						agent: self.agent
+					}, (err, res) => {
 						
 						if (err) {
 							return reject(new Error(err));
@@ -339,7 +368,10 @@ class EasyVK {
 				}
 			}
 
-			request.get(configuration.BASE_CALL_URL + "apps.get?" + getData, (err, res) => {
+			request.get({
+				url: configuration.BASE_CALL_URL + "apps.get?" + getData,
+				agent: self.agent
+			}, (err, res) => {
 				
 				if (err) {
 					return reject(new Error(err));
@@ -529,10 +561,6 @@ class EasyVK {
 
 			//http module for http requests from cookies and jar session
 			self.http = new easyVKHttp(self);
-			self.agent = new https.Agent({
-			    keepAlive: true,
-			    keepAliveMsecs: 30000,
-			});
 			
 			//Re init all cases
 			self.session = new easyVKSession(self, self.session);

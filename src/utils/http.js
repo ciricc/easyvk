@@ -63,7 +63,8 @@ class HTTPEasyVKClient {
 			request.get({
 				url: `${configuration.PROTOCOL}://m.${configuration.BASE_DOMAIN}/fv?to=/id${vk_id}?_fm=profile&_fm2=1`,
 				jar: self._authjar,
-				headers: self.headersRequest
+				headers: self.headersRequest,
+				agent: self._vk.agent
 			}, (err, res, vkr) => {
 				if (err) return reject(new Error(err));
 
@@ -148,7 +149,8 @@ class HTTPEasyVKClient {
 				'stories': stories
 			},
 			jar: self._authjar,
-			headers: self.headersRequest
+			headers: self.headersRequest,
+			agent: self._vk.agent
 		}, cb);
 	}
 
@@ -164,7 +166,8 @@ class HTTPEasyVKClient {
 			request.get({
 				url: `${configuration.PROTOCOL}://m.${configuration.BASE_DOMAIN}/fv?to=%2Ffeed%3F_fm%3Dfeed%26_fm2%3D1`,
 				jar: self._authjar,
-				headers: self.headersRequest
+				headers: self.headersRequest,
+				agent: self._vk.agent
 			}, (err, res, vkr) => {
 				if (err) return reject(new Error(err));
 
@@ -341,7 +344,8 @@ class HTTPEasyVK {
 						request.get({
 							headers: self.headersRequest,
 							url: 'https://m.vk.com/',
-							jar: self._authjar
+							jar: self._authjar,
+							agent: self._vk.agent
 						}, (err, res, vkr) => {
 							
 							if (err) return reject(new Error(err));
@@ -377,7 +381,8 @@ class HTTPEasyVK {
 									gid: 0,
 									im_v: 2,
 									rs: "",
-								}
+								},
+								agent: self._vk.agent
 							}, (err, res) => {
 
 								if (err) return reject(err);
@@ -410,7 +415,8 @@ class HTTPEasyVK {
 								form: {
 									'email': login,
 									'pass': pass
-								}
+								},
+								agent: self._vk.agent
 							}, (err, res, vkr) => {
 
 								if (err) return reject(new Error(err));

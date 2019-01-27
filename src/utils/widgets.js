@@ -68,7 +68,8 @@ class Widgets {
 				url: alVideoUrl,
 				headers: headers,
 				form: form,
-				encoding: 'binary'
+				encoding: 'binary',
+				agent: self._vk.agent
 			}
 
 			request.post(queryParams, (err, res, vkr) => {
@@ -102,6 +103,7 @@ class Widgets {
 						body: `al=1&hash=${hash}&oid=${oid}&user_id=0&vid=${vid}`,
 						encoding: "binary", //Special
 						headers: headers,
+						agent: self._vk.agent
 					}
 
 					//Here is magic
