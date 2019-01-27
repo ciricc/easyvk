@@ -140,7 +140,8 @@ easyvk({
 ```javascript
   
   // Разработка простейшего плагина для отправки сообщений
-  vk.use(({thread, next}) => {
+
+  vk.use(async ({thread, next}) => {
 
     if (thread.method == "messages.send") {
       thread.methodType = "post"; // Автоматически меняем типа запроса на POST
@@ -149,7 +150,8 @@ easyvk({
         
         // Для новых версий API ВКонтакте для сообщений трубет поля random_id (уникальный id сообщения)
 
-        thread.query.random_id = new Date().getTime().toString() + '' + (Math.random() * 1000).toString() ; 
+        thread.query.random_id = 
+          new Date().getTime().toString() + '' + (Math.random() * 1000).toString() ; 
       }
 
     }
