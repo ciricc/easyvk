@@ -593,45 +593,6 @@ class EasyVK {
 	}
 
 
-
-	/**
-	 *	
-	 *	Function adds new middleware for requests to VK API methods
-	 *
-	 *	@param {Function} middleware - Is just a function-middleware,
-	 *  for example: async ({data, next}) => { data.query.v = 5.75; return await next() }
-	 *	@param {rejectMiddleware} [data={}] - Function for listen middleware errors, when in middleware uccrs new error, it will be called.
-	 * 
-	 *  @return {Object} - Easy VK selfish object .use().use().use()
-     *
-	 */
-
-	use (middleWare = null, rejectMiddleware = Function) {
-
-		if (middleWare && typeof middleWare == "function") {
-			this.middleWares.push(async ({data, next, other}) => {
-
-				return new Promise((resolve, reject) => {
-					return middleWare({data, next, other}).then(resNext => {
-						if (resNext) return resNext;
-						return {data}
-					}).catch(async (e) => {
-						if (rejectMiddleware && typeof rejectMiddleware == "function") {
-							rejectMiddleware(e)
-						} else {
-							console.log(e);
-						}
-
-						return await next();
-					});
-				});
-			});
-		}
-
-		return this;
-
-	}
-
 	/**
 	 *	
 	 *	Function for calling to methods and get anything form VKontakte API
@@ -685,21 +646,21 @@ class EasyVK {
 				}
 
 				let thread = {
-					data: { 
-						method: methodName, 
-						methodType
-					},
+					methodType,
+					method: methodName,
 					query: data,
 					_needSolve
 				}
 
 				let FromMiddleWare = await self._middlewaresController.run(thread);
 				
-				methodName = FromMiddleWare.data.method;
-				methodType = FromMiddleWare.data.methodType;
+				methodName = FromMiddleWare.method;
+				methodType = FromMiddleWare.methodType;
 
 				data = FromMiddleWare.query;
 
+				console.log(FromMiddleWare);
+				
 				return staticMethods.call(methodName, data, methodType, self.debugger, self.agent).then((vkr) => {
 					if (_needSolve) {
 						try {

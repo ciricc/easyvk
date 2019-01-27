@@ -527,7 +527,7 @@ class StreamingAPIConnector {
 							let json = staticMethods.checkJSONErrors(vkr, reject);
 							
 							if (json) {	
-								
+
 								initConnect(json);
 
 							} else {
@@ -543,12 +543,6 @@ class StreamingAPIConnector {
 
 				function initConnect (json = {}) {
 					
-					// console.log('Getting url...');
-
-					console.log({
-						access_token: json.access_token
-					});
-
 					staticMethods.call("streaming.getServerUrl", {
 						access_token: json.access_token
 					}).then((vkrURL) => {
