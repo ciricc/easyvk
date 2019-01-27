@@ -157,9 +157,7 @@ module.exports.call = async function call (methodName, data = {}, methodType = "
 
 			callParams.form = data;
 			callParams.headers = {
-				"Content-Type" : "application/x-www-form-urlencoded",
-				"Connection": "keep-alive",
-				"User-Agent": "KateMobileAndroid/52.2.1 lite-447 (Android 6.0; SDK 23; arm64-v8a; alps Razar; ru)"
+				"Content-Type" : "application/x-www-form-urlencoded"
 			};
 
 			//Nice request recommendtion
@@ -180,14 +178,11 @@ module.exports.call = async function call (methodName, data = {}, methodType = "
 
         	data = querystring.stringify(data);
 
+
         	let options = {
         		host: 'api.' + configuration.BASE_DOMAIN,
         		agent: Agent,
-        		path: "/method/" + methodName + '?' + data,
-        		headers: {
-        			"User-Agent": "KateMobileAndroid/52.2.1 lite-447 (Android 6.0; SDK 23; arm64-v8a; alps Razar; ru)",
-        			"Connection": "keep-alive"
-        		}
+        		path: "/method/" + methodName + '?' + data
         	}
 
         	return https.get(options, (res) => {

@@ -192,7 +192,6 @@ class LongPollConnection extends EventEmitter {
 			}
 
 			try {
-				// console.log(self.userListeners, typeEvent, updates);
 				if (self.userListeners[typeEvent]) {
 					self.userListeners[typeEvent](updates[updateIndex].object);
 				}

@@ -30,7 +30,7 @@ class HTTPEasyVKClient {
 		self._config = config;
 
 		self.headersRequest = {
-			"user-agent": self._config.user_agent,
+			"User-Agent": self._config.user_agent,
 			"content-type": "application/x-www-form-urlencoded",
 		};
 
@@ -281,7 +281,7 @@ class HTTPEasyVK {
 				
 				self._config = params;
 
-				self.headersRequest["user-agent"] = self._config.user_agent;
+				self.headersRequest["User-Agent"] = self._config.user_agent;
 				let cookiepath = self._config.cookies;
 
 
@@ -315,7 +315,8 @@ class HTTPEasyVK {
 					password: pass,
 					username: login,
 					save_session: false,
-					reauth: true
+					reauth: true,
+					proxy: self._vk.params.proxy
 				}).then((vkHtpp) => {
 
 					let vHttp = vkHtpp;

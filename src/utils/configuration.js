@@ -15,7 +15,6 @@ configuration.BASE_CALL_URL = configuration.PROTOCOL + "://" + "api." + configur
 configuration.BASE_OAUTH_URL = configuration.PROTOCOL + "://" + "oauth." + configuration.BASE_DOMAIN + "/";
 
 
-
 //It is windows client_id, you can change it here, but please, do not change
 // variable name, it need for authentication by password and username
 
@@ -31,6 +30,7 @@ configuration.ANDROID_CLIENT_SECRET = "hHbZxrka2uZ6jB1inYsH";
 //ios
 configuration.IOS_CLIENT_ID = "3140623";
 configuration.IOS_CLIENT_SECRET = "VeWdmVclDCtn6ihuP1nt";
+
 
 //Here is ids for platforms
 configuration.platformIds = {

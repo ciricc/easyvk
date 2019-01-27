@@ -50,44 +50,46 @@ class MiddlewaresMechanism {
 
 		let setupedMiddleWare = 0;
 
-		thread.next = next;
-		async function next (changedThread) {
-			// If not pushed new thread in next middleware with await next(data)
-			if (typeof changedThread != "object" || !changedThread) changedThread = thread;
+		let context = {}
+
+		context.next = next;
+		context.thread = thread;
+
+		async function next () {
+			let changedThread = context.thread;
 			
 			// Call to next middleware
 			setupedMiddleWare += 1;
 
 			for (let prop in changedThread) {
-				if (thread[prop] == undefined) { // if it was deleted by middleware, not changed
-					thread[prop] = changedThread[prop]; // need add deleted property
+				if (context.thread[prop] == undefined) { // if it was deleted by middleware, not changed
+					context.thread[prop] = changedThread[prop]; // need add deleted property
 				}
 			}
 
 			// so, now we can use changed data in this new middleware
-			thread.next = next;
+			context.next = next;
 			if (self.middleWares[setupedMiddleWare]) {
-				let res = await self.middleWares[setupedMiddleWare](thread);
+				let res = await self.middleWares[setupedMiddleWare](context);
 				// console.log('Res from ', setupedMiddleWare)
-				if (!res) return thread
-
+				if (!res) return context
 				return res;
 			} else {
-				return thread;
+				return context;
 			}
 		}
 
 		if (self.middleWares.length) {
 
-			let res = await self.middleWares[setupedMiddleWare](thread);
+			let res = await self.middleWares[setupedMiddleWare](context);
 
 			if (typeof res != "object" || !res) {
 				res = {}
 			}	
 
-			for (let prop in thread) {
+			for (let prop in context.thread) {
 				if (res[prop] == undefined) {
-					res[prop] = thread[prop]
+					res[prop] = context.thread[prop]
 				}
 			}
 

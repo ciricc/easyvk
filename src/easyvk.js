@@ -26,6 +26,8 @@ const SocksProxyAgent = require('socks-proxy-agent');
 
 const https = require("https");
 
+process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
+
 /**
  *  EasyVK module. In this module creates session by your params
  *  And then you will get a EasyVK object (Session creates in the easyvkInit.js file)
@@ -160,7 +162,7 @@ class EasyVK {
 					
 
 					if (err) {
-						return reject(new Error(`Server was down or we don't know what happaned [responseCode ${res.statusCode}]`));
+						return reject(new Error(`Server was down or we don't know what happaned [responseCode ${(res || {statusCode: 0}).statusCode}]`));
 					}
 
 

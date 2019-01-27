@@ -499,11 +499,11 @@ class StreamingAPIConnector {
 					let getParams = {
 						client_id: applicationParams.clientId,
 						client_secret: applicationParams.clientSecret, 
-						v: self.api_v,
 						grant_type: "client_credentials",
 					};
 
 					getParams = staticMethods.urlencode(getParams);
+
 
 					request.get({
 						url: `${configuration.BASE_OAUTH_URL}access_token?${getParams}`,
@@ -526,8 +526,8 @@ class StreamingAPIConnector {
 						if (vkr) {
 							let json = staticMethods.checkJSONErrors(vkr, reject);
 							
-							if (json) {
-
+							if (json) {	
+								
 								initConnect(json);
 
 							} else {
@@ -543,7 +543,11 @@ class StreamingAPIConnector {
 
 				function initConnect (json = {}) {
 					
-					console.log('Getting url...');
+					// console.log('Getting url...');
+
+					console.log({
+						access_token: json.access_token
+					});
 
 					staticMethods.call("streaming.getServerUrl", {
 						access_token: json.access_token
