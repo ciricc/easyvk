@@ -328,7 +328,7 @@ class AudioAPI {
 			data.act = 'done_add';
 			data.al = 1;
 
-			self._request(data).then(vkr => {
+			self._request(data, true).then(vkr => {
 
 
 				vkr = vkr.body;
@@ -397,7 +397,7 @@ class AudioAPI {
     				return reject(new Error(json[5]));
     			}
 
-    			if (!json[5]) {
+    			if (!json[5] && !ignoreStringError) {
     				return reject(self._vk._error("audio_api", {}, "not_have_access"));
     			}
 
