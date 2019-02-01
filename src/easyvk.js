@@ -652,6 +652,7 @@ class EasyVK {
 					_needSolve
 				}
 
+
 				let FromMiddleWare = await self._middlewaresController.run(thread);
 				
 				methodName = FromMiddleWare.method;
@@ -659,8 +660,6 @@ class EasyVK {
 
 				data = FromMiddleWare.query;
 
-				console.log(FromMiddleWare);
-				
 				return staticMethods.call(methodName, data, methodType, self.debugger, self.agent).then((vkr) => {
 					if (_needSolve) {
 						try {
@@ -778,6 +777,6 @@ module.exports.class = {
 }
 
 
-module.exports.version = "2.1.3";
+module.exports.version = "2.2.0";
 module.exports.callbackAPI = new easyVKCallbackAPI({});
 module.exports.streamingAPI = new easyVKStreamingAPI({});

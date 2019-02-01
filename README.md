@@ -9,8 +9,12 @@
 This library helps you easily create a javascript application with VKontakte API!
 Official VK API: [vk.com/dev/](https://vk.com/dev/)
 
+<img alt="Downloads" src="https://img.shields.io/npm/dt/easyvk.svg"/> <img alt="Issues" src="https://img.shields.io/github/issues/ciricc/easyvk.svg"/>
+<img src="https://img.shields.io/node/v/easyvk.svg" alt="Platfrom support"/> <img alt="Latest version" src="https://img.shields.io/npm/v/easyvk/latest.svg"/>
+
 | [Community](https://vk.com/club162208999) | [Документация на русском](https://ciricc.github.io/) |
 | ------------------------------------------| -------------|
+
 
 ## Для русскоязычных
 
