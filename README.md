@@ -155,7 +155,7 @@ easyvk({
         // Для новых версий API ВКонтакте для сообщений трубет поля random_id (уникальный id сообщения)
 
         thread.query.random_id = 
-          new Date().getTime().toString() + '' + (Math.random() * 1000).toString() ; 
+          new Date().getTime().toString() + '' + (Math.floor(Math.random() * 1000)).toString() ; 
       }
 
     }
