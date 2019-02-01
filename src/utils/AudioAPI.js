@@ -3,7 +3,6 @@
 const configuration = require("./configuration.js");
 const staticMethods = require("./staticMethods.js");
 const request = require("request");
-const encoding = require("encoding");
 const VKResponse = require("./VKResponse.js");
 
 
@@ -364,79 +363,16 @@ class AudioAPI {
 	}
 
 
-	_request (form = {}, ignoreStringError = false) {
-
-		let self = this;
-
-		return new Promise((resolve, reject) => {
-
-
-			request.post({
-				jar: self._authjar,
-				url: `${configuration.PROTOCOL}://${configuration.BASE_DOMAIN}/al_audio.php`,
-				form: form,
-				encoding: "binary",
-				headers: {
-					"user-agent": self._http._config.user_agent
-				},
-				agent: self._vk.agent
-			}, (err, res, vkr) => {
-
-				if (err) {
-					return reject(err);
-				}
-
-				res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString();
-				
-
-				if (!res.body.length) {
-					return reject(self._vk._error("audio_api", {}, "not_have_access"));
-				}
-
-
-
-				let json = self._parseResponse(res.body.split('<!>'));
-				
-				if (typeof json[6] == "object") json[5] = json[6];
-
-    			if (typeof json[5] == "string" && !ignoreStringError) {
-    				return reject(new Error(json[5]));
-    			}
-
-    			if (!json[5] && !ignoreStringError) {
-    				return reject(self._vk._error("audio_api", {}, "not_have_access"));
-    			}
-
-
-				return resolve(res);
-
-			});
-
-
-		});
-
-
+	_request (...args) {
+		return this._http.request('al_audio.php', ...args);
 	}
 
-	_parseJSON (body, reject) {
-		let self = this;
+	_parseResponse (...args) {
+		return this._http._parseResponse(...args);
+	}
 
-
-		let json = self._parseResponse(body.split('<!>'));
-
-		if (typeof json[6] == "object") json[5] = json[6];
-
-		if (typeof json[5] == "string") {
-			return reject(new Error(json[5]));
-		}
-
-		if (!json[5]) {
-			return reject(self._vk._error("audio_api", {}, "not_have_access"));
-		}
-
-		json = json[5];
-
-		return json;
+	_parseJSON (...args) {
+		return this._http._parseJSON(...args);
 	}
 	
 
@@ -970,43 +906,6 @@ class AudioAPI {
 		});
 
 	}
-
-	_parseResponse (e) {
-        for (var o = e.length - 1; o >= 0; --o) {
-            var n = e[o];
-            if ("<!" === n.substr(0, 2)) {
-                var i = n.indexOf(">"),
-                    r = n.substr(2, i - 2);
-                switch (n = n.substr(i + 1), r) {
-                    case "json":
-
-                        try {
-                        	e[o] = JSON.parse(n);
-                        } catch (e) {
-                        	e[o] = {}
-                        }
-
-                        break;
-                    case "int":
-                        e[o] = parseInt(n);
-                        break;
-                    case "float":
-                        e[o] = parseFloat(n);
-                        break;
-                    case "bool":
-                        e[o] = !!parseInt(n);
-                        break;
-                    case "null":
-                        e[o] = null;
-                        break;
-                    case "debug":
-                    	console.log('debug');
-                }
-            }
-        }
-
-        return e;
-    }
 
     _getPlaylistAsObject (playlist = {}) {
     	let self = this;

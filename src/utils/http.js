@@ -12,6 +12,8 @@
 
 const configuration = require("./configuration.js");
 const staticMethods = require("./staticMethods.js");
+const encoding = require("encoding");
+
 
 const fs = require("fs");
 const request = require("request");
@@ -193,6 +195,144 @@ class HTTPEasyVKClient {
 			});
 		});
 	}
+
+	async addBotToConf (params = {}) {
+		let self = this;
+
+		return new Promise((resolve, reject) => {
+			self.request('al_groups.php', {
+				_ads_group_id: params.group_id || 0,
+				act: 'a_search_chats_box',
+				al: 1,
+				group_id: params.group_id || 0
+			}, false, 8).then(vkr => {
+
+				let json = self._parseResponse(vkr.body.split('<!>'));
+				json = json[8];
+				
+				let add_hash = json.add_hash;
+
+				self.request('al_im.php', {
+					_ads_group_id: params.group_id || 0,
+					act: 'a_add_bots_to_chat',
+					add_hash: add_hash,
+					al: 1,
+					bot_id: (-params.group_id || -1),
+					peer_ids: params.peer_ids
+				}, true).then(resolve, reject);
+
+
+			}).catch(reject);
+
+		});
+	}
+
+	async request (file, form = {}, ignoreStringError = false, indexJson = 6) {
+		let self = this;
+
+		return new Promise((resolve, reject) => {
+			request.post({
+				jar: self._authjar,
+				url: `${configuration.PROTOCOL}://${configuration.BASE_DOMAIN}/` + file,
+				form: form,
+				encoding: "binary",
+				headers: {
+					"user-agent": self._config.user_agent
+				},
+				agent: self._vk.agent
+			}, (err, res, vkr) => {
+
+				if (err) {
+					return reject(err);
+				}
+
+				res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString();
+				
+
+				if (!res.body.length) {
+					return reject(self._vk._error("audio_api", {}, "not_have_access"));
+				}
+
+
+
+				let json = self._parseResponse(res.body.split('<!>'));
+
+				if (typeof json[indexJson] == "object") json[5] = json[indexJson];
+
+    			if (typeof json[5] == "string" && !ignoreStringError) {
+    				return reject(new Error(json[5]));
+    			}
+
+    			if (!json[5] && !ignoreStringError) {
+    				return reject(self._vk._error("audio_api", {}, "not_have_access"));
+    			}
+
+
+				return resolve(res);
+
+			});
+
+
+		});
+	}
+
+	_parseResponse (e) {
+        for (var o = e.length - 1; o >= 0; --o) {
+            var n = e[o];
+            if ("<!" === n.substr(0, 2)) {
+                var i = n.indexOf(">"),
+                    r = n.substr(2, i - 2);
+                switch (n = n.substr(i + 1), r) {
+                    case "json":
+
+                        try {
+                        	e[o] = JSON.parse(n);
+                        } catch (e) {
+                        	e[o] = {}
+                        }
+
+                        break;
+                    case "int":
+                        e[o] = parseInt(n);
+                        break;
+                    case "float":
+                        e[o] = parseFloat(n);
+                        break;
+                    case "bool":
+                        e[o] = !!parseInt(n);
+                        break;
+                    case "null":
+                        e[o] = null;
+                        break;
+                    case "debug":
+                    	console.log('debug');
+                }
+            }
+        }
+
+        return e;
+    }
+
+    _parseJSON (body, reject) {
+		let self = this;
+
+
+		let json = self._parseResponse(body.split('<!>'));
+
+		if (typeof json[6] == "object") json[5] = json[6];
+
+		if (typeof json[5] == "string") {
+			return reject(new Error(json[5]));
+		}
+
+		if (!json[5]) {
+			return reject(self._vk._error("audio_api", {}, "not_have_access"));
+		}
+
+		json = json[5];
+
+		return json;
+	}
 }
 
 class HTTPEasyVK {
@@ -282,7 +422,7 @@ class HTTPEasyVK {
 				self._config = params;
 
 				self.headersRequest["User-Agent"] = self._config.user_agent;
-				
+
 				let cookiepath = self._config.cookies;
 
 
