@@ -266,7 +266,10 @@ class AudioAPI {
 				gid: params.group_id
 			}, true).then(res => {
 
-				let matches = res.body.match(/Upload\.init\((.*)/)[0];
+				let matches = res.body.match(/Upload\.init\((.*)/);
+				if (!matches) return reject(new Error(res.body));
+
+				matches = matches[0];
 				matches = String(matches).replace(/Upload\.init\(/, "").split(', ');
 				
 				let url = matches[1].replace(/'|"/g, "");
@@ -390,8 +393,11 @@ class AudioAPI {
 					return reject(self._vk._error("audio_api", {}, "not_have_access"));
 				}
 
-				
+
+
 				let json = self._parseResponse(res.body.split('<!>'));
+				
+				if (typeof json[6] == "object") json[5] = json[6];
 
     			if (typeof json[5] == "string" && !ignoreStringError) {
     				return reject(new Error(json[5]));
@@ -400,6 +406,7 @@ class AudioAPI {
     			if (!json[5] && !ignoreStringError) {
     				return reject(self._vk._error("audio_api", {}, "not_have_access"));
     			}
+
 
 				return resolve(res);
 
@@ -417,6 +424,7 @@ class AudioAPI {
 
 		let json = self._parseResponse(body.split('<!>'));
 
+		if (typeof json[6] == "object") json[5] = json[6];
 
 		if (typeof json[5] == "string") {
 			return reject(new Error(json[5]));
@@ -645,8 +653,8 @@ class AudioAPI {
 			performer: audio[self.AudioObject.AUDIO_ITEM_INDEX_PERFORMER],
 			duration: audio[self.AudioObject.AUDIO_ITEM_INDEX_DURATION],
 			covers: c,
-			coverUrl_s: c_l[0],
-            coverUrl_p: c_l[1],
+			coverUrl_s: c_l[0] || "",
+            coverUrl_p: c_l[1] || "",
 			flags: audio[self.AudioObject.AUDIO_ITEM_INDEX_FLAGS],
 			hq: !!(audio[self.AudioObject.AUDIO_ITEM_INDEX_FLAGS] & self.AudioObject.AUDIO_ITEM_HQ_BIT),
 			claimed: !!(audio[self.AudioObject.AUDIO_ITEM_INDEX_FLAGS] & self.AudioObject.AUDIO_ITEM_CLAIMED_BIT),

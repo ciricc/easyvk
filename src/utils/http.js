@@ -282,6 +282,7 @@ class HTTPEasyVK {
 				self._config = params;
 
 				self.headersRequest["User-Agent"] = self._config.user_agent;
+				
 				let cookiepath = self._config.cookies;
 
 
@@ -325,6 +326,8 @@ class HTTPEasyVK {
 
 					//Make first request, for know url for POST request
 					//parse from m.vk.com page
+					
+					fs.writeFileSync(cookiepath, '{}');
 
 					let jar = request.jar(new FileCookieStore(cookiepath));
 
