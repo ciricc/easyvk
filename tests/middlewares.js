@@ -27,22 +27,24 @@ evk({
 	reauth: true
 }).then(vk => {
 
-	vk.use(async ({next, thread}) => {
+	vk.use(async ({thread, next}) => {
 
-		let version = thread.query.v;
+		if (thread.method == "messages.send") {
+			thread.methodType = "post"; // Автоматически меняем типа запроса на POST
 
-		if (Number(version) >= 5.90 && !thread.query.random_id) {
-			thread.query.random_id = new Date().getTime() + '' + Math.floor(Math.random() * 1000);
+			if (Number(thread.query.v) >= 5.90) {
+
+				// Для новых версий API ВКонтакте для сообщений трубет поля random_id (уникальный id сообщения)
+
+				thread.query.random_id = 
+			  	new Date().getTime().toString() + '' + (Math.floor(Math.random() * 1000)).toString() ; 
+			}
+
 		}
 
+		// Запускаем следующий плагин
 		await next();
-	})
-
-
-	vk.use(async ({next, thread}) => {
-		console.log(thread, 'I CAN CHANGE THIS!!');
-		await next();
-	})	
+	});	
 
 
 	vk.call("messages.send", {
@@ -59,8 +61,10 @@ evk({
 			thread.updates.forEach((upd, i) => {
 				if (upd.type == 4) {
 					upd.object = {
-						id: upd.object[1],
-						body: upd.object[5]
+					  out: upd.object[2] & 2,
+				      peer_id: upd.object[3],
+				      text: upd.object[5],
+				      payload: upd.object[6].payload || {}
 					}
 				}
 			})
@@ -77,7 +81,7 @@ evk({
 		console.log(connection);
 
 	});
-	
+
 
 }).catch(e => {
 	
