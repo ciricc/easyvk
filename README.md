@@ -6,6 +6,8 @@
 
 # EasyVK (VKontakte API Manager) v2.0
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/194899f6a70b44b2bbe3113e72b095bd)](https://app.codacy.com/app/ciricc/easyvk?utm_source=github.com&utm_medium=referral&utm_content=ciricc/easyvk&utm_campaign=Badge_Grade_Settings)
+
 This library helps you easily create a javascript application with VKontakte API!
 Official VK API: [vk.com/dev/](https://vk.com/dev/)
 
