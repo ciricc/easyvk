@@ -7,6 +7,11 @@
   "bugs": "https://github.com/ciricc/easyvk/issues",
   "homepage": "https://ciricc.github.io/",
   "main": "src/index.js",
+  "scripts": {
+    "test:jasmine": "jasmine JASMINE_CONFIG_PATH=jasmine.json CLIENT_ID=process.env.CLIENT_ID CLIENT_SECRET=process.env.CLIENT_SECRET",
+    "test:eslint": "eslint src",
+    "test": "npm run test:eslint && npm run test:jasmine"
+  },
   "engines": {
     "node": ">=10"
   },
@@ -29,6 +34,7 @@
     "express": "^4.16.3",
     "fast-event-emitter": "0.0.2",
     "https-proxy-agent": "^2.2.1",
+    "jasmine": "^3.3.1",
     "remark-lint-emphasis-marker": "^1.0.2",
     "remark-lint-strong-marker": "^1.0.2",
     "remark-stringify": "^6.0.4",

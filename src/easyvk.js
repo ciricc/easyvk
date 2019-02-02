@@ -111,7 +111,7 @@ class EasyVK {
         client_id: params.client_id || configuration.WINDOWS_CLIENT_ID,
         client_secret: params.client_secret || configuration.WINDOWS_CLIENT_SECRET,
         v: params.api_v,
-        lang: params.lang
+        lang: params.lang || 'ru'
       }
 
       if (params.captcha_key) {
