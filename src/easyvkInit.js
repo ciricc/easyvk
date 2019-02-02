@@ -20,6 +20,8 @@ let debuggerRun = new EasyVKRequestsDebugger(Boolean(false))
 
 module.exports = createSession
 
+export default createSession
+
 module.exports.static = staticMethods
 module.exports.debuggerRun = debuggerRun
 module.exports.version = EasyVK.version
@@ -197,11 +199,7 @@ async function checkInitParams (params = {}) {
  */
 
 async function createSession (params = {}) {
-  return new Promise((resolve, reject) => {
-    return checkInitParams(params).then((p) => {
-      let vk = new EasyVK(p, resolve, reject, debuggerRun)
-
-      return vk
-    }, reject)
+  return checkInitParams(params).then((p) => {
+    return (new EasyVK(p, resolve, reject, debuggerRun))
   })
 }

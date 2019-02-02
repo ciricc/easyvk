@@ -3,10 +3,8 @@
 const staticMethods = require('./staticMethods.js')
 const VKResponse = require('./VKResponse.js')
 
-class AudioItem extends Object {
+class AudioItem {
   constructor (audio) {
-    super()
-
     let self = this
     let _props = audio
 
@@ -21,13 +19,10 @@ class AudioItem extends Object {
   }
 }
 
-class PlayListItem extends Object {
+class PlayListItem {
   constructor (audio) {
-    super()
-
     let self = this
     let _props = audio
-
     // Use session data with methods
     for (let prop in _props) {
       Object.defineProperty(self, prop, {

@@ -95,13 +95,8 @@ class HTTPEasyVKClient {
 
     let storiesMatch, superStories
 
-    if (type === 'feed') {
-      storiesMatch = /cur\['stories_list_feed'\]=\[(.*?)\];/
-      superStories = /cur\['stories_list_feed'\]=/
-    } else {
-      storiesMatch = /cur\['stories_list_profile'\]=\[(.*?)\];/
-      superStories = /cur\['stories_list_profile'\]=/
-    }
+    storiesMatch = /cur\['stories_list_profile'\]=\[(.*?)\];/
+    superStories = /cur\['stories_list_profile'\]=/
 
     let stories = response.match(storiesMatch)
 

@@ -478,7 +478,6 @@ class EasyVK {
       // Here is a middlewares will be saved
       self.middleWares = [async (data) => {
         let next = data.next
-
         data.next = undefined
         await next(data)
       }]
