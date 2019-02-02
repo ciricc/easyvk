@@ -28,14 +28,16 @@ describe('This test running an application authentication (Client Credentials Fl
       session_file: process.env['session-path'] || DEFAULT_SESSION_PATH,
       reauth: true
     })
+
     expect(vk.session).toBeDefined()
+
     expect(vk.session.credentials_flow).toBe(1)
   }))
 })
 
 describe('This test running a user and group authentication', function () {
   if (!ACCESS_TOKEN) {
-    it('Test was stopped because no have a env.CLIENT_ID and env.CLIENT_SECRET tokens', () => {
+    it('Test was stopped because no have a CLIENT_ID and CLIENT_SECRET tokens', () => {
 
     })
 
