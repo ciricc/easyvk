@@ -1,5 +1,4 @@
 
-
 <p align="center">
   <img alt="EasyVK logo" title="EasyVK can help you create applications on VKontakte API easy!" src="https://i.imgur.com/5P6VNOq.png" width="300"/>
 </p>
@@ -80,8 +79,7 @@ easyvk({
 
 *  Use <b>Callback API</b> (like creating your server to listen to group events)
 
-*  Manage your stream based on official <b>Streaming API</b>,
-   listen to events and collect data to create statistic and metrics
+*  Manage your stream based on official <b>Streaming API</b>, listen to events and collect data to create statistic and metrics
 
 *  Upload your files to the server
 
