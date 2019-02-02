@@ -4,7 +4,7 @@ const easyvk = require('..')
 
 const DEFAULT_SESSION_PATH = path.join(__dirname, '.vk-session')
 
-let { CLIENT_ID: clientId, CLIENT_SECRET: clientSecret, ACCESS_TOKEN: accessToken } = process.env
+let { CLIENT_ID: clientId, CLIENT_SECRET: clientSecret } = process.env
 
 describe('This test running an application authentication (Client Credentials Flow)', function () {
   function testAsync (runAsync) {
