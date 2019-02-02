@@ -61,7 +61,7 @@ class EasyVKSession {
 
       fs.writeFile(self.path, buf, (err) => {
         if (err) {
-          reject(err)
+          return reject(new Error(err))
         }
 
         return resolve({

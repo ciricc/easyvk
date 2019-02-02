@@ -36,226 +36,124 @@ process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0
 
 class EasyVK {
   // Here will be created session
-  constructor (params, resolve, reject, debuggerRun) {
-    let session = {}
+  constructor (params, debuggerRun) {
+    this.params = params
 
+    this.debugger = new EasyVKRequestsDebugger(this)
+
+    this.debuggerRun = debuggerRun || this.debugger
+    this._errors = easyVKErrors
+
+    this._errors.setLang(params.lang)
+  }
+
+  async _init () {
     let self = this
+    return new Promise((resolve, reject) => {
+      let session, params
 
-    self.params = params
+      session = {}
+      params = self.params
 
-    self.debugger = new EasyVKRequestsDebugger(self)
-    self.debuggerRun = debuggerRun || self.debugger
-    self._errors = easyVKErrors
+      if (params.proxy) {
+        let options = new URL(params.proxy)
 
-    self._errors.setLang(params.lang)
+        options.keepAlive = true
+        options.keepAliveMsecs = 30000
 
-    if (params.proxy) {
-      let options = new URL(params.proxy)
-
-      options.keepAlive = true
-      options.keepAliveMsecs = 30000
-
-      if (options.protocol.match('socks')) {
-        self.agent = new SocksProxyAgent(options, true)
-      } else { self.agent = new HttpsProxyAgent(options) }
-    } else {
-      self.agent = new https.Agent({
-        keepAlive: true,
-        keepAliveMsecs: 30000
-      })
-    }
-
-    if (!params.reauth) {
-      let data = fs.readFileSync(params.session_file)
-
-      if (data) {
-        try {
-          data = JSON.parse(data)
-
-          if (data.access_token) {
-            session = new EasyVKSession(self, data)
-            initToken()
-          } else {
-            if (!(params.username && params.password) && !params.access_token && !params.client_id && params.client_secret) {
-              return reject(self._error('empty_session'))
-            }
-          }
-        } catch (e) {
-          if (!(params.username && params.password) && !params.access_token) {
-            return reject(self._error('session_not_valid'))
-          }
-        }
+        if (options.protocol.match('socks')) {
+          self.agent = new SocksProxyAgent(options, true)
+        } else { self.agent = new HttpsProxyAgent(options) }
       } else {
-        if (!(params.username && params.password) && !params.access_token) {
-          return reject(self._error('empty_session'))
-        }
-      }
-    }
-
-    if (!session.access_token) { // If session file contents access_token, try auth with it
-      if (params.access_token) {
-        session.access_token = params.access_token
-        initToken()
-      } else if (params.username) {
-        // Try get access_token with auth
-        let getData = {
-          username: params.username,
-          password: params.password,
-          client_id: params.client_id || configuration.WINDOWS_CLIENT_ID,
-          client_secret: params.client_secret || configuration.WINDOWS_CLIENT_SECRET,
-          grant_type: 'password',
-          v: params.api_v,
-          lang: params.lang,
-          device_id: '',
-          libverify_support: 1
-        }
-
-        if (params.captcha_key) {
-          getData.captcha_sid = params.captcha_sid
-          getData.captcha_key = params.captcha_key
-        }
-
-        if (params.code && params.code.toString().length !== 0) {
-          getData['2fa_supported'] = 1
-          getData.code = params.code
-        }
-
-        getData = staticMethods.urlencode(getData)
-
-        if (self.debuggerRun) {
-          try {
-            self.debuggerRun.push('request', configuration.BASE_OAUTH_URL + 'token/?' + getData)
-          } catch (e) {
-            // Ignore
-          }
-        }
-
-        request.get({
-          url: configuration.BASE_OAUTH_URL + 'token/?' + getData,
-          headers: {
-            'User-Agent': 'KateMobileAndroid/52.2.1 lite-447 (Android 6.0; SDK 23; arm64-v8a; alps Razar; ru)'
-          },
-          agent: self.agent
-        }, (err, res) => {
-          if (err) {
-            return reject(new Error(`Server was down or we don't know what happaned [responseCode ${(res || { statusCode: 0 }).statusCode}]`))
-          }
-
-          let vkr = res.body
-
-          if (self.debuggerRun) {
-            try {
-              self.debuggerRun.push('response', vkr)
-            } catch (e) {
-              // Ignore
-            }
-          }
-
-          if (vkr) {
-            let json = staticMethods.checkJSONErrors(vkr, reject)
-
-            if (json) {
-              session = JSON.parse(JSON.stringify(json))
-              session.user_id = null
-              initToken()
-            }
-          } else {
-            return reject(self._error('empty_response', {
-              response: vkr
-            }))
-          }
-        })
-      } else if (params.client_id) {
-        let getData = {
-          client_id: params.client_id || configuration.WINDOWS_CLIENT_ID,
-          client_secret: params.client_secret || configuration.WINDOWS_CLIENT_SECRET,
-          grant_type: 'client_credentials',
-          v: params.api_v,
-          lang: params.lang
-        }
-
-        if (params.captcha_key) {
-          getData.captcha_sid = params.captcha_sid
-          getData.captcha_key = params.captcha_key
-        }
-
-        if (params.code && params.code.toString().length !== 0) {
-          getData['2fa_supported'] = 1
-          getData.code = params.code
-        }
-
-        getData = staticMethods.urlencode(getData)
-
-        if (self.debuggerRun) {
-          try {
-            self.debuggerRun.push('request', configuration.BASE_OAUTH_URL + 'token/?' + getData)
-          } catch (e) {
-            // Ignore
-          }
-        }
-
-        request.get({
-          url: configuration.BASE_OAUTH_URL + 'token/?' + getData,
-          agent: self.agent
-        }, (err, res) => {
-          if (err) {
-            return reject(new Error(`Server was down or we don't know what happaned [responseCode ${res.statusCode}]`))
-          }
-
-          let vkr = res.body
-
-          if (self.debuggerRun) {
-            try {
-              self.debuggerRun.push('response', vkr)
-            } catch (e) {
-              // Ignore
-            }
-          }
-
-          if (vkr) {
-            let json = staticMethods.checkJSONErrors(vkr, reject)
-
-            if (json) {
-              session = JSON.parse(JSON.stringify(json))
-              session.user_id = null
-              session.credentials_flow = 1
-              initToken()
-            }
-          } else {
-            return reject(self._error('empty_response', {
-              response: vkr
-            }))
-          }
+        self.agent = new https.Agent({
+          keepAlive: true,
+          keepAliveMsecs: 30000
         })
       }
-    }
 
-    function initToken () {
-      if (!session.user_id && !session.group_id) {
-        let token, getData
+      /* if user wants to get data from file, need get data from file
+         or generate this file automatically with new data */
 
-        token = session.access_token || params.access_token
+      if (!params.reauth) {
+        let data
 
-        if (session.credentials_flow) {
-          self.__credentials_flow_type = true
-          self.session = session
+        try {
+          data = fs.readFileSync(params.session_file)
+        } catch (e) {
+          data = false
+        }
 
-          initResolve(self)
+        if (data) {
+          try {
+            data = JSON.parse(data)
+
+            if (data.access_token) {
+              session = new EasyVKSession(self, data)
+              initToken()
+            } else {
+              if (!(params.username && params.password) && !params.access_token && !params.client_id && params.client_secret) {
+                return reject(self._error('empty_session'))
+              }
+            }
+          } catch (e) {
+            if (!(params.username && params.password) && !params.access_token) {
+              return reject(self._error('session_not_valid'))
+            }
+          }
         } else {
-          getData = {
-            access_token: token,
+          if (!(params.username && params.password) && !params.access_token) {
+            return reject(self._error('empty_session'))
+          }
+        }
+      }
+
+      if (!session.access_token) { // If session file contents access_token, try auth with it
+        if (params.access_token) {
+          session.access_token = params.access_token
+          initToken()
+        } else if (params.username) {
+          // Try get access_token with auth
+          let getData = {
+            username: params.username,
+            password: params.password,
+            client_id: params.client_id || configuration.WINDOWS_CLIENT_ID,
+            client_secret: params.client_secret || configuration.WINDOWS_CLIENT_SECRET,
+            grant_type: 'password',
             v: params.api_v,
-            fields: params.fields.join(',')
+            lang: params.lang,
+            device_id: '',
+            libverify_support: 1
+          }
+
+          if (params.captcha_key) {
+            getData.captcha_sid = params.captcha_sid
+            getData.captcha_key = params.captcha_key
+          }
+
+          if (params.code && params.code.toString().length !== 0) {
+            getData['2fa_supported'] = 1
+            getData.code = params.code
           }
 
           getData = staticMethods.urlencode(getData)
 
+          if (self.debuggerRun) {
+            try {
+              self.debuggerRun.push('request', configuration.BASE_OAUTH_URL + 'token/?' + getData)
+            } catch (e) {
+              // Ignore
+            }
+          }
+
           request.get({
-            url: configuration.BASE_CALL_URL + 'users.get?' + getData,
+            url: configuration.BASE_OAUTH_URL + 'token/?' + getData,
+            headers: {
+              'User-Agent': 'KateMobileAndroid/52.2.1 lite-447 (Android 6.0; SDK 23; arm64-v8a; alps Razar; ru)'
+            },
             agent: self.agent
           }, (err, res) => {
             if (err) {
-              return reject(new Error(err))
+              return reject(new Error(`Server was down or we don't know what happaned [responseCode ${(res || { statusCode: 0 }).statusCode}]`))
             }
 
             let vkr = res.body
@@ -270,239 +168,361 @@ class EasyVK {
 
             if (vkr) {
               let json = staticMethods.checkJSONErrors(vkr, reject)
+
               if (json) {
-                if (Array.isArray(json) && json.length === 0) {
-                  appToken()
-                } else {
-                  session.user_id = json[0].id
-                  session.first_name = json[0].first_name
-                  session.last_name = json[0].last_name
-
-                  for (let i = 0; i < params.fields.length; i++) {
-                    if (json[0][params.fields[i]] && session[params.fields[i]] === undefined) {
-                      session[params.fields[i]] = json[0][params.fields[i]]
-                    }
-                  }
-
-                  self.session = session
-                  initResolve(self)
-                }
+                session = JSON.parse(JSON.stringify(json))
+                session.user_id = null
+                initToken()
               }
             } else {
               return reject(self._error('empty_response', {
-                response: vkr,
-                where: 'in auth with token (user)'
+                response: vkr
+              }))
+            }
+          })
+        } else if (params.client_id) {
+          let getData = {
+            client_id: params.client_id || configuration.WINDOWS_CLIENT_ID,
+            client_secret: params.client_secret || configuration.WINDOWS_CLIENT_SECRET,
+            grant_type: 'client_credentials',
+            v: params.api_v,
+            lang: params.lang
+          }
+
+          if (params.captcha_key) {
+            getData.captcha_sid = params.captcha_sid
+            getData.captcha_key = params.captcha_key
+          }
+
+          if (params.code && params.code.toString().length !== 0) {
+            getData['2fa_supported'] = 1
+            getData.code = params.code
+          }
+
+          getData = staticMethods.urlencode(getData)
+
+          if (self.debuggerRun) {
+            try {
+              self.debuggerRun.push('request', configuration.BASE_OAUTH_URL + 'token/?' + getData)
+            } catch (e) {
+              // Ignore
+            }
+          }
+
+          request.get({
+            url: configuration.BASE_OAUTH_URL + 'token/?' + getData,
+            agent: self.agent
+          }, (err, res) => {
+            if (err) {
+              return reject(new Error(`Server was down or we don't know what happaned [responseCode ${res.statusCode}]`))
+            }
+
+            let vkr = res.body
+
+            if (self.debuggerRun) {
+              try {
+                self.debuggerRun.push('response', vkr)
+              } catch (e) {
+                // Ignore
+              }
+            }
+
+            if (vkr) {
+              let json = staticMethods.checkJSONErrors(vkr, reject)
+
+              if (json) {
+                session = JSON.parse(JSON.stringify(json))
+                session.user_id = null
+                session.credentials_flow = 1
+                initToken()
+              }
+            } else {
+              return reject(self._error('empty_response', {
+                response: vkr
               }))
             }
           })
         }
-      } else {
-        self.session = session
-        initResolve(self)
       }
-    }
 
-    function appToken () {
-      let getData
+      function initToken () {
+        if (!session.user_id && !session.group_id) {
+          let token, getData
 
-      getData = staticMethods.urlencode({
-        access_token: params.access_token,
-        v: params.api_v,
-        lang: params.lang,
-        fields: params.fields.join(',')
-      })
+          token = session.access_token || params.access_token
 
-      if (self.debuggerRun) {
-        try {
-          self.debuggerRun.push('request', configuration.BASE_CALL_URL + 'groups.getById?' + getData)
-        } catch (e) {
-          // Ignore
+          if (session.credentials_flow) {
+            self.__credentials_flow_type = true
+            self.session = session
+
+            initResolve(self)
+          } else {
+            getData = {
+              access_token: token,
+              v: params.api_v,
+              fields: params.fields.join(',')
+            }
+
+            getData = staticMethods.urlencode(getData)
+
+            request.get({
+              url: configuration.BASE_CALL_URL + 'users.get?' + getData,
+              agent: self.agent
+            }, (err, res) => {
+              if (err) {
+                return reject(new Error(err))
+              }
+
+              let vkr = res.body
+
+              if (self.debuggerRun) {
+                try {
+                  self.debuggerRun.push('response', vkr)
+                } catch (e) {
+                  // Ignore
+                }
+              }
+
+              if (vkr) {
+                let json = staticMethods.checkJSONErrors(vkr, reject)
+                if (json) {
+                  if (Array.isArray(json) && json.length === 0) {
+                    appToken()
+                  } else {
+                    session.user_id = json[0].id
+                    session.first_name = json[0].first_name
+                    session.last_name = json[0].last_name
+
+                    for (let i = 0; i < params.fields.length; i++) {
+                      if (json[0][params.fields[i]] && session[params.fields[i]] === undefined) {
+                        session[params.fields[i]] = json[0][params.fields[i]]
+                      }
+                    }
+
+                    self.session = session
+                    initResolve(self)
+                  }
+                }
+              } else {
+                return reject(self._error('empty_response', {
+                  response: vkr,
+                  where: 'in auth with token (user)'
+                }))
+              }
+            })
+          }
+        } else {
+          self.session = session
+          initResolve(self)
         }
       }
 
-      request.get({
-        url: configuration.BASE_CALL_URL + 'apps.get?' + getData,
-        agent: self.agent
-      }, (err, res) => {
-        if (err) {
-          return reject(new Error(err))
-        }
+      function appToken () {
+        let getData
 
-        let vkr = res.body
+        getData = staticMethods.urlencode({
+          access_token: params.access_token,
+          v: params.api_v,
+          lang: params.lang,
+          fields: params.fields.join(',')
+        })
 
         if (self.debuggerRun) {
           try {
-            self.debuggerRun.push('response', vkr)
+            self.debuggerRun.push('request', configuration.BASE_CALL_URL + 'groups.getById?' + getData)
           } catch (e) {
             // Ignore
           }
         }
 
-        if (vkr) {
-          let json
+        request.get({
+          url: configuration.BASE_CALL_URL + 'apps.get?' + getData,
+          agent: self.agent
+        }, (err, res) => {
+          if (err) {
+            return reject(new Error(err))
+          }
 
-          json = staticMethods.checkJSONErrors(vkr, (e) => {
-            if (e.error_code === 5) {
-              groupToken()
-            } else {
-              reject(e)
-            }
-          })
+          let vkr = res.body
 
-          if (json) {
-            json = json.items[0]
-
-            if (Array.isArray(json) && json.length === 0) {
-              groupToken()
-            } else {
-              session.app_id = json.id
-              session.app_title = json.title
-              session.app_type = json.type
-              session.app_icons = [json.icon_75, json.icon_150]
-              session.author = {
-                id: json.author_id
-              }
-
-              session.app_members = json.members_count
-
-              for (let i = 0; i < params.fields.length; i++) {
-                if (json[params.fields[i]]) {
-                  session[params.fields[i]] = json[params.fields[i]]
-                }
-              }
-
-              self.session = session
-
-              initResolve(self)
+          if (self.debuggerRun) {
+            try {
+              self.debuggerRun.push('response', vkr)
+            } catch (e) {
+              // Ignore
             }
           }
-        } else {
-          return reject(self._error('empty_response', {
-            response: vkr,
-            where: 'in auth with token (group)'
-          }))
-        }
-      })
-    }
 
-    function groupToken () {
-      let getData
+          if (vkr) {
+            let json
 
-      getData = staticMethods.urlencode({
-        access_token: params.access_token,
-        v: params.api_v,
-        lang: params.lang,
-        fields: params.fields.join(',')
-      })
+            json = staticMethods.checkJSONErrors(vkr, (e) => {
+              if (e.error_code === 5) {
+                groupToken()
+              } else {
+                reject(e)
+              }
+            })
 
-      if (self.debuggerRun) {
-        try {
-          self.debuggerRun.push('request', configuration.BASE_CALL_URL + 'groups.getById?' + getData)
-        } catch (e) {
-          // Ignore
-        }
+            if (json) {
+              json = json.items[0]
+
+              if (Array.isArray(json) && json.length === 0) {
+                groupToken()
+              } else {
+                session.app_id = json.id
+                session.app_title = json.title
+                session.app_type = json.type
+                session.app_icons = [json.icon_75, json.icon_150]
+                session.author = {
+                  id: json.author_id
+                }
+
+                session.app_members = json.members_count
+
+                for (let i = 0; i < params.fields.length; i++) {
+                  if (json[params.fields[i]]) {
+                    session[params.fields[i]] = json[params.fields[i]]
+                  }
+                }
+
+                self.session = session
+
+                initResolve(self)
+              }
+            }
+          } else {
+            return reject(self._error('empty_response', {
+              response: vkr,
+              where: 'in auth with token (group)'
+            }))
+          }
+        })
       }
 
-      request.get({
-        url: configuration.BASE_CALL_URL + 'groups.getById?' + getData,
-        proxy: params.proxy
-      }, (err, res) => {
-        if (err) {
-          return reject(new Error(err))
-        }
+      function groupToken () {
+        let getData
 
-        let vkr = res.body
+        getData = staticMethods.urlencode({
+          access_token: params.access_token,
+          v: params.api_v,
+          lang: params.lang,
+          fields: params.fields.join(',')
+        })
 
         if (self.debuggerRun) {
           try {
-            self.debuggerRun.push('response', vkr)
+            self.debuggerRun.push('request', configuration.BASE_CALL_URL + 'groups.getById?' + getData)
           } catch (e) {
             // Ignore
           }
         }
 
-        if (vkr) {
-          let json = staticMethods.checkJSONErrors(vkr, reject)
+        request.get({
+          url: configuration.BASE_CALL_URL + 'groups.getById?' + getData,
+          proxy: params.proxy
+        }, (err, res) => {
+          if (err) {
+            return reject(new Error(err))
+          }
 
-          if (json) {
-            if (Array.isArray(json) && json.length === 0) {
-              reject(self._error('access_token_not_valid'))
-            } else {
-              session.group_id = json[0].id
-              session.group_name = json[0].name
-              session.group_screen = json[0].screen_name
+          let vkr = res.body
 
-              for (let i = 0; i < params.fields.length; i++) {
-                if (json[0][params.fields[i]]) {
-                  session[params.fields[i]] = json[0][params.fields[i]]
-                }
-              }
-
-              self.session = session
-              initResolve(self)
+          if (self.debuggerRun) {
+            try {
+              self.debuggerRun.push('response', vkr)
+            } catch (e) {
+              // Ignore
             }
           }
-        } else {
-          return reject(self._error('empty_response', {
-            response: vkr,
-            where: 'in auth with token (group)'
-          }))
-        }
-      })
-    }
 
-    function initResolve (s) {
-      if (params.clean_session_file) {
-        fs.writeFileSync(params.session_file, '{}')
+          if (vkr) {
+            let json = staticMethods.checkJSONErrors(vkr, reject)
+
+            if (json) {
+              if (Array.isArray(json) && json.length === 0) {
+                reject(self._error('access_token_not_valid'))
+              } else {
+                session.group_id = json[0].id
+                session.group_name = json[0].name
+                session.group_screen = json[0].screen_name
+
+                for (let i = 0; i < params.fields.length; i++) {
+                  if (json[0][params.fields[i]]) {
+                    session[params.fields[i]] = json[0][params.fields[i]]
+                  }
+                }
+
+                self.session = session
+                initResolve(self)
+              }
+            }
+          } else {
+            return reject(self._error('empty_response', {
+              response: vkr,
+              where: 'in auth with token (group)'
+            }))
+          }
+        })
       }
 
-      if (!params.captchaHandler || !Object.prototype.toString.call(params.captchaHandler).match(/Function/)) {
-        params.captchaHandler = ({ captcha_sid: captchaSid, captcha_key: captchaKey }) => {
-          throw self._error('captcha_error', {
-            captcha_key: captchaKey,
-            captcha_sid: captchaSid
-          })
+      function initResolve (s) {
+        if (params.clean_session_file) {
+          fs.writeFileSync(params.session_file, '{}')
         }
+
+        if (!params.captchaHandler || !Object.prototype.toString.call(params.captchaHandler).match(/Function/)) {
+          params.captchaHandler = ({ captcha_sid: captchaSid, captcha_key: captchaKey }) => {
+            throw self._error('captcha_error', {
+              captcha_key: captchaKey,
+              captcha_sid: captchaSid
+            })
+          }
+        }
+
+        self.captchaHandler = params.captchaHandler
+        self.uploader = new EasyVKUploader(self)
+        self.longpoll = new EasyVKLongPoll(self)
+        self.config = configuration
+        self.callbackAPI = new EasyVKCallbackAPI(self)
+        self.streamingAPI = new EasyVKStreamingAPI(self)
+        self.widgets = new EasyVKWidgets(self)
+        self.bots = {}
+        self.bots.longpoll = new EasyVKBotsLongPoll(self)
+
+        // Here is a middlewares will be saved
+        self.middleWares = [async (data) => {
+          let next = data.next
+          data.next = undefined
+          await next(data)
+        }]
+
+        self._middlewaresController = new EasyVKMiddlewares(self)
+
+        // http module for http requests from cookies and jar session
+        self.http = new EasyVKHttp(self)
+
+        // Re init all cases
+        self.session = new EasyVKSession(self, self.session)
+
+        Object.defineProperty(self, 'helpers', {
+          get: () => {
+            throw self._error('method_deprecated', {
+              from: '1.3.0',
+              method: 'helpers'
+            })
+          }
+        })
+
+        if (params.save_session) {
+          return self.session.save().then(() => {
+            return resolve(s)
+          }).catch(reject)
+        }
+
+        return resolve(s)
       }
-
-      self.captchaHandler = params.captchaHandler
-      self.uploader = new EasyVKUploader(self)
-      self.longpoll = new EasyVKLongPoll(self)
-      self.config = configuration
-      self.callbackAPI = new EasyVKCallbackAPI(self)
-      self.streamingAPI = new EasyVKStreamingAPI(self)
-      self.widgets = new EasyVKWidgets(self)
-      self.bots = {}
-      self.bots.longpoll = new EasyVKBotsLongPoll(self)
-
-      // Here is a middlewares will be saved
-      self.middleWares = [async (data) => {
-        let next = data.next
-        data.next = undefined
-        await next(data)
-      }]
-
-      self._middlewaresController = new EasyVKMiddlewares(self)
-
-      // http module for http requests from cookies and jar session
-      self.http = new EasyVKHttp(self)
-
-      // Re init all cases
-      self.session = new EasyVKSession(self, self.session)
-
-      Object.defineProperty(self, 'helpers', {
-        get: () => {
-          throw self._error('method_deprecated', {
-            from: '1.3.0',
-            method: 'helpers'
-          })
-        }
-      })
-
-      if (params.save_session) self.session.save()
-
-      return resolve(s)
-    }
+    })
   }
 
   async post (methodName, data, other) {
