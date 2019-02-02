@@ -147,19 +147,7 @@ class EasyVK {
             },
             agent: self.agent
           }, (err, res) => {
-            if (err) {
-              return reject(new Error(`Server was down or we don't know what happaned [responseCode ${(res || { statusCode: 0 }).statusCode}]`))
-            }
-
-            let vkr = res.body
-
-            if (self.debuggerRun) {
-              try {
-                self.debuggerRun.push('response', vkr)
-              } catch (e) {
-                // Ignore
-              }
-            }
+            let vkr = prepareResponse(err, res)
 
             if (vkr) {
               let json = staticMethods.checkJSONErrors(vkr, reject)
@@ -186,19 +174,7 @@ class EasyVK {
             url: configuration.BASE_OAUTH_URL + 'token/?' + getData,
             agent: self.agent
           }, (err, res) => {
-            if (err) {
-              return reject(new Error(`Server was down or we don't know what happaned [responseCode ${res.statusCode}]`))
-            }
-
-            let vkr = res.body
-
-            if (self.debuggerRun) {
-              try {
-                self.debuggerRun.push('response', vkr)
-              } catch (e) {
-                // Ignore
-              }
-            }
+            let vkr = prepareResponse(err, res)
 
             if (vkr) {
               let json = staticMethods.checkJSONErrors(vkr, reject)
@@ -227,11 +203,29 @@ class EasyVK {
           try {
             self.debuggerRun.push('request', configuration.BASE_OAUTH_URL + 'token/?' + Obj)
           } catch (e) {
-            // Ignore
+            return reject(new Error('DebuggerRun is not setuped correctly'))
           }
         }
 
         return Obj
+      }
+
+      function prepareResponse (err, res) {
+        if (err) {
+          return reject(new Error(`Server was down or we don't know what happaned [responseCode ${res.statusCode}]`))
+        }
+
+        let vkr = res.body
+
+        if (self.debuggerRun) {
+          try {
+            self.debuggerRun.push('response', vkr)
+          } catch (e) {
+            return reject(new Error('DebuggerRun is not setuped correctly'))
+          }
+        }
+
+        return vkr
       }
 
       function initToken () {
