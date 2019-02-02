@@ -100,7 +100,6 @@ easyvk({
 *   Informative documentation
 
 *   Regular updates and support for newest features
-
 *   Two factor authentication support
 
 You can read documentation <a href="https://ciricc.github.io/">here</a>
