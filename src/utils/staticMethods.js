@@ -147,7 +147,9 @@ module.exports.call = async function call (methodName, data = {}, methodType = '
     if (debuggerIS) {
       try {
         debuggerIS.push('fullRequest', callParams)
-      } catch (e) {}
+      } catch (e) {
+        return reject(new Error('No have a complite debuggerIS'))
+      }
     }
 
     if (methodType === 'get') {

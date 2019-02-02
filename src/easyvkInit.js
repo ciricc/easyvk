@@ -16,12 +16,9 @@ const configuration = require('./utils/configuration.js')
 const EasyVKRequestsDebugger = require('./utils/debugger.js')
 const EasyVK = require('./easyvk.js')
 
-let debuggerRun = new EasyVKRequestsDebugger(Boolean(false))
+let DebuggerRun = new EasyVKRequestsDebugger(Boolean(false))
 
-module.exports = createSession
-
-export default createSession
-
+module.exports = Auth
 module.exports.static = staticMethods
 module.exports.debuggerRun = debuggerRun
 module.exports.version = EasyVK.version
@@ -198,7 +195,7 @@ async function checkInitParams (params = {}) {
  *
  */
 
-async function createSession (params = {}) {
+async function Auth (params = {}) {
   return checkInitParams(params).then((p) => {
     return (new EasyVK(p, resolve, reject, debuggerRun))
   })

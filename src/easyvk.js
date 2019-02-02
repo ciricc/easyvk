@@ -279,7 +279,7 @@ class EasyVK {
                   session.last_name = json[0].last_name
 
                   for (let i = 0; i < params.fields.length; i++) {
-                    if (json[0][params.fields[i]]) {
+                    if (json[0][params.fields[i]] && session[params.fields[i]] === undefined) {
                       session[params.fields[i]] = json[0][params.fields[i]]
                     }
                   }
