@@ -1,81 +1,74 @@
-const fs = require("fs");
+const fs = require('fs')
+const path = require('path')
 
 class EasyVKError extends Error {
-	constructor (error, name = '', data = {}) {
+  constructor (error, name = '', data = {}) {
+    super(error.description)
 
-		super(error.description);
-		
-		let self = this;
+    let self = this
 
-		self.error_code = error.code
-		self.easyvk_error = true;
-		self.data = data;
-		self.name = name;
-
-	}
+    self.error_code = error.code
+    self.easyvk_error = true
+    self.data = data
+    self.name = name
+  }
 }
-
 
 class EasyVKErrors {
-	constructor () {
-		let self = this;
+  constructor () {
+    let self = this
 
-		let errors = {}
+    let errors = {}
 
-		errors = JSON.parse(fs.readFileSync(__dirname + "/evkerrors.json").toString());
+    errors = JSON.parse(fs.readFileSync(path.join(__dirname, 'evkerrors.json')).toString())
 
-		self._errors = errors;
-	}
+    self._errors = errors
+  }
 
-	error(name = "", data = {}, parent = "") {
-		
-		let self = this;
-		
-		name = String(name);
-		parent = String(parent);
+  error (name = '', data = {}, parent = '') {
+    let self = this
 
-		if (self._errors[name]) {
-			let err;
+    name = String(name)
+    parent = String(parent)
 
-			if (self._errors[name]["errors"] && self._errors[name]["errors"][parent]) {
-				
-				err = self._errors[name]["errors"][parent];
-				err.code += (self._errors[name]["parent_hash"] || -100000);
+    if (self._errors[name]) {
+      let err
 
-			} else {
-				err = self._errors[name];
-			}
+      if (self._errors[name]['errors'] && self._errors[name]['errors'][parent]) {
+        err = self._errors[name]['errors'][parent]
+        err.code += (self._errors[name]['parent_hash'] || -100000)
+      } else {
+        err = self._errors[name]
+      }
 
-			if (err[self._lang + '_description']) {
-				err.description = err[self._lang + '_description'];
-			}
+      if (err[self._lang + '_description']) {
+        err.description = err[self._lang + '_description']
+      }
 
-			let string_id = name;
-				
-			if (self._errors[name]["errors"] && self._errors[name]["errors"][parent]) {
-				string_id = name + "\\" + parent;
-			}
+      let stringId = name
 
-			return new EasyVKError(err, string_id, data);
-		}
+      if (self._errors[name]['errors'] && self._errors[name]['errors'][parent]) {
+        stringId = name + '\\' + parent
+      }
 
-		let notHaveError = "Not have this error in EasyVKErrors object!";
+      return new EasyVKError(err, stringId, data)
+    }
 
-		if (self._lang == "ru") {
-			notHaveError = "Данная ошибка не описана в объекте EasyVKErrors";
-		}
+    let notHaveError = 'Not have this error in EasyVKErrors object!'
 
-		return new Error(notHaveError);
+    if (self._lang === 'ru') {
+      notHaveError = 'Данная ошибка не описана в объекте EasyVKErrors'
+    }
 
-	}
+    return new Error(notHaveError)
+  }
 
-	setLang (lang = "ru") {
-		let self = this;
+  setLang (lang = 'ru') {
+    let self = this
 
-		self._lang = String(lang);
-	}
-
+    self._lang = String(lang)
+  }
 }
 
-module.exports = new EasyVKErrors;
-module.exports.EasyVKError = EasyVKError;
+module.exports = new EasyVKErrors()
+module.exports.EasyVKError = EasyVKError

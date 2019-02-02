@@ -1,38 +1,31 @@
-"use strict";
+'use strict'
 
-const request = require("request");
-const staticMethods = require("./staticMethods.js");
-const EventEmitter = require("events");
+const EventEmitter = require('events')
 
-let stack = [];
+let stack = []
 
 class RequestsDebugger extends EventEmitter {
-	
-	constructor () {
-		super();
-	}
+  // Push to debugger
+  async push (type = 'response', data) {
+    let self = this
 
-	//Push to debugger
-	async push (type = "response", data) {
-		let self = this;
-		
-		let logData = {
-			type: type.toString(),
-			data: data
-		};
-		
-		stack.splice(0, 1); 
-		stack.push(logData);
-		
-		self.emit("push", logData);
+    let logData = {
+      type: type.toString(),
+      data: data
+    }
 
-		return (stack.length - 1);
-	}
+    stack.splice(0, 1)
+    stack.push(logData)
 
-	//Get last log from stack
-	lastLog () {
-		return stack[stack.length - 1];
-	}
+    self.emit('push', logData)
+
+    return (stack.length - 1)
+  }
+
+  // Get last log from stack
+  lastLog () {
+    return stack[stack.length - 1]
+  }
 }
 
-module.exports = RequestsDebugger;
+module.exports = RequestsDebugger

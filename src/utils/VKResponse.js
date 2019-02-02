@@ -1,81 +1,69 @@
-let VKResponseReturner = function(staticMethods, dataResponse_, returnConstructor) {
-	
-	let response_ = dataResponse_;
+let VKResponseReturner = function (staticMethods, dataResponse_, returnConstructor) {
+  let response_ = dataResponse_
 
-	let res = response_.response;
-	
-	if (res === undefined || res === null) res = response_;
+  let res = response_.response
 
-	let constructorName = (res).constructor.name;
-	let Constructor = global[constructorName];
+  if (res === undefined || res === null) res = response_
 
+  let constructorName = (res).constructor.name
+  let Constructor = global[constructorName]
 
-	if (!Constructor) Constructor = Object;
+  if (!Constructor) Constructor = Object
 
-	class VKResponse extends Constructor {
-		
-		constructor (res) {
+  class VKResponse extends Constructor {
+    constructor (res) {
+      if ((staticMethods.isString(res) || !isNaN(res) || res instanceof Boolean) && constructorName !== 'Array') {
+        super(res)
+      } else if (Array.isArray(res) || constructorName === 'Array') {
+        super(...res)
+      } else if (staticMethods.isObject(res)) {
+        super()
 
+        let self = this
 
-			if ((staticMethods.isString(res) || !isNaN(res) || res instanceof Boolean) && constructorName != "Array") {
-				super(res);
-			} else if (Array.isArray(res) || constructorName == "Array") {
-				super(...res);
-			} else if (staticMethods.isObject(res)) {
-				
-				super();
+        let _props = {
+          response: res
+        }
 
-				let self = this;
+        let canChanged = ['response']
 
-				let _props = {
-					response: res
-				}
+        for (let prop in _props) {
+          let settings = {
+            value: _props[prop]
+          }
 
-				
-				let canChanged = ["response"];
-				
-				for (let prop in _props) {
-					
-					let settings = {
-						value: _props[prop]
-					}
+          if (canChanged.indexOf(prop) !== -1) {
+            settings.configurable = true
+          }
 
-					if (canChanged.indexOf(prop) != -1) {
-						settings.configurable = true;
-					}
+          Object.defineProperty(self, prop, settings)
+        }
 
-					Object.defineProperty(self, prop, settings);
-				}
+        // Use session data with methods
+        for (let prop in self.response) {
+          Object.defineProperty(self, prop, {
+            enumerable: true,
+            configurable: true,
+            value: self.response[prop]
+          })
+        }
+      } else {
+        super(res)
+      }
 
+      return this
+    }
 
-				//Use session data with methods
-				for (let prop in self.response) {
-					
-					Object.defineProperty(self, prop, {
-						enumerable: true,
-						configurable: true,
-						value: self.response[prop],
-					});
+    getFullResponse () {
+      return response_
+    }
+  }
 
-				}
-			} else {
-				super(res);
-			}
+  if (returnConstructor) {
+    return VKResponse
+  }
 
-			return this;
-		}
-
-		getFullResponse() {
-			return response_;
-		}
-	}
-
-	if (returnConstructor) {
-		return VKResponse;
-	}
-	
-	return new VKResponse(res);
+  return new VKResponse(res)
 }
 
-
-module.exports = VKResponseReturner;
+module.exports = VKResponseReturner

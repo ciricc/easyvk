@@ -4,596 +4,507 @@
  *
  *   Author: @ciricc
  *   License: MIT
- *   
+ *
  */
 
+'use strict'
 
-"use strict";
+const configuration = require('./configuration.js')
+const encoding = require('encoding')
 
-const configuration = require("./configuration.js");
-const staticMethods = require("./staticMethods.js");
-const encoding = require("encoding");
+const fs = require('fs')
+const request = require('request')
+const FileCookieStore = require('tough-cookie-file-store')
 
-
-const fs = require("fs");
-const request = require("request");
-const FileCookieStore = require('tough-cookie-file-store');
-
-const VKResponse = require("./VKResponse.js");
-const AudioAPI = require("./AudioAPI.js");
-
+const AudioAPI = require('./AudioAPI.js')
 
 class HTTPEasyVKClient {
+  constructor ({ _jar, vk, httpVk, config, parser }) {
+    let self = this
 
-	constructor ({_jar, vk, http_vk, config}) {
-		
-		let self = this;
+    self._config = config
 
-		self._config = config;
-
-		self.headersRequest = {
-			"User-Agent": self._config.user_agent,
-			"content-type": "application/x-www-form-urlencoded",
-		};
-
-
-		self.LOGIN_ERROR = 'Need login by form, use .loginByForm() method';
-		self._vk = vk;
-		self._authjar = _jar;
-
-		// self._http_token = http_vk.session.access_token;
-
-		self.audio = new AudioAPI(self._vk, self);
-	}
-
-
-	async readStories (vk_id = 0, story_id = 0)
-	{
-		let self = this;
-		
-		story_id = Number(story_id);
-		if (isNaN(story_id)) story_id = 0;
-
-		return new Promise((resolve, reject) => {
-			vk_id = Number(vk_id);
-
-			if (isNaN(vk_id)) return reject(new Error('Is not numeric vk_id'));
-
-			//else try get sttories from user
-			if (!self._authjar) return reject(new Error(self.LOGIN_ERROR));
-
-			request.get({
-				url: `${configuration.PROTOCOL}://m.${configuration.BASE_DOMAIN}/fv?to=/id${vk_id}?_fm=profile&_fm2=1`,
-				jar: self._authjar,
-				headers: self.headersRequest,
-				agent: self._vk.agent
-			}, (err, res, vkr) => {
-				if (err) return reject(new Error(err));
-
-				let stories = self.__getStories(res.body, 'profile');
-				let i = 0;
-
-				stories.forEach((story) => {
-					if (Array.isArray(story.items)) {
-						story.items.forEach(item => {
-							
-							self._story_read_hash = story.read_hash;
-
-							if (story_id) {
-									
-								//Only one story
-								if (item.raw_id === story_id) {
-									self.__readStory(story.read_hash, item.raw_id, 'profile');
-								}
-
-							} else {
-
-								//All stories
-								self.__readStory(story.read_hash, item.raw_id, 'profile');
-
-							}
-
-							i++;
-						});
-					}
-				});
-
-				resolve({
-					vk: self._vk,
-					count: i
-				});
-
-			});
-		});
-	}
-
-	__getStories(response='', type = 'feed') {
-		response = String(response);
-
-		let storiesMatch, superStories;
-
-		if (type == 'feed') {
-			storiesMatch = /cur\[\'stories_list_feed\'\]\=\[(.*?)\];/;
-			superStories = /cur\[\'stories_list_feed\'\]\=/;
-		} else {
-			storiesMatch = /cur\[\'stories_list_profile\'\]\=\[(.*?)\];/;
-			superStories = /cur\[\'stories_list_profile\'\]\=/;
-		}
-
-		let stories = response.match(storiesMatch);
-
-		if (!stories || !stories[0]) return [];
-
-		try {
-			stories = JSON.parse(
-				String(stories[0])
-				.replace(superStories, '')
-				.replace(/;/g, '')
-			);
-
-		} catch (e) {
-			stories = [];
-		}
-
-		return stories;
-	}
-
-	__readStory (read_hash = '', stories = '', source = 'feed', cb) {
-		let self = this;
-
-		request.post({
-			url: 'https://vk.com/al_stories.php',
-			form: {
-				'act': 'read_stories',
-				'al': '1',
-				'hash': read_hash,
-				'source': source,
-				'stories': stories
-			},
-			jar: self._authjar,
-			headers: self.headersRequest,
-			agent: self._vk.agent
-		}, cb);
-	}
-
-	async readFeedStories ()
-	{
-		let self = this;
-
-		return new Promise((resolve, reject) => {
-
-			//else try get sttories from user
-			if (!self._authjar) return reject(new Error(self.LOGIN_ERROR));
-
-			request.get({
-				url: `${configuration.PROTOCOL}://m.${configuration.BASE_DOMAIN}/fv?to=%2Ffeed%3F_fm%3Dfeed%26_fm2%3D1`,
-				jar: self._authjar,
-				headers: self.headersRequest,
-				agent: self._vk.agent
-			}, (err, res, vkr) => {
-				if (err) return reject(new Error(err));
-
-				//parse stories
-
-				let stories = self.__getStories(res.body, 'feed');
-				let i = 0;
-
-				stories.forEach((story) => {
-					if (Array.isArray(story.items)) {
-						story.items.forEach(item => {
-							self.__readStory(story.read_hash, item.raw_id, 'feed');
-							i++;
-						});
-					}
-				});
-
-				resolve({
-					vk: self._vk,
-					count: i
-				});
-
-			});
-		});
-	}
-
-	async addBotToConf (params = {}) {
-		let self = this;
-
-		return new Promise((resolve, reject) => {
-			self.request('al_groups.php', {
-				_ads_group_id: params.group_id || 0,
-				act: 'a_search_chats_box',
-				al: 1,
-				group_id: params.group_id || 0
-			}, false, 8).then(vkr => {
-
-				let json = self._parseResponse(vkr.body.split('<!>'));
-				json = json[8];
-				
-				let add_hash = json.add_hash;
-
-				self.request('al_im.php', {
-					_ads_group_id: params.group_id || 0,
-					act: 'a_add_bots_to_chat',
-					add_hash: add_hash,
-					al: 1,
-					bot_id: (-params.group_id || -1),
-					peer_ids: params.peer_ids
-				}, true).then(resolve, reject);
-
-
-			}).catch(reject);
-
-		});
-	}
-
-	async request (file, form = {}, ignoreStringError = false, indexJson = 6) {
-		let self = this;
-
-		return new Promise((resolve, reject) => {
-			request.post({
-				jar: self._authjar,
-				url: `${configuration.PROTOCOL}://${configuration.BASE_DOMAIN}/` + file,
-				form: form,
-				encoding: "binary",
-				headers: {
-					"user-agent": self._config.user_agent
-				},
-				agent: self._vk.agent
-			}, (err, res, vkr) => {
-
-				if (err) {
-					return reject(err);
-				}
-
-				res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString();
-				
-
-				if (!res.body.length) {
-					return reject(self._vk._error("audio_api", {}, "not_have_access"));
-				}
-
-
-
-				let json = self._parseResponse(res.body.split('<!>'));
-
-				if (typeof json[indexJson] == "object") json[5] = json[indexJson];
-
-    			if (typeof json[5] == "string" && !ignoreStringError) {
-    				return reject(new Error(json[5]));
-    			}
-
-    			if (!json[5] && !ignoreStringError) {
-    				return reject(self._vk._error("audio_api", {}, "not_have_access"));
-    			}
-
-
-				return resolve(res);
-
-			});
-
-
-		});
-	}
-
-	_parseResponse (e) {
-        for (var o = e.length - 1; o >= 0; --o) {
-            var n = e[o];
-            if ("<!" === n.substr(0, 2)) {
-                var i = n.indexOf(">"),
-                    r = n.substr(2, i - 2);
-                switch (n = n.substr(i + 1), r) {
-                    case "json":
-
-                        try {
-                        	e[o] = JSON.parse(n);
-                        } catch (e) {
-                        	e[o] = {}
-                        }
-
-                        break;
-                    case "int":
-                        e[o] = parseInt(n);
-                        break;
-                    case "float":
-                        e[o] = parseFloat(n);
-                        break;
-                    case "bool":
-                        e[o] = !!parseInt(n);
-                        break;
-                    case "null":
-                        e[o] = null;
-                        break;
-                    case "debug":
-                    	console.log('debug');
-                }
-            }
-        }
-
-        return e;
+    self.headersRequest = {
+      'User-Agent': self._config.user_agent,
+      'content-type': 'application/x-www-form-urlencoded'
     }
 
-    _parseJSON (body, reject) {
-		let self = this;
+    self.LOGIN_ERROR = 'Need login by form, use .loginByForm() method'
+    self._vk = vk
+    self._authjar = _jar
+    self._parser = parser
 
+    self.audio = new AudioAPI(self._vk, self)
+  }
 
-		let json = self._parseResponse(body.split('<!>'));
+  async readStories (vkId = 0, storyId = 0) {
+    let self = this
 
-		if (typeof json[6] == "object") json[5] = json[6];
+    storyId = Number(storyId)
+    if (isNaN(storyId)) storyId = 0
 
-		if (typeof json[5] == "string") {
-			return reject(new Error(json[5]));
-		}
+    return new Promise((resolve, reject) => {
+      vkId = Number(vkId)
 
-		if (!json[5]) {
-			return reject(self._vk._error("audio_api", {}, "not_have_access"));
-		}
+      if (isNaN(vkId)) return reject(new Error('Is not numeric vk_id'))
 
-		json = json[5];
+      // else try get sttories from user
+      if (!self._authjar) return reject(new Error(self.LOGIN_ERROR))
 
-		return json;
-	}
+      request.get({
+        url: `${configuration.PROTOCOL}://m.${configuration.BASE_DOMAIN}/fv?to=/id${vkId}?_fm=profile&_fm2=1`,
+        jar: self._authjar,
+        headers: self.headersRequest,
+        agent: self._vk.agent
+      }, (err, res, vkr) => {
+        if (err) return reject(new Error(err))
+
+        let stories = self.__getStories(res.body, 'profile')
+        let i = 0
+
+        stories.forEach((story) => {
+          if (Array.isArray(story.items)) {
+            story.items.forEach(item => {
+              self._story_read_hash = story.read_hash
+
+              if (storyId) {
+                // Only one story
+                if (item.raw_id === storyId) {
+                  self.__readStory(story.read_hash, item.raw_id, 'profile')
+                }
+              } else {
+                // All stories
+                self.__readStory(story.read_hash, item.raw_id, 'profile')
+              }
+
+              i++
+            })
+          }
+        })
+
+        resolve({
+          vk: self._vk,
+          count: i
+        })
+      })
+    })
+  }
+
+  __getStories (response = '', type = 'feed') {
+    response = String(response)
+
+    let storiesMatch, superStories
+
+    if (type === 'feed') {
+      storiesMatch = /cur\['stories_list_feed'\]=\[(.*?)\];/
+      superStories = /cur\['stories_list_feed'\]=/
+    } else {
+      storiesMatch = /cur\['stories_list_profile'\]=\[(.*?)\];/
+      superStories = /cur\['stories_list_profile'\]=/
+    }
+
+    let stories = response.match(storiesMatch)
+
+    if (!stories || !stories[0]) return []
+
+    try {
+      stories = JSON.parse(
+        String(stories[0])
+          .replace(superStories, '')
+          .replace(/;/g, '')
+      )
+    } catch (e) {
+      stories = []
+    }
+
+    return stories
+  }
+
+  __readStory (read_hash = '', stories = '', source = 'feed', cb) {
+    let self = this
+
+    request.post({
+      url: 'https://vk.com/al_stories.php',
+      form: {
+        'act': 'read_stories',
+        'al': '1',
+        'hash': read_hash,
+        'source': source,
+        'stories': stories
+      },
+      jar: self._authjar,
+      headers: self.headersRequest,
+      agent: self._vk.agent
+    }, cb)
+  }
+
+  async readFeedStories () {
+    let self = this
+
+    return new Promise((resolve, reject) => {
+      // else try get sttories from user
+      if (!self._authjar) return reject(new Error(self.LOGIN_ERROR))
+
+      request.get({
+        url: `${configuration.PROTOCOL}://m.${configuration.BASE_DOMAIN}/fv?to=%2Ffeed%3F_fm%3Dfeed%26_fm2%3D1`,
+        jar: self._authjar,
+        headers: self.headersRequest,
+        agent: self._vk.agent
+      }, (err, res, vkr) => {
+        if (err) return reject(new Error(err))
+
+        // parse stories
+
+        let stories = self.__getStories(res.body, 'feed')
+        let i = 0
+
+        stories.forEach((story) => {
+          if (Array.isArray(story.items)) {
+            story.items.forEach(item => {
+              self.__readStory(story.read_hash, item.raw_id, 'feed')
+              i++
+            })
+          }
+        })
+
+        resolve({
+          vk: self._vk,
+          count: i
+        })
+      })
+    })
+  }
+
+  async addBotToConf (params = {}) {
+    let self = this
+
+    return new Promise((resolve, reject) => {
+      self.request('al_groups.php', {
+        _ads_group_id: params.group_id || 0,
+        act: 'a_search_chats_box',
+        al: 1,
+        group_id: params.group_id || 0
+      }, false, 8).then(vkr => {
+        let json = self._parseResponse(vkr.body.split('<!>'))
+        json = json[8]
+
+        let addHash = json.add_hash
+
+        self.request('al_im.php', {
+          _ads_group_id: params.group_id || 0,
+          act: 'a_add_bots_to_chat',
+          add_hash: addHash,
+          al: 1,
+          bot_id: (-params.group_id || -1),
+          peer_ids: params.peer_ids
+        }, true).then(resolve, reject)
+      }).catch(reject)
+    })
+  }
+
+  async request (file, form = {}, ignoreStringError = false, indexJson = 6) {
+    let self = this
+
+    return new Promise((resolve, reject) => {
+      request.post({
+        jar: self._authjar,
+        url: `${configuration.PROTOCOL}://${configuration.BASE_DOMAIN}/` + file,
+        form: form,
+        encoding: 'binary',
+        headers: {
+          'user-agent': self._config.user_agent
+        },
+        agent: self._vk.agent
+      }, (err, res, vkr) => {
+        if (err) {
+          return reject(err)
+        }
+
+        res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString()
+
+        if (!res.body.length) {
+          return reject(self._vk._error('audio_api', {}, 'not_have_access'))
+        }
+
+        let json = self._parseResponse(res.body.split('<!>'))
+
+        if (typeof json[indexJson] === 'object') json[5] = json[indexJson]
+
+        if (typeof json[5] === 'string' && !ignoreStringError) {
+          return reject(new Error(json[5]))
+        }
+
+        if (!json[5] && !ignoreStringError) {
+          return reject(self._vk._error('audio_api', {}, 'not_have_access'))
+        }
+
+        return resolve(res)
+      })
+    })
+  }
+
+  _parseResponse (e) {
+    return this._parser(e)
+  }
+
+  _parseJSON (body, reject) {
+    let self = this
+
+    let json = self._parseResponse(body.split('<!>'))
+
+    if (typeof json[6] === 'object') json[5] = json[6]
+
+    if (typeof json[5] === 'string') {
+      return reject(new Error(json[5]))
+    }
+
+    if (!json[5]) {
+      return reject(self._vk._error('audio_api', {}, 'not_have_access'))
+    }
+
+    json = json[5]
+
+    return json
+  }
 }
 
 class HTTPEasyVK {
+  constructor (vk) {
+    let self = this
 
-	constructor (vk) {
-		let self = this;
-
-		self.headersRequest = {
-			"content-type": "application/x-www-form-urlencoded",
-		};
-
-		self._vk = vk;
-	}
-
-	async __checkHttpParams (params = {}) {
-		return new Promise((resolve, reject) => {
-			
-
-			if (!params.user_agent) {
-				params.user_agent = configuration["HTTP_CLIENT"]["USER_AGENT"];
-			}
-
-			params.user_agent = String(params.user_agent);
-
-			if (!params.cookies) {
-				params.cookies = configuration["HTTP_CLIENT"]["COOKIE_PATH"];
-			}
-
-			params.cookies = String(params.cookies);
-
-
-			return resolve(params);
-
-		});
-	}
-
-	_parseResponse (e) {
-        for (var o = e.length - 1; o >= 0; --o) {
-            var n = e[o];
-            if ("<!" === n.substr(0, 2)) {
-                var i = n.indexOf(">"),
-                    r = n.substr(2, i - 2);
-                switch (n = n.substr(i + 1), r) {
-                    case "json":
-
-                        try {
-                        	e[o] = JSON.parse(n);
-                        } catch (e) {
-                        	e[o] = {}
-                        }
-
-                        break;
-                    case "int":
-                        e[o] = parseInt(n);
-                        break;
-                    case "float":
-                        e[o] = parseFloat(n);
-                        break;
-                    case "bool":
-                        e[o] = !!parseInt(n);
-                        break;
-                    case "null":
-                        e[o] = null;
-                        break;
-                    case "debug":
-                    	console.log('debug');
-                }
-            }
-        }
-
-        return e;
+    self.headersRequest = {
+      'content-type': 'application/x-www-form-urlencoded'
     }
 
-	async loginByForm (params = {}) {
-		let self = this;
+    self._vk = vk
+  }
 
-		return new Promise((resolve, reject) => {
-			
-			let pass = self._vk.params.password;
-			let login = self._vk.params.username;
+  async __checkHttpParams (params = {}) {
+    return new Promise((resolve, reject) => {
+      if (!params.user_agent) {
+        params.user_agent = configuration['HTTP_CLIENT']['USER_AGENT']
+      }
 
-			if (!pass || !login) return reject(self._vk._error("http_client", {}, "need_auth"));
+      params.user_agent = String(params.user_agent)
 
-			self.__checkHttpParams(params).then((p) => {
-				let params = p;
-				
-				self._config = params;
+      if (!params.cookies) {
+        params.cookies = configuration['HTTP_CLIENT']['COOKIE_PATH']
+      }
 
-				self.headersRequest["User-Agent"] = self._config.user_agent;
+      params.cookies = String(params.cookies)
 
-				let cookiepath = self._config.cookies;
+      return resolve(params)
+    })
+  }
 
+  _parseResponse (e) {
+    for (var o = e.length - 1; o >= 0; --o) {
+      var n = e[o]
+      if (n.substr(0, 2) === '<!') {
+        var i = n.indexOf('>')
 
-				if (!self._vk.params.reauth) {
-					let data;
+        switch (n = n.substr(i + 1)) {
+          case 'json':
 
-					if(!fs.existsSync(cookiepath)){
-					    fs.closeSync(fs.openSync(cookiepath, 'w'));
-					}	
+            try {
+              e[o] = JSON.parse(n)
+            } catch (e) {
+              e[o] = {}
+            }
 
-					data = fs.readFileSync(cookiepath).toString();
+            break
+          case 'int':
+            e[o] = parseInt(n)
+            break
+          case 'float':
+            e[o] = parseFloat(n)
+            break
+          case 'bool':
+            e[o] = !!parseInt(n)
+            break
+          case 'null':
+            e[o] = null
+            break
+          case 'debug':
+            console.log('debug')
+        }
+      }
+    }
 
-					try {
-						data = JSON.parse(data);
-					} catch (e) {
-						data = null;
-					}
+    return e
+  }
 
-					if (data) {
-						let jar = request.jar(new FileCookieStore(cookiepath));
-						
-						self._authjar = jar;
+  async loginByForm (params = {}) {
+    let self = this
 
-						return createClient(resolve);
-					}
-				}
-				
-				let easyvk = require('../index.js');
+    return new Promise((resolve, reject) => {
+      let pass = self._vk.params.password
+      let login = self._vk.params.username
 
-				easyvk({
-					password: pass,
-					username: login,
-					save_session: false,
-					reauth: true,
-					proxy: self._vk.params.proxy
-				}).then((vkHtpp) => {
+      if (!pass || !login) return reject(self._vk._error('http_client', {}, 'need_auth'))
 
-					let vHttp = vkHtpp;
+      self.__checkHttpParams(params).then((p) => {
+        let params = p
 
-					easyvk = null;
+        self._config = params
 
-					//Make first request, for know url for POST request
-					//parse from m.vk.com page
-					
-					fs.writeFileSync(cookiepath, '{}');
+        self.headersRequest['User-Agent'] = self._config.user_agent
 
-					let jar = request.jar(new FileCookieStore(cookiepath));
+        let cookiepath = self._config.cookies
 
-					self._authjar = jar;
+        if (!self._vk.params.reauth) {
+          let data
 
-					if (Object.keys(jar._jar.store.idx).length) {
+          if (!fs.existsSync(cookiepath)) {
+            fs.closeSync(fs.openSync(cookiepath, 'w'))
+          }
 
-						return actCheckLogin().then(() => {
-							return createClient(resolve, vHttp);
-						}, (err) => {
-							return goLogin();
-						});
-					}
+          data = fs.readFileSync(cookiepath).toString()
 
-					return goLogin();
+          try {
+            data = JSON.parse(data)
+          } catch (e) {
+            data = null
+          }
 
-					function goLogin() {
-						request.get({
-							headers: self.headersRequest,
-							url: 'https://m.vk.com/',
-							jar: self._authjar,
-							agent: self._vk.agent
-						}, (err, res, vkr) => {
-							
-							if (err) return reject(new Error(err));
+          if (data) {
+            let jar = request.jar(new FileCookieStore(cookiepath))
 
-							let body = res.body;
+            self._authjar = jar
 
-							let matches = body.match(/action\=\"(.*?)\"/);
+            return createClient(resolve)
+          }
+        }
 
-							if (!matches) { // Если пользовтаель уже авторизован по кукисам, чекаем сессию
-								return actCheckLogin().then(() => {
-									return createClient(resolve, vHttp);
-								}, reject);
-							}
+        let easyvk = require('../index.js')
 
-							let POSTLoginFormUrl = matches[1];
+        easyvk({
+          password: pass,
+          username: login,
+          save_session: false,
+          reauth: true,
+          proxy: self._vk.params.proxy
+        }).then((vkHtpp) => {
+          let vHttp = vkHtpp
 
-							if (!POSTLoginFormUrl.match(/login\.vk\.com/)) return reject(self._vk._error("http_client", {}, "not_supported"));
+          easyvk = null
 
-							actLogin(POSTLoginFormUrl).then(resolve, reject);
-						});
-					}
+          // Make first request, for know url for POST request
+          // parse from m.vk.com page
 
-					async function actCheckLogin () {
-						return new Promise((resolve, reject) => {
+          fs.writeFileSync(cookiepath, '{}')
 
-							request.post({
-								url: "https://vk.com/al_im.php",
-								jar: self._authjar,
-								followAllRedirects: true,
-								form: {
-									act: "a_dialogs_preload",
-									al: 1,
-									gid: 0,
-									im_v: 2,
-									rs: "",
-								},
-								agent: self._vk.agent
-							}, (err, res) => {
+          let jar = request.jar(new FileCookieStore(cookiepath))
 
-								if (err) return reject(err);
-								
-								res = res.body.split('<!>');
-								res = self._parseResponse(res[5]);
+          self._authjar = jar
 
-								if (res.match(/\<\!json\>/)) {
-									res = res.replace("<!json>", "");
-									try {
-										res = JSON.parse(res);
-									} catch (e) {
-										// 
-										return reject("Need update session not valid json");
-									}
-									return resolve(true);
-								}
-								return reject("Need update session");
+          if (Object.keys(jar._jar.store.idx).length) {
+            return actCheckLogin().then(() => {
+              return createClient(resolve, vHttp)
+            }, () => {
+              return goLogin()
+            })
+          }
 
-							});
+          return goLogin()
 
-						});
-					}
-					async function actLogin (loginURL) {
-						return new Promise((resolve, reject) => {
-							request.post({
-								url: loginURL,
-								jar: self._authjar,
-								followAllRedirects: true,
-								form: {
-									'email': login,
-									'pass': pass
-								},
-								agent: self._vk.agent
-							}, (err, res, vkr) => {
+          function goLogin () {
+            request.get({
+              headers: self.headersRequest,
+              url: 'https://m.vk.com/',
+              jar: self._authjar,
+              agent: self._vk.agent
+            }, (err, res, vkr) => {
+              if (err) return reject(new Error(err))
 
-								if (err) return reject(new Error(err));
+              let body = res.body
 
-								return createClient(resolve, vHttp);
-							});
-						});
-					}
+              let matches = body.match(/action="(.*?)"/)
 
-				}, reject);
-				
-				function createClient (r, vHttp) {
-					
-					let HTTPClient = new HTTPEasyVKClient({
-						_jar: self._authjar,
-						vk: self._vk,
-						http_vk: vHttp,
-						config: self._config,
-						parser: self._parseResponse
-					});
+              if (!matches) { // Если пользовтаель уже авторизован по кукисам, чекаем сессию
+                return actCheckLogin().then(() => {
+                  return createClient(resolve, vHttp)
+                }, reject)
+              }
 
-					return r({
-						client: HTTPClient,
-						vk: self._vk
-					});
-				}
+              let POSTLoginFormUrl = matches[1]
 
+              if (!POSTLoginFormUrl.match(/login\.vk\.com/)) return reject(self._vk._error('http_client', {}, 'not_supported'))
 
-			}, reject);
+              actLogin(POSTLoginFormUrl).then(resolve, reject)
+            })
+          }
 
-		});
-	}
-}	
+          async function actCheckLogin () {
+            return new Promise((resolve, reject) => {
+              request.post({
+                url: 'https://vk.com/al_im.php',
+                jar: self._authjar,
+                followAllRedirects: true,
+                form: {
+                  act: 'a_dialogs_preload',
+                  al: 1,
+                  gid: 0,
+                  im_v: 2,
+                  rs: ''
+                },
+                agent: self._vk.agent
+              }, (err, res) => {
+                if (err) return reject(err)
 
+                res = res.body.split('<!>')
+                res = self._parseResponse(res[5])
 
-module.exports = HTTPEasyVK;
+                if (res.match(/<!json>/)) {
+                  res = res.replace('<!json>', '')
+                  try {
+                    res = JSON.parse(res)
+                  } catch (e) {
+                    return reject(new Error('Need update session not valid json'))
+                  }
+                  return resolve(true)
+                }
+                return reject(new Error('Need update session'))
+              })
+            })
+          }
+          async function actLogin (loginURL) {
+            return new Promise((resolve, reject) => {
+              request.post({
+                url: loginURL,
+                jar: self._authjar,
+                followAllRedirects: true,
+                form: {
+                  'email': login,
+                  'pass': pass
+                },
+                agent: self._vk.agent
+              }, (err, res, vkr) => {
+                if (err) return reject(new Error(err))
+
+                return createClient(resolve, vHttp)
+              })
+            })
+          }
+        }, reject)
+
+        function createClient (r, vHttp) {
+          let HTTPClient = new HTTPEasyVKClient({
+            _jar: self._authjar,
+            vk: self._vk,
+            httpVk: vHttp,
+            config: self._config,
+            parser: self._parseResponse
+          })
+
+          return r({
+            client: HTTPClient,
+            vk: self._vk
+          })
+        }
+      }, reject)
+    })
+  }
+}
+
+module.exports = HTTPEasyVK

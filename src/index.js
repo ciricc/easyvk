@@ -1,6 +1,3 @@
-"use strict"
+'use strict'
 
-
-module.exports = require("./easyvkInit.js");
-
-
+module.exports = require('./easyvkInit.js')

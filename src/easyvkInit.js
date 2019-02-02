@@ -1,46 +1,38 @@
 
 /*
- *	@author: ciricc (Kirill Novak)
- *	@license: MIT
- * 	@description : EasyVK is library for creating appliations based on VKontakte API
- *	
- *	Copyright (c) 2017-2018 Kirill Novak (https://ciricc.github.io/) 	
- *	ALL UTILITIES OF THIS MODULE ARE DISTRIBUTED UNDER THE SAME LICENSE AND RULES
- *	Docs: https://ciricc.github.io/
+ *@author: ciricc (Kirill Novak)
+ *@license: MIT
+ * @description : EasyVK is library for creating appliations based on VKontakte API
+ *
+ *Copyright (c) 2017-2018 Kirill Novak (https://ciricc.github.io/)
+ *ALL UTILITIES OF THIS MODULE ARE DISTRIBUTED UNDER THE SAME LICENSE AND RULES
+ *Docs: https://ciricc.github.io/
  */
 
+'use strict'
 
-"use strict";
+const staticMethods = require('./utils/staticMethods.js')
+const configuration = require('./utils/configuration.js')
+const EasyVKRequestsDebugger = require('./utils/debugger.js')
+const EasyVK = require('./easyvk.js')
 
-const staticMethods = require("./utils/staticMethods.js");
-const configuration = require("./utils/configuration.js");
-const easyVKRequestsDebugger = require("./utils/debugger.js");
-const EasyVK = require("./easyvk.js");
+let debuggerRun = new EasyVKRequestsDebugger(Boolean(false))
 
-let debuggerRun = new easyVKRequestsDebugger(Boolean(false));
-		
+module.exports = createSession
 
-module.exports = createSession;
-
-module.exports.static = staticMethods;
-module.exports.debuggerRun = debuggerRun;
-module.exports.version = EasyVK.version;
-module.exports.callbackAPI = EasyVK.callbackAPI;
-module.exports.streamingAPI = EasyVK.streamingAPI;
-module.exports.classes = EasyVK.class;
-module.exports.is = EasyVK.is;
-
-
-
-
-
-
+module.exports.static = staticMethods
+module.exports.debuggerRun = debuggerRun
+module.exports.version = EasyVK.version
+module.exports.callbackAPI = EasyVK.callbackAPI
+module.exports.streamingAPI = EasyVK.streamingAPI
+module.exports.classes = EasyVK.class
+module.exports.is = EasyVK.is
 
 /**
  *
  *  This function check all parameters
  *  @see createSession()
- *  @return {Promise} 
+ *  @return {Promise}
  *  @promise Check errors
  *  @resolve {Object} changed user parameters for create session
  *  @reject {Error} auth error or just an error from responses
@@ -48,161 +40,131 @@ module.exports.is = EasyVK.is;
  */
 
 async function checkInitParams (params = {}) {
-	return new Promise((resolve, reject) => {
-		
+  return new Promise((resolve, reject) => {
+    if (params.save_session !== false) {
+      params.save_session = configuration.save_session
+    }
 
-		if (params.save_session !== false) {
-			params.save_session = configuration.save_session;
-		}
+    if (params.session_file) {
+      if (!staticMethods.isString(params.session_file)) {
+        return reject(new Error('The session_file must be a string'))
+      }
+    } else {
+      params.session_file = configuration.session_file
+    }
 
-		
-		if (params.session_file) {
-			
-			if (!staticMethods.isString(params.session_file)) {
-				return reject(new Error("The session_file must be a string"));
-			}
+    if (params.api_v && params.api_v !== configuration.api_v) {
+      if (isNaN(params.api_v.toString())) {
+        return reject(new Error('The api_v parameter must be numeric'))
+      } else if (Number(params.api_v) < 5) {
+        return reject(new Error('The api_v parameter must be more then 5.0 version, other not support'))
+      }
+    } else {
+      params.api_v = configuration.api_v
+    }
 
-		} else {
-			params.session_file = configuration.session_file;
-		}
+    if (params.captcha_key && !params.captcha_sid) {
+      return reject(new Error('You puted captcha_key but not using captcha_sid parameter'))
+    } else if (!params.captcha_key && params.captcha_sid) {
+      return reject(new Error('You puted captcha_sid but not puted captcha_key parameter'))
+    } else if (params.captcha_key && params.captcha_sid) {
+      if (isNaN(params.captcha_sid.toString())) {
+        return reject(new Error('The captcha_sid must be numeric'))
+      }
+    }
 
+    if (params.reauth !== true) {
+      params.reauth = configuration.reauth
+    }
 
-		if (params.api_v && params.api_v !== configuration.api_v) {
-			
-			if (isNaN(params.api_v.toString())) {
-				return reject(new Error("The api_v parameter must be numeric"));
-			} else if (Number(params.api_v) < 5) {
-				return reject(new Error("The api_v parameter must be more then 5.0 version, other not support"))
-			}
+    if (params.reauth) {
+      if (params.access_token && params.username) {
+        return reject(new Error('Select only one way auth: access_token XOR username'))
+      }
 
-		} else {
-			params.api_v = configuration.api_v;
-		}
+      if (params.access_token) {
+        if (!staticMethods.isString(params.access_token)) {
+          return reject(new Error('The access_token must be a string'))
+        }
+      }
 
+      if (params.username && !params.password) {
+        return reject(new Error('Put password if you want aut with username'))
+      }
 
+      if (params.username && params.password) {
+        params.username = params.username.toString()
+        params.password = params.password.toString()
+      }
+    }
 
-		if (params.captcha_key && !params.captcha_sid) {
-			return reject(new Error("You puted captcha_key but not using captcha_sid parameter"));
-		} else if (!params.captcha_key && params.captcha_sid) {
-			return reject(new Error("You puted captcha_sid but not puted captcha_key parameter"));
-		} else if (params.captcha_key && params.captcha_sid) {
-			
-			if (isNaN(params.captcha_sid.toString())) {
-				return reject(new Error("The captcha_sid must be numeric"));
-			}
+    if (params.platform) {
+      if (!isNaN(Number(params.platform))) {
+        // Get platform by ID
 
-		}
+        params.platform = configuration.platformIds[params.platform]
+      } else {
+        // Get by matching
+        let hashes = []
+        let values = []
 
-		if (params.reauth !== true) {
-			params.reauth = configuration.reauth;
-		}
+        for (let hash in configuration.platformIds) {
+          hashes.push(hash)
+          values.push(configuration.platformIds[hash])
+        }
 
-		
-		if (params.reauth) {
-			
-			if (params.access_token && params.username) {
-				return reject(new Error("Select only one way auth: access_token XOR username"));
-			}
+        let platform = params.platform
+        platform = String(platform).toLocaleLowerCase()
 
-			if (params.access_token) {
-				
-				if (!staticMethods.isString(params.access_token)) {
-					return reject(new Error("The access_token must be a string"));
-				}
+        let resultPlatform
 
-			}
+        values.forEach((value, index) => {
+          value = value.toLocaleLowerCase()
+          if (value.match(platform)) {
+            // save it
+            resultPlatform = configuration.platformIds[String(hashes[index])]
+          }
+        })
 
-			if (params.username && !params.password) {
-				return reject(new Error("Put password if you want aut with username"));
-			}
+        if (resultPlatform) {
+          params.platform = resultPlatform
+        } else {
+          params.platform = undefined
+        }
 
-			if (params.username && params.password) {
-				params.username = params.username.toString();
-				params.password = params.password.toString();
-			}
+        hashes = undefined
+        values = undefined
+      }
+    }
 
-		}
+    if (!params.client_id || !params.client_secret) {
+      if (params.platform) {
+        params.client_id = configuration[params.platform + '_CLIENT_ID']
+        params.client_secret = configuration[params.platform + '_CLIENT_SECRET']
+      } else {
+        params.client_id = configuration['ANDROID_CLIENT_ID']
+        params.client_secret = configuration['ANDROID_CLIENT_SECRET']
+      }
+    }
 
+    params.lang = String(params.lang)
 
-		if (params.platform) {
-			
-			if (!isNaN(Number(params.platform))) {
-				//Get platform by ID
+    if (!params.lang) {
+      params.lang = 'ru'
+    }
 
-				params.platform = configuration.platformIds[params.platform];
+    if (staticMethods.isString(params.fields)) {
+      params.fields = params.fields.split(',')
+    }
 
-			} else {
-				
-				//Get by matching
-				let hashes = [];
-				let values = [];
+    if (!params.fields || !Array.isArray(params.fields)) {
+      params.fields = []
+    } else {
+      params.fields = params.fields.map(a => String(a))
+    }
 
-				for (let hash in configuration.platformIds) {
-					hashes.push(hash);
-					values.push(configuration.platformIds[hash]);
-				}
-
-				let platform = params.platform;
-				platform = String(platform).toLocaleLowerCase();
-				
-				let resultPlatform = undefined;
-
-				values.forEach((value, index) => {
-					value = value.toLocaleLowerCase();
-					if (value.match(platform)) {
-						//save it
-						resultPlatform = configuration.platformIds[String(hashes[index])];
-					}
-				});
-
-
-				if (resultPlatform) {
-					params.platform = resultPlatform;
-				} else {
-					params.platform = undefined;
-
-				}
-
-				hashes = undefined;
-				values = undefined;
-
-			}
-
-		}
-
-		if (!params.client_id || !params.client_secret) {
-			
-			if (params.platform) {
-				
-				params.client_id = configuration[params.platform + '_CLIENT_ID'];
-				params.client_secret = configuration[params.platform + '_CLIENT_SECRET'];
-
-			} else {
-				params.client_id = configuration["ANDROID_CLIENT_ID"];
-				params.client_secret = configuration["ANDROID_CLIENT_SECRET"];
-			}
-
-		}
-
-		params.lang = String(params.lang);
-		
-		if (!params.lang) {
-			params.lang = "ru";
-		}
-
-		if (staticMethods.isString(params.fields)) {
-			params.fields = params.fields.split(",");
-		}
-
-		if (!params.fields || !Array.isArray(params.fields)) {
-			params.fields = [];
-		} else {
-			params.fields = params.fields.map(a => String(a));
-		}
-
-		resolve(params);
-
-	});
+    resolve(params)
+  })
 }
 
 /*
@@ -222,7 +184,7 @@ async function checkInitParams (params = {}) {
  *  for create path.join(__dirname, '.session-vk')
  *  @param {String|Number} [params.code] - Is your code from application which generate your 2-factor-auth
  *  code
- *  @param {String} [params.captcha_key] - Is your code from captcha, only if you got an error and not solved it 
+ *  @param {String} [params.captcha_key] - Is your code from captcha, only if you got an error and not solved it
  *  before
  *  @param {String|Number} [params.captcha_sid] - Is a captcha id from captcha error, if you got it and not solved before
  *  @param {Function|Async Function} [params.captchaHandler] - Is a captcha Handler function for
@@ -231,19 +193,15 @@ async function checkInitParams (params = {}) {
  *  @promise Authenticate you and create session
  *  @resolve {Object} EasyVK object, which contents session and all methods
  *  for work with VKontakte API
- *  
+ *
  */
 
 async function createSession (params = {}) {
-	return new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
+    return checkInitParams(params).then((p) => {
+      let vk = new EasyVK(p, resolve, reject, debuggerRun)
 
-		return checkInitParams(params).then((p) => {
-			
-			let vk =  new EasyVK(p, resolve, reject, debuggerRun);
-			
-			return vk;
-
-		}, reject);
-
-	});
+      return vk
+    }, reject)
+  })
 }
