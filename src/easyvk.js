@@ -150,13 +150,15 @@ class EasyVK {
             let vkr = prepareResponse(err, res)
 
             if (vkr) {
-              let json = staticMethods.checkJSONErrors(vkr, reject)
+
+              let json = generateSessionFromResponse(vkr)
 
               if (json) {
-                session = JSON.parse(JSON.stringify(json))
+                session = json
                 session.user_id = null
                 initToken()
               }
+              
             } else {
               return reject(self._error('empty_response', {
                 response: vkr
@@ -177,11 +179,19 @@ class EasyVK {
             let vkr = prepareResponse(err, res)
 
             if (vkr) {
+              
+              let json = generateSessionFromResponse(vkr)
+
+              if (json) {
+                session = json
+                session.credentials_flow = 1
+                initToken()
+              }
+
               let json = staticMethods.checkJSONErrors(vkr, reject)
 
               if (json) {
                 session = JSON.parse(JSON.stringify(json))
-                session.user_id = null
                 session.credentials_flow = 1
                 initToken()
               }
@@ -191,6 +201,18 @@ class EasyVK {
               }))
             }
           })
+        }
+      }
+
+      function generateSessionFromResponse(vkr) {
+        let json = staticMethods.checkJSONErrors(vkr, reject)
+
+        if (json) {
+          
+          json = JSON.parse(JSON.stringify(json))
+          json.user_id = null
+
+          return json
         }
       }
 
@@ -252,19 +274,7 @@ class EasyVK {
               url: configuration.BASE_CALL_URL + 'users.get?' + getData,
               agent: self.agent
             }, (err, res) => {
-              if (err) {
-                return reject(new Error(err))
-              }
-
-              let vkr = res.body
-
-              if (self.debuggerRun) {
-                try {
-                  self.debuggerRun.push('response', vkr)
-                } catch (e) {
-                  // Ignore
-                }
-              }
+              let vkr = prepareResponse(err, res)
 
               if (vkr) {
                 let json = staticMethods.checkJSONErrors(vkr, reject)
