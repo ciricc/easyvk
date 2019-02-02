@@ -107,6 +107,23 @@ class EasyVK {
         }
       }
 
+      let defaultDataParams = {
+        client_id: params.client_id || configuration.WINDOWS_CLIENT_ID,
+        client_secret: params.client_secret || configuration.WINDOWS_CLIENT_SECRET,
+        v: params.api_v,
+        lang: params.lang
+      }
+
+      if (params.captcha_key) {
+        defaultDataParams.captcha_sid = params.captcha_sid
+        defaultDataParams.captcha_key = params.captcha_key
+      }
+
+      if (params.code && params.code.toString().length !== 0) {
+        defaultDataParams['2fa_supported'] = 1
+        defaultDataParams.code = params.code
+      }
+
       if (!session.access_token) { // If session file contents access_token, try auth with it
         if (params.access_token) {
           session.access_token = params.access_token
@@ -116,34 +133,12 @@ class EasyVK {
           let getData = {
             username: params.username,
             password: params.password,
-            client_id: params.client_id || configuration.WINDOWS_CLIENT_ID,
-            client_secret: params.client_secret || configuration.WINDOWS_CLIENT_SECRET,
             grant_type: 'password',
-            v: params.api_v,
-            lang: params.lang,
             device_id: '',
             libverify_support: 1
           }
 
-          if (params.captcha_key) {
-            getData.captcha_sid = params.captcha_sid
-            getData.captcha_key = params.captcha_key
-          }
-
-          if (params.code && params.code.toString().length !== 0) {
-            getData['2fa_supported'] = 1
-            getData.code = params.code
-          }
-
-          getData = staticMethods.urlencode(getData)
-
-          if (self.debuggerRun) {
-            try {
-              self.debuggerRun.push('request', configuration.BASE_OAUTH_URL + 'token/?' + getData)
-            } catch (e) {
-              // Ignore
-            }
-          }
+          getData = prepareRequest(getData)
 
           request.get({
             url: configuration.BASE_OAUTH_URL + 'token/?' + getData,
@@ -182,32 +177,10 @@ class EasyVK {
           })
         } else if (params.client_id) {
           let getData = {
-            client_id: params.client_id || configuration.WINDOWS_CLIENT_ID,
-            client_secret: params.client_secret || configuration.WINDOWS_CLIENT_SECRET,
-            grant_type: 'client_credentials',
-            v: params.api_v,
-            lang: params.lang
+            grant_type: 'client_credentials'
           }
 
-          if (params.captcha_key) {
-            getData.captcha_sid = params.captcha_sid
-            getData.captcha_key = params.captcha_key
-          }
-
-          if (params.code && params.code.toString().length !== 0) {
-            getData['2fa_supported'] = 1
-            getData.code = params.code
-          }
-
-          getData = staticMethods.urlencode(getData)
-
-          if (self.debuggerRun) {
-            try {
-              self.debuggerRun.push('request', configuration.BASE_OAUTH_URL + 'token/?' + getData)
-            } catch (e) {
-              // Ignore
-            }
-          }
+          getData = prepareRequest(getData)
 
           request.get({
             url: configuration.BASE_OAUTH_URL + 'token/?' + getData,
@@ -243,6 +216,22 @@ class EasyVK {
             }
           })
         }
+      }
+
+      function prepareRequest (getDataObject = {}) {
+        let Obj = Object.assign(getDataObject, defaultDataParams)
+
+        Obj = staticMethods.urlencode(Obj)
+
+        if (self.debuggerRun) {
+          try {
+            self.debuggerRun.push('request', configuration.BASE_OAUTH_URL + 'token/?' + Obj)
+          } catch (e) {
+            // Ignore
+          }
+        }
+
+        return Obj
       }
 
       function initToken () {
