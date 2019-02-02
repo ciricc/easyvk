@@ -150,7 +150,6 @@ class EasyVK {
             let vkr = prepareResponse(err, res)
 
             if (vkr) {
-
               let json = generateSessionFromResponse(vkr)
 
               if (json) {
@@ -158,7 +157,6 @@ class EasyVK {
                 session.user_id = null
                 initToken()
               }
-              
             } else {
               return reject(self._error('empty_response', {
                 response: vkr
@@ -179,19 +177,10 @@ class EasyVK {
             let vkr = prepareResponse(err, res)
 
             if (vkr) {
-              
               let json = generateSessionFromResponse(vkr)
 
               if (json) {
                 session = json
-                session.credentials_flow = 1
-                initToken()
-              }
-
-              let json = staticMethods.checkJSONErrors(vkr, reject)
-
-              if (json) {
-                session = JSON.parse(JSON.stringify(json))
                 session.credentials_flow = 1
                 initToken()
               }
@@ -204,11 +193,10 @@ class EasyVK {
         }
       }
 
-      function generateSessionFromResponse(vkr) {
+      function generateSessionFromResponse (vkr) {
         let json = staticMethods.checkJSONErrors(vkr, reject)
 
         if (json) {
-          
           json = JSON.parse(JSON.stringify(json))
           json.user_id = null
 
