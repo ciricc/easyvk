@@ -29,13 +29,13 @@ Official VK API: [vk.com/dev/](https://vk.com/dev/)
 
 Download and install Node.js. Create a project and install `easyvk` with `npm`:
 
-```
+```sh
 npm i easyvk --save
 ```
 
 ### Yarn installation
 If you are using a yarn package manager, you can add easyvk to project so
-```
+```sh
 yarn add easyvk
 ```
 
@@ -72,26 +72,41 @@ easyvk({
 
 
 
-## EasyVK can help you:
+## EasyVK can help you
 
 * <b>Create Bots</b>
+
 * Manage groups
+
 * Use LongPoll: <b>Bots LongPoll (groups) and User LongPoll</b>
+
 * Use <b>Callback API</b> (like creating your server to listen to group events)
+
 * Manage your stream based on official <b>Streaming API</b>,
   listen to events and collect data to create statistic and metrics
+
 * Upload your files to the server
+
 * Call official <b>VKontakte API methods</b>
+
 * Use my widgets - non-official instruments for everyday tasks
+
 * Use helpers - utility for creating something that you need everyday
+
 * Use saved session, cache data to saved session
+
 * Catch errors like Captcha error and others
 
 ## EasyVK provide:
+
 * <b>Promises and async / await based library</b>
+
 * Authentication support: groups, users, applications, password + username
+
 * Informative documentation
+
 * Regular updates and support for newest features
+
 * Two factor authentication support
 
 
@@ -133,7 +148,7 @@ easyvk({
 ```
 
 
-## Что дает EasyVK?
+## Что дает EasyVK
 
 Узнайте, зачем Вам может понадобиться EasyVK, и что именно он может Вам дать!
 
@@ -353,5 +368,5 @@ easyvk({
 
 ```
 
-
 Все остальное находится на <a href="https://ciricc.github.io/">сайте-документации</a> проекта.
+
