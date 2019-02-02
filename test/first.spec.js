@@ -4,7 +4,7 @@ const easyvk = require('..')
 
 const DEFAULT_SESSION_PATH = path.join(__dirname, '.vk-session')
 
-const { CLIENT_ID, CLIENT_SECRET, ACCESS_TOKEN } = process.env
+let { CLIENT_ID: clientId, CLIENT_SECRET: clientSecret, ACCESS_TOKEN: accessToken } = process.env
 
 describe('This test running an application authentication (Client Credentials Flow)', function () {
   function testAsync (runAsync) {
@@ -13,7 +13,10 @@ describe('This test running an application authentication (Client Credentials Fl
     }
   }
 
-  if (!CLIENT_SECRET || !CLIENT_ID) {
+  clientSecret = clientSecret.replace('process.env.CLIENT_SECRET', '')
+  clientId = clientId.replace('process.env.CLIENT_ID', '')
+
+  if (!clientSecret || !clientId) {
     it('Test was stopped because no have a env.CLIENT_ID and env.CLIENT_SECRET tokens', () => {
 
     })
@@ -23,8 +26,8 @@ describe('This test running an application authentication (Client Credentials Fl
 
   it('checking session', testAsync(async function () {
     let vk = await easyvk({
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
+      client_id: clientId,
+      client_secret: clientSecret,
       session_file: process.env['session-path'] || DEFAULT_SESSION_PATH,
       reauth: true
     })
@@ -33,27 +36,4 @@ describe('This test running an application authentication (Client Credentials Fl
 
     expect(vk.session.credentials_flow).toBe(1)
   }))
-})
-
-describe('This test running a user and group authentication', function () {
-  if (!ACCESS_TOKEN) {
-    it('Test was stopped because no have a CLIENT_ID and CLIENT_SECRET tokens', () => {
-
-    })
-
-    return
-  }
-
-  easyvk({
-    client_id: CLIENT_ID,
-    client_secret: CLIENT_SECRET,
-    session_file: process.env['session-path'] || DEFAULT_SESSION_PATH,
-    reauth: true
-  }).then(vk => {
-    it('Check that session have an application id ', () => {
-      expect(vk.session).toBeDefined()
-      expect(vk.session.app_id).toBe(Number)
-      expect(vk.session.app_title).toBe(String)
-    })
-  })
 })
