@@ -147,21 +147,9 @@ class EasyVK {
             },
             agent: self.agent
           }, (err, res) => {
-            let vkr = prepareResponse(err, res)
-
-            if (vkr) {
-              let json = generateSessionFromResponse(vkr)
-
-              if (json) {
-                session = json
-                session.user_id = null
-                initToken()
-              }
-            } else {
-              return reject(self._error('empty_response', {
-                response: vkr
-              }))
-            }
+            completeSession(err, res, {
+              user_id: null
+            })
           })
         } else if (params.client_id) {
           let getData = {
@@ -174,22 +162,25 @@ class EasyVK {
             url: configuration.BASE_OAUTH_URL + 'token/?' + getData,
             agent: self.agent
           }, (err, res) => {
-            let vkr = prepareResponse(err, res)
-
-            if (vkr) {
-              let json = generateSessionFromResponse(vkr)
-
-              if (json) {
-                session = json
-                session.credentials_flow = 1
-                initToken()
-              }
-            } else {
-              return reject(self._error('empty_response', {
-                response: vkr
-              }))
-            }
+            completeSession(err, res, {
+              credentials_flow: 1
+            })
           })
+        }
+      }
+
+      function completeSession (err, res, object = {}) {
+        let vkr = prepareResponse(err, res)
+        let json = generateSessionFromResponse(vkr)
+
+        if (json) {
+          session = json
+          Object.assign(session, object)
+          initToken()
+        } else {
+          return reject(self._error('empty_response', {
+            response: vkr
+          }))
         }
       }
 
