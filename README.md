@@ -91,7 +91,7 @@ easyvk({
 
 *   Catch errors like Captcha error and others
 
-## EasyVK provide:
+## EasyVK provide
 
 *   <b>Promises and async / await based library</b>
 
@@ -139,7 +139,6 @@ easyvk({
 });
 
 ```
-
 
 ## Что дает EasyVK
 
