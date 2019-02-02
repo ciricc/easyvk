@@ -111,7 +111,7 @@ class Widgets {
               let countViews = videoInfo.match('<!int>([0-9]+)<!>')
 
               if (countViews) {
-                countViews = parseInt(countViews[1])
+                countViews = parseInt(countViews[1], 10)
                 return resolve(countViews)
               } else {
                 return reject(self._vk.error('live_error', {

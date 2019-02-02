@@ -8,8 +8,6 @@ const _easyvk = path.join(__dirname, 'easyvk.js')
 
 const easyVK = require(`${_easyvk}`)
 
-
-
 const currentSessionFile = path.join(__dirname, '.vksession')
 
 /**
@@ -21,101 +19,93 @@ const currentSessionFile = path.join(__dirname, '.vksession')
  *
  */
 
-function longPollDebugger({type, data}) {
-	//Debug all steps on the poll step
-	console.log(`[typeLog ${type}]`, data);
+function longPollDebugger ({ type, data }) {
+  // Debug all steps on the poll step
+  console.log(`[typeLog ${type}]`, data)
 }
 
 easyVK({
-	api_v: '5.73',
-	save_session: false,
-	session_file: currentSessionFile,
+  api_v: '5.73',
+  save_session: false,
+  session_file: currentSessionFile,
 
-	//Access token whcch you need get from your group settings
-	access_token: '{GROUP_ACCESS_TOKEN}',
-	reauth: true
+  // Access token whcch you need get from your group settings
+  access_token: '{GROUP_ACCESS_TOKEN}',
+  reauth: true
 }).then(vk => {
+  const session = vk.session
 
+  console.info(`Running a LongPoll server.... \nwith group named as ("${session.group_name}")`)
 
-	const session = vk.session
-	
-	console.info(`Running a LongPoll server.... \nwith group named as ("${session.group_name}")`)
+  // LongPoll for Bots
+  const LPB = vk.bots.longpoll
 
-	//LongPoll for Bots
-	const LPB = vk.bots.longpoll
+  return LPB.connect({
+    forGetLongPollServer: {
+      group_id: session.group_id // Group id, getting from session auth
+    },
+    forLongPollServer: {
+      wait: 10 // Need wait for one poll 10 seconds
+    }
+  })
+}).then(({ connection, vk }) => {
+  connection.debug(longPollDebugger)
 
-	return LPB.connect({
-		forGetLongPollServer: {
-			group_id: session.group_id //Group id, getting from session auth
-		},
-		forLongPollServer: {
-			wait: 10 //Need wait for one poll 10 seconds
-		}
-	})
+  // Keyboard objet for user interface
+  // For work it you need enable LongPoll version >= 5.80 in group settings
+  const keyboardObject = {
+    one_time: false,
+    buttons: [
+      [
+        {
+          action: {
+            type: 'text',
+            label: 'start',
+            payload: '{"command": "start"}'
+          },
+          color: 'default'
+        }
+      ]
 
-}).then(({connection, vk}) => {
+    ]
+  }
 
-	connection.debug(longPollDebugger);
+  async function messageNew (msgEvent) {
+    if (!msgEvent.user_id && msgEvent.from_id) msgEvent.user_id = msgEvent.from_id
 
+    let payload = msgEvent.payload
 
-	//Keyboard objet for user interface
-	//For work it you need enable LongPoll version >= 5.80 in group settings
-	const keyboardObject = {
-		one_time: false,
-		buttons: [
-			[
-				{
-					action: {
-						type: 'text',
-						label: 'start',
-						payload: '{"command": "start"}'
-					},
-					color: "default"
-				}
-			]
+    try {
+      payload = JSON.parse(payload)
+    } catch (e) {
+      // Ignore
+    }
 
-		]
-	}
+    await (vk.call('messages.send', {
+      user_id: msgEvent.user_id,
+      message: ((payload) ? 'Button started' : 'Reply it'),
+      keyboard: keyboardObject
+    }), 'post') // Only post requests recommend
+  }
 
-	async function messageNew (msgEvent) {
+  connection.on('message_new', messageNew)
 
-		if (!msgEvent.user_id && msgEvent.from_id) msgEvent.user_id = msgEvent.from_id;
+  /*
+   *
+   * In the next release this listeners will be one listener
+   * And one-debugger will too
+   *
+   */
 
-		let payload = msgEvent.payload;
-		
-		try {
-			payload = JSON.parse(payload);
-		} catch (e) {
-			//Ignore
-		}
+  connection.on('error', console.error)
+  connection.on('failure', console.error)
 
-		await (vk.call('messages.send', {
-			user_id: msgEvent.user_id,
-			message: ( (payload) ? "Button started" : 'Reply it'),
-			keyboard: keyboardObject
-		}), "post"); //Only post requests recommend
-	}
+  // LongPoll needs auto-reconnect for support one connection without stopping program
+  // Sure i am added this featture and if error uccurs on recconect step you will catch it by this method
+  connection.on('reconnectError', console.error)
 
-
-	connection.on('message_new', messageNew)
-
-	/*
-	 *
-	 * In the next release this listeners will be one listener
-	 * And one-debugger will too
-	 *
-	 */
-
-	connection.on('error', console.error)
-	connection.on('failure', console.error)
-
-	//LongPoll needs auto-reconnect for support one connection without stopping program
-	//Sure i am added this featture and if error uccurs on recconect step you will catch it by this method
-	connection.on('reconnectError', console.error)
-
-	return true
-
+  return true
 }).catch(console.error)
 
-//Handle all rejects and errors
+// Handle all rejects and errors
 process.on('unhandledRejection', console.error)

@@ -309,19 +309,17 @@ class HTTPEasyVK {
 
             break
           case 'int':
-            e[o] = parseInt(n)
+            e[o] = parseInt(n, 10)
             break
           case 'float':
             e[o] = parseFloat(n)
             break
           case 'bool':
-            e[o] = !!parseInt(n)
+            e[o] = !!parseInt(n, 10)
             break
           case 'null':
             e[o] = null
             break
-          case 'debug':
-            console.log('debug')
         }
       }
     }

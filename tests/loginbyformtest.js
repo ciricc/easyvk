@@ -8,7 +8,6 @@ const _easyvk = path.join(__dirname, 'easyvk.js')
 
 const easyVK = require(`${_easyvk}`)
 
-
 const currentSessionFile = path.join(__dirname, '.vksession')
 
 /*
@@ -19,28 +18,24 @@ const currentSessionFile = path.join(__dirname, '.vksession')
  */
 
 easyVK({
-	api_v: '5.73',
-	session_file: currentSessionFile,
-	//Access token whcch you need get from your group settings
-	username: '{LOGIN_FIELD}',
-	password: '{PASSWORD_FIELD}',
-	reauth: true,
-	lang: "ru"
+  api_v: '5.73',
+  session_file: currentSessionFile,
+  // Access token whcch you need get from your group settings
+  username: '{LOGIN_FIELD}',
+  password: '{PASSWORD_FIELD}',
+  reauth: true,
+  lang: 'ru'
 }).then((vk) => {
+  const Widgets = vk.http
 
-	const Widgets = vk.http
-	
-	Widgets.loginByForm().then(({client}) => {
-		//You can get read stories and other
-		
-		client.readStories('497395239').then(({vk, count}) => {
-			console.log(count);
-		});
+  Widgets.loginByForm().then(({ client }) => {
+    // You can get read stories and other
 
-	});
+    client.readStories('497395239').then(({ vk, count }) => {
+      console.log(count)
+    })
+  })
+}).catch(console.error)
 
-}).catch(console.error);
-
-
-//Handle all rejects and errors
+// Handle all rejects and errors
 process.on('unhandledRejection', console.error)
