@@ -70,45 +70,42 @@ easyvk({
 
 ```
 
-
-
 ## EasyVK can help you
 
-*  <b>Create Bots</b>
+  *  <b>Create Bots</b>
 
-*  Manage groups
+  *  Manage groups
 
-*  Use LongPoll: <b>Bots LongPoll (groups) and User LongPoll</b>
+  *  Use LongPoll: <b>Bots LongPoll (groups) and User LongPoll</b>
 
-*  Use <b>Callback API</b> (like creating your server to listen to group events)
+  *  Use <b>Callback API</b> (like creating your server to listen to group events)
 
-*  Manage your stream based on official <b>Streaming API</b>,
+  *  Manage your stream based on official <b>Streaming API</b>,
    listen to events and collect data to create statistic and metrics
 
-*  Upload your files to the server
+  *  Upload your files to the server
 
-*  Call official <b>VKontakte API methods</b>
+  *  Call official <b>VKontakte API methods</b>
 
-*  Use my widgets - non-official instruments for everyday tasks
+  *  Use my widgets - non-official instruments for everyday tasks
 
-*  Use helpers - utility for creating something that you need everyday
+  *  Use helpers - utility for creating something that you need everyday
 
-*  Use saved session, cache data to saved session
+  *  Use saved session, cache data to saved session
 
-*  Catch errors like Captcha error and others
+  *  Catch errors like Captcha error and others
 
 ## EasyVK provide:
 
-*  <b>Promises and async / await based library</b>
+  *  <b>Promises and async / await based library</b>
 
-*  Authentication support: groups, users, applications, password + username
+  *  Authentication support: groups, users, applications, password + username
 
-*  Informative documentation
+  *  Informative documentation
 
-*  Regular updates and support for newest features
+  *  Regular updates and support for newest features
 
-*  Two factor authentication support
-
+  *  Two factor authentication support
 
 You can read documentation <a href="https://ciricc.github.io/">here</a>
 
@@ -179,7 +176,6 @@ easyvk({
   });
 
 ```
-
 
 ### Audio API
 
@@ -367,6 +363,4 @@ easyvk({
   }).catch(console.error);
 
 ```
-
 Все остальное находится на <a href="https://ciricc.github.io/">сайте-документации</a> проекта.
-
