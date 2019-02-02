@@ -14,7 +14,6 @@ Official VK API: [vk.com/dev/](https://vk.com/dev/)
 | [Community](https://vk.com/club162208999) | [Документация на русском](https://ciricc.github.io/) |
 | ------------------------------------------| -------------|
 
-
 ## Для русскоязычных
 
 Данная библиотека создана для того, чтобы VKontakte API имел удобную поддержу на node.js.
@@ -71,7 +70,7 @@ easyvk({
 
 ## EasyVK can help you
 
-*  <b>Create Bots</b>
+*  <b> Create Bots </b>
 
 *  Manage groups
 
@@ -79,7 +78,7 @@ easyvk({
 
 *  Use <b>Callback API</b> (like creating your server to listen to group events)
 
-*  Manage your stream based on official <b>Streaming API</b>, listen to events and collect data to create statistic and metrics
+*   Manage your stream based on official <b>Streaming API</b>, listen to events and collect data to create statistic and metrics
 
 *  Upload your files to the server
 
