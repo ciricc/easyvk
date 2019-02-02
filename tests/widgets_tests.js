@@ -29,7 +29,7 @@ easyVK({
 
   const Widgets = vk.widgets
   const interval = 8000
-  const me = 356607530
+  const me = 0x1541662A
   const videoSourceId = '5088687_456239369' // From url, for example:
   // https://vk.com/video?z=video<!![-156373163_456239058]!!>%2F20f2c18b0457ec2a84%2Fpl_cat_games
 

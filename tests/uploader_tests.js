@@ -10,7 +10,7 @@ const easyVK = require(`${_easyvk}`)
 
 const currentSessionFile = path.join(__dirname, '.vksession')
 
-const me = 356607530
+const me = 0x1541662A
 const myGroup = 162208999
 const filePath = path.join(__dirname, '..', 'src', 'logo_200.png') // change on your file
 
