@@ -29,7 +29,7 @@ easyVK({
 }).then((vk) => {
   // Get 2 users - me and 1
   return vk.call('users.get', {
-    user_ids: [1, parseInt('356607530')]
+    user_ids: [1, parseInt('356607530', 10)]
   })
 }).then(({ vkr, vk }) => {
   // Get my id not from cariable

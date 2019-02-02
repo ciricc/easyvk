@@ -61,7 +61,7 @@ easyVK({
   captchaHandler: captchaHandler
 
 }).then((vk) => {
-  const me = parseInt('356607530')
+  const me = parseInt('356607530', 10)
   const interval = 700 // DDOS, catch captcha
   // (joke, it's not a DDOS, but many requests per minute call a captcha error)
 
