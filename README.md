@@ -70,25 +70,15 @@ easyvk({
 ## EasyVK can help you
 
 *   <b> Create Bots </b>
-
 *   Manage groups
-
 *   Use LongPoll: <b>Bots LongPoll (groups) and User LongPoll</b>
-
 *   Use <b>Callback API</b> (like creating your server to listen to group events)
-
 *   Manage your stream based on official <b>Streaming API</b>, listen to events and collect data to create statistic and metrics
-
 *   Upload your files to the server
-
 *   Call official <b>VKontakte API methods</b>
-
 *   Use my widgets - non-official instruments for everyday tasks
-
 *   Use helpers - utility for creating something that you need everyday
-
 *   Use saved session, cache data to saved session
-
 *   Catch errors like Captcha error and others
 
 ## EasyVK provide
