@@ -52,13 +52,9 @@ class StreamingAPIConnection extends EventEmitter {
 
     try {
       let body = JSON.parse(msgBody)
-
       if (parseInt(body.code) === 100) {
-        if (self.listeners(body.event.event_type).length) {
-          self.emit(body.event.event_type, body.event)
-        } else {
-          self.emit('pullEvent', body.event)
-        }
+        self.emit(body.event.event_type, body.event)
+        self.emit('pullEvent', body.event)
       } else if (body.code === 300) {
         self.emit('serviceMessage', body.service_message)
       }
