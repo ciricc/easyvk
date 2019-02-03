@@ -10,8 +10,10 @@
 ### Добавления
 -   Добавлен метод поиска множества аудиозаписей сразу 
 ```javascript
-let { client } = await vk.http.loginByForm() 
-client.audio.searchAll(query, count) 
+let { client } = await vk.http.loginByForm()
+let count = 1000 // Если аудиозаписей меньше, вернет полученное количество
+
+client.audio.searchAll(query, count).then(console.log)
 ```
 
 ### Исправления
