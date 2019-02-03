@@ -497,7 +497,8 @@ class AudioAPI {
       can_delete: !!audio[this.AudioMobileObject.AUDIO_ITEM_INDEX_CAN_DELETE],
       mix: audio[this.AudioMobileObject.AUDIO_ITEM_INDEX_MIX],
       is_disabled: !!audio[this.AudioMobileObject.AUDIO_ITEM_INDEX_IS_DISABLED],
-      duration: audio[this.AudioMobileObject.AUDIO_ITEM_INDEX_DURATION]
+      duration: audio[this.AudioMobileObject.AUDIO_ITEM_INDEX_DURATION],
+      title: audio[this.AudioMobileObject.AUDIO_ITEM_INDEX_TITLE] || ''
     }
 
     return new MobileAudioItem(audio_)
