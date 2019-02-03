@@ -428,7 +428,6 @@ class AudioAPI {
 
   async searchAll (q = '', count = 1000) {
     let self = this
-
     return new Promise((resolve, reject) => {
       let audios = []
       let url = ''

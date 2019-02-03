@@ -447,7 +447,7 @@ class HTTPEasyVK {
 
               let matches = body.match(/action="(.*?)"/)
 
-              if (!matches) { // Если пользовтаель уже авторизован по кукисам, чекаем сессию
+              if (!matches || !body.match(/password/)) { // Если пользовтаель уже авторизован по кукисам, чекаем сессию
                 return actCheckLogin().then(() => {
                   return createClient(resolve, vHttp)
                 }, reject)
