@@ -366,6 +366,7 @@ class AudioAPI {
       return resolve(audios_)
     })
   }
+
   _getNormalAudiosWithURL (audios) {
     let self = this
 
@@ -429,17 +430,8 @@ class AudioAPI {
     let self = this
 
     return new Promise((resolve, reject) => {
-      self._requestMobile('audio?' + querystring.stringify({
-        q: params.q,
-        tab: 'global'
-      }), {}, false).then(res => {
-        let postingUrl = res.body.match(/(AudioBlock_audios.*)<a(.*)Pad__corner(.*)href="(.*)">(.*)<\/a>/)
-
-        if (!postingUrl || !postingUrl[4]) return reject(new Error('Algorythm of search was changed by bk, open new issue please'))
-
-        postingUrl = postingUrl[4].slice(1)
-
-        self._requestMobile(postingUrl, {
+      async function callToPostingUrl (postingUrl = '') {
+        return self._requestMobile(postingUrl, {
           _ajax: 1,
           offset: params.offset
         }).then(res => {
@@ -449,16 +441,31 @@ class AudioAPI {
           json = JSON.parse(json)
 
           let audios = json[3]
-          self._getNormalAudiosWithURLMobile(audios).then(audios => {
+          return self._getNormalAudiosWithURLMobile(audios).then(audios => {
             return resolve({
               vk: self._vk,
               json: json,
+              url: postingUrl,
               vkr: VKResponse(staticMethods, {
                 response: audios
               })
             })
           })
         })
+      }
+
+      if (params.url) return callToPostingUrl(params.url)
+
+      self._requestMobile('audio?' + querystring.stringify({
+        q: params.q,
+        tab: 'global'
+      }), {}, false).then(res => {
+        let postingUrl = res.body.match(/(AudioBlock_audios.*)<a(.*)Pad__corner(.*)href="(.*)">(.*)<\/a>/)
+
+        if (!postingUrl || !postingUrl[4]) return reject(new Error('Algorythm of search was changed by bk, open new issue please'))
+
+        postingUrl = postingUrl[4].slice(1)
+        return callToPostingUrl(postingUrl)
       })
     })
   }
