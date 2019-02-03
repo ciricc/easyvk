@@ -3,34 +3,34 @@
 const staticMethods = require('./staticMethods.js')
 const VKResponse = require('./VKResponse.js')
 
+const querystring = require('querystring')
+
+function extend (target, source) {
+  for (let prop in source) {
+    Object.defineProperty(target, prop, {
+      enumerable: true,
+      configurable: true,
+      value: source[prop]
+    })
+  }
+  return target
+}
+
 class AudioItem {
   constructor (audio) {
-    let self = this
-    let _props = audio
+    extend(this, audio)
+  }
+}
 
-    // Use session data with methods
-    for (let prop in _props) {
-      Object.defineProperty(self, prop, {
-        enumerable: true,
-        configurable: true,
-        value: _props[prop]
-      })
-    }
+class MobileAudioItem {
+  constructor (audio) {
+    extend(this, audio)
   }
 }
 
 class PlayListItem {
-  constructor (audio) {
-    let self = this
-    let _props = audio
-    // Use session data with methods
-    for (let prop in _props) {
-      Object.defineProperty(self, prop, {
-        enumerable: true,
-        configurable: true,
-        value: _props[prop]
-      })
-    }
+  constructor (list) {
+    extend(this, list)
   }
 }
 
@@ -69,6 +69,21 @@ class AudioAPI {
       AUDIO_ITEM_UMA_BIT: 128,
       AUDIO_ITEM_REPLACEABLE: 512,
       AUDIO_ITEM_EXPLICIT_BIT: 1024
+    }
+
+    self.AudioMobileObject = {
+      AUDIO_ITEM_INDEX_ID: 1,
+      AUDIO_ITEM_INDEX_URL: 2,
+      AUDIO_ITEM_INDEX_PERFORMER: 3,
+      AUDIO_ITEM_INDEX_TITLE: 4,
+      AUDIO_ITEM_INDEX_DURATION: 5,
+      AUDIO_ITEM_INDEX_CAN_ADD: 6,
+      AUDIO_ITEM_INDEX_CAN_DELETE: 7,
+      AUDIO_ITEM_INDEX_COVER_URL: 8,
+      AUDIO_ITEM_INDEX_IS_DISABLED: 9,
+      AUDIO_ITEM_INDEX_MIX: 10,
+      AUDIO_ITEM_INDEX_SUBTITLE: 11,
+      AUDIO_ITEM_INDEX_IS_EXPLICIT: 12
     }
 
     self.genres = {
@@ -326,6 +341,10 @@ class AudioAPI {
     return this._http.request('al_audio.php', ...args)
   }
 
+  _requestMobile (file = 'audio', form, post) {
+    return this._http.requestMobile(file, form, null, null, post)
+  }
+
   _parseResponse (...args) {
     return this._http._parseResponse(...args)
   }
@@ -334,6 +353,19 @@ class AudioAPI {
     return this._http._parseJSON(...args)
   }
 
+  _getNormalAudiosWithURLMobile (audios) {
+    let self = this
+
+    return new Promise((resolve, reject) => {
+      let audios_ = []
+
+      audios[1].forEach((audioIndex) => {
+        audios_.push(self._getAudioAsObjectMobile(audios[0][audioIndex]))
+      })
+
+      return resolve(audios_)
+    })
+  }
   _getNormalAudiosWithURL (audios) {
     let self = this
 
@@ -397,75 +429,35 @@ class AudioAPI {
     let self = this
 
     return new Promise((resolve, reject) => {
-      self._request({
-        act: 'section',
-        al: 1,
-        owner_id: (params.owner_id || self._vk.session.user_id),
-        is_layer: 0,
+      self._requestMobile('audio?' + querystring.stringify({
         q: params.q,
-        section: 'search'
-      }).then(res => {
-        let json; let audios = []
+        tab: 'global'
+      }), {}, false).then(res => {
+        let postingUrl = res.body.match(/(AudioBlock_audios.*)<a(.*)Pad__corner(.*)href="(.*)">(.*)<\/a>/)
 
-        json = self._parseJSON(res.body, reject)
+        if (!postingUrl || !postingUrl[4]) return reject(new Error('Algorythm of search was changed by bk, open new issue please'))
 
-        audios = json.playlists[0].list
+        postingUrl = postingUrl[4].slice(1)
 
-        self._getNormalAudiosWithURL(audios).then((audios) => {
-          let playlist = json.playlists[0]
-          let playlistId = playlist.id
-          let ownerId = playlist.ownerId
-          let offsetNum = Number((params.offset || 0))
-          // 50 - 100 - 150 etc..
+        self._requestMobile(postingUrl, {
+          _ajax: 1,
+          offset: params.offset
+        }).then(res => {
+          let json = res.body
 
-          let countOffset = Math.floor(offsetNum / 50)
-          let i = 0
+          if (!json) return reject(new Error('Not founded audios'))
+          json = JSON.parse(json)
 
-          function req (offset = '') {
-            self._request({
-              access_hash: '',
-              act: 'load_section',
-              al: 1,
-              claim: 0,
-              offset: offset,
-              owner_id: ownerId,
-              playlist_id: playlistId,
-              search_q: params.q,
-              type: 'search'
-            }).then(res => {
-              let json; let audios = []
-
-              json = self._parseJSON(res.body, reject)
-
-              if (i < countOffset && json.hasMore) {
-                i++
-                return req(json.nextOffset)
-              }
-
-              audios = json.list
-
-              if (!json.hasMore && i < countOffset) {
-                // return empty audios
-                audios = []
-              }
-
-              self._getNormalAudiosWithURL(audios).then((audios) => {
-                resolve({
-                  vk: self._vk,
-                  json: json,
-                  vkr: VKResponse(staticMethods, {
-                    response: audios
-                  })
-                })
-              }, () => {
-                reject(new Error('I don\t know what is this, in next releases it will be fixed'))
+          let audios = json[3]
+          self._getNormalAudiosWithURLMobile(audios).then(audios => {
+            return resolve({
+              vk: self._vk,
+              json: json,
+              vkr: VKResponse(staticMethods, {
+                response: audios
               })
             })
-          }
-
-          req()
-        }, () => {
-          reject(new Error('I don\t know what is this, in next releases it will be fixed'))
+          })
         })
       })
     })
@@ -482,6 +474,26 @@ class AudioAPI {
     if (otherHash) adi[3] = otherHash
 
     return adi
+  }
+
+  _getAudioAsObjectMobile (audio = []) {
+    let source = this.__UnmuskTokenAudio(audio[this.AudioMobileObject.AUDIO_ITEM_INDEX_URL], this._vk.session.user_id)
+
+    let audio_ = {
+      id: audio[this.AudioMobileObject.AUDIO_ITEM_INDEX_ID] || '',
+      url: source || '',
+      performer: audio[this.AudioMobileObject.AUDIO_ITEM_INDEX_PERFORMER],
+      explicit: !!audio[this.AudioMobileObject.AUDIO_ITEM_INDEX_IS_EXPLICIT],
+      cover: (audio[this.AudioMobileObject.AUDIO_ITEM_INDEX_COVER_URL].match(/\((.*)\)/) || ['', ''])[1],
+      can_add: !!audio[this.AudioMobileObject.AUDIO_ITEM_INDEX_CAN_ADD],
+      subtitle: audio[this.AudioMobileObject.AUDIO_ITEM_INDEX_SUBTITLE] || '',
+      can_delete: !!audio[this.AudioMobileObject.AUDIO_ITEM_INDEX_CAN_DELETE],
+      mix: audio[this.AudioMobileObject.AUDIO_ITEM_INDEX_MIX],
+      is_disabled: !!audio[this.AudioMobileObject.AUDIO_ITEM_INDEX_IS_DISABLED],
+      duration: audio[this.AudioMobileObject.AUDIO_ITEM_INDEX_DURATION]
+    }
+
+    return new MobileAudioItem(audio_)
   }
 
   _getAudioAsObject (audio = []) {
@@ -573,19 +585,15 @@ class AudioAPI {
 
     var n = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN0PQRSTUVWXYZO123456789+/='
 
-    function each (arr, cb) {
-      return arr.forEach(cb)
-    }
-
     var i = {
       v: function (e) {
         return e.split('').reverse().join('')
       },
       r: function (e, t) {
         e = e.split('')
-        for (var i, o = n + n, r = e.length; r--;) {
-          i = o.indexOf(e[r])
-          ~i && (e[r] = o.substr(i - t, 1))
+        for (var i, o = n + n, r = e.length; r; r--) {
+          o.indexOf(e[r])
+          i = ~i && (e[r] = o.substr(i - t, 1))
         }
         return e.join('')
       },
@@ -605,12 +613,14 @@ class AudioAPI {
       },
       x: function (e, t) {
         var n = []
+
         t = t.charCodeAt(0)
+
         each(e.split(''), function (e, i) {
           n.push(String.fromCharCode(i.charCodeAt(0) ^ t))
         })
-        n.join('')
-        return t
+
+        return n.join('')
       }
     }
 
@@ -637,12 +647,18 @@ class AudioAPI {
       return e
     }
 
+    function each (arr, cb) {
+      return arr.forEach(cb)
+    }
+
     function a (e) {
       if (!e || e.length % 4 === 1) return !1
-      for (var t, i, o = 0, r = 0, a = ''; i;) {
-        i = i = e.charAt(r++)
+      for (var t, i, o = 0, r = 0, a = ''; true;) {
+        i = e.charAt(r++)
+        if (!i) break
+
         i = n.indexOf(i)
-        ~i && (t = o % 4 ? 64 * t + i : i, o++ % 4) && (a += String.fromCharCode(255 & t >> (-2 * o & 6)))
+        i = ~i && (t = o % 4 ? 64 * t + i : i, o++ % 4) && (a += String.fromCharCode(255 & t >> (-2 * o & 6)))
       }
       return a
     }
@@ -653,8 +669,10 @@ class AudioAPI {
       var i = []
       if (n) {
         var o = n
-        for (t = Math.abs(t); o--;) {
-          t = (n * (o + 1) ^ t + o) % n
+        for (t = Math.abs(t); true;) {
+          o--
+          if (o < 0) break
+          t = ((n * o + n) ^ t + o) % n
           i[o] = t
         }
       }

@@ -197,20 +197,37 @@ class HTTPEasyVKClient {
     })
   }
 
-  async request (file, form = {}, ignoreStringError = false, indexJson = 6) {
+  async request (file, form = {}, ignoreStringError = false, indexJson = 6, post = true, isMobile = false) {
     let self = this
 
     return new Promise((resolve, reject) => {
-      request.post({
+      let mobile = ''
+
+      if (isMobile) {
+        mobile = 'm.'
+      }
+
+      let method = 'post'
+
+      if (post !== true) method = 'get'
+
+      let headers = {
+        'user_agent': self._config.user_agent
+      }
+
+      if (isMobile && method === 'post') {
+        headers['x-requested-with'] = 'XMLHttpRequest'
+      }
+
+      request[method]({
         jar: self._authjar,
-        url: `${configuration.PROTOCOL}://${configuration.BASE_DOMAIN}/` + file,
+        url: `${configuration.PROTOCOL}://${mobile}${configuration.BASE_DOMAIN}/` + file,
         form: form,
         encoding: 'binary',
-        headers: {
-          'user-agent': self._config.user_agent
-        },
+        headers: headers,
         agent: self._vk.agent
       }, (err, res, vkr) => {
+        require('fs').writeFileSync('res.body', res.body)
         if (err) {
           return reject(err)
         }
@@ -221,21 +238,27 @@ class HTTPEasyVKClient {
           return reject(self._vk._error('audio_api', {}, 'not_have_access'))
         }
 
-        let json = self._parseResponse(res.body.split('<!>'))
+        if (!isMobile) {
+          let json = self._parseResponse(res.body.split('<!>'))
 
-        if (typeof json[indexJson] === 'object') json[5] = json[indexJson]
+          if (typeof json[indexJson] === 'object') json[5] = json[indexJson]
 
-        if (typeof json[5] === 'string' && !ignoreStringError) {
-          return reject(new Error(json[5]))
-        }
+          if (typeof json[5] === 'string' && !ignoreStringError) {
+            return reject(new Error(json[5].slice(0, 250)))
+          }
 
-        if (!json[5] && !ignoreStringError) {
-          return reject(self._vk._error('audio_api', {}, 'not_have_access'))
+          if (!json[5] && !ignoreStringError) {
+            return reject(self._vk._error('audio_api', {}, 'not_have_access'))
+          }
         }
 
         return resolve(res)
       })
     })
+  }
+
+  async requestMobile (...args) {
+    return this.request(...args, true)
   }
 
   _parseResponse (e) {
@@ -298,7 +321,9 @@ class HTTPEasyVK {
       if (n.substr(0, 2) === '<!') {
         var i = n.indexOf('>')
 
-        switch (n = n.substr(i + 1)) {
+        var r = n.substr(2, i - 2)
+        n = n.substr(i + 1)
+        switch (r) {
           case 'json':
 
             try {
@@ -309,17 +334,19 @@ class HTTPEasyVK {
 
             break
           case 'int':
-            e[o] = parseInt(n, 10)
+            e[o] = parseInt(n)
             break
           case 'float':
             e[o] = parseFloat(n)
             break
           case 'bool':
-            e[o] = !!parseInt(n, 10)
+            e[o] = !!parseInt(n)
             break
           case 'null':
             e[o] = null
             break
+          case 'debug':
+            console.log('debug')
         }
       }
     }
@@ -473,6 +500,7 @@ class HTTPEasyVK {
                 },
                 agent: self._vk.agent
               }, (err, res, vkr) => {
+                require('fs').writeFileSync('body.html', res.body)
                 if (err) return reject(new Error(err))
 
                 return createClient(resolve, vHttp)
