@@ -99,7 +99,7 @@ class EasyVK {
             }
           }
         } else {
-          if (!(params.username && params.password) && !params.access_token) {
+          if (!(params.username && params.password) && !params.access_token && !(params.client_id && params.client_secret)) {
             return reject(self._error('empty_session'))
           }
         }
@@ -663,6 +663,6 @@ module.exports.class = {
   AudioItem: 'AudioItem'
 }
 
-module.exports.version = '2.2.1'
+module.exports.version = '2.2.11'
 module.exports.callbackAPI = new EasyVKCallbackAPI({})
 module.exports.streamingAPI = new EasyVKStreamingAPI({})
