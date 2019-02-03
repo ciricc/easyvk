@@ -9,7 +9,9 @@
 ## [2.2.1] - 2019-03-02
 ### Добавления
 -   Добавлен метод поиска множества аудиозаписей сразу 
-```javascript vk.audio.searchAll(query, count) 
+```javascript
+let { client } = await vk.http.loginByForm() 
+client.audio.searchAll(query, count) 
 ```
 
 ### Исправления
