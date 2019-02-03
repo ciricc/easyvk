@@ -7,7 +7,7 @@
 This library helps you easily create a javascript application with VKontakte API!
 Official VK API: [vk.com/dev/](https://vk.com/dev/)
 
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/cfce75d7342d487c8b8766b7d2085d1d)](https://www.codacy.com/app/ciricc/easyvk?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ciricc/easyvk&amp;utm_campaign=Badge_Grade) [![Build Status](https://travis-ci.org/ciricc/easyvk.svg?branch=dev)](https://travis-ci.org/ciricc/easyvk) ![Downloads](https://img.shields.io/npm/dt/easyvk.svg?style=flat) ![Issues](https://img.shields.io/github/issues/ciricc/easyvk.svg?style=flat)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/cfce75d7342d487c8b8766b7d2085d1d)](https://www.codacy.com/app/ciricc/easyvk?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ciricc/easyvk&amp;utm_campaign=Badge_Grade) [![Build Status](https://travis-ci.org/ciricc/easyvk.svg?branch=master)](https://travis-ci.org/ciricc/easyvk) ![Downloads](https://img.shields.io/npm/dt/easyvk.svg?style=flat) ![Issues](https://img.shields.io/github/issues/ciricc/easyvk.svg?style=flat)
 ![Node version support](https://img.shields.io/node/v/easyvk.svg?style=flat) ![Npm version released](https://img.shields.io/npm/v/easyvk.svg?style=flat)
 
 | [Community](https://vk.com/club162208999) | [Документация на русском](https://ciricc.github.io/) |
