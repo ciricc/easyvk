@@ -218,16 +218,20 @@ class HTTPEasyVKClient {
       if (isMobile && method === 'post') {
         headers['x-requested-with'] = 'XMLHttpRequest'
       }
-
-      request[method]({
+      let requestParams = {
         jar: self._authjar,
         url: `${configuration.PROTOCOL}://${mobile}${configuration.BASE_DOMAIN}/` + file,
         form: form,
         encoding: 'binary',
         headers: headers,
         agent: self._vk.agent
-      }, (err, res, vkr) => {
-        require('fs').writeFileSync('res.body', res.body)
+      }
+
+      self._vk.debugger.push('request', requestParams)
+
+      request[method](requestParams, (err, res, vkr) => {
+        self._vk.debugger.push('response', res.body)
+
         if (err) {
           return reject(err)
         }
@@ -439,6 +443,8 @@ class HTTPEasyVK {
 
               let body = res.body
 
+              self._vk.debugger.push('response', res.body)
+
               let matches = body.match(/action="(.*?)"/)
 
               if (!matches) { // Если пользовтаель уже авторизован по кукисам, чекаем сессию
@@ -472,6 +478,8 @@ class HTTPEasyVK {
               }, (err, res) => {
                 if (err) return reject(err)
 
+                self._vk.debugger.push('response', res.body)
+
                 res = res.body.split('<!>')
                 res = self._parseResponse(res[5])
 
@@ -500,7 +508,8 @@ class HTTPEasyVK {
                 },
                 agent: self._vk.agent
               }, (err, res, vkr) => {
-                require('fs').writeFileSync('body.html', res.body)
+                self._vk.debugger.push('response', res.body)
+
                 if (err) return reject(new Error(err))
 
                 return createClient(resolve, vHttp)

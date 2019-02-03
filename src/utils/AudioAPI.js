@@ -426,6 +426,34 @@ class AudioAPI {
     })
   }
 
+  async searchAll (q = '', count = 1000) {
+    let self = this
+
+    return new Promise((resolve, reject) => {
+      let audios = []
+      let url = ''
+      async function iter (offset = 0) {
+        return self.search({
+          q: q,
+          offset: offset,
+          url
+        }).then(({ vkr, url: u }) => {
+          if (!url) url = u
+          audios = audios.concat(vkr)
+          if (audios.length < count && vkr.length) {
+            offset += 50
+            return iter(offset)
+          }
+          return true
+        })
+      }
+
+      return iter().then(() => {
+        return resolve(audios)
+      })
+    })
+  }
+
   search (params = {}) {
     let self = this
 
