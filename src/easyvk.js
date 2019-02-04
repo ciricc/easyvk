@@ -663,6 +663,6 @@ module.exports.class = {
   AudioItem: 'AudioItem'
 }
 
-module.exports.version = '2.2.12'
+module.exports.version = '2.2.13'
 module.exports.callbackAPI = new EasyVKCallbackAPI({})
 module.exports.streamingAPI = new EasyVKStreamingAPI({})
