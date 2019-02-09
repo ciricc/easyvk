@@ -13,7 +13,7 @@ easyvk({
   access_token: 'USER_TOKEN',
   reauth: true
 }).then(async (vk) => {
-  let {vkr: audios} = vk.call("audio.get")
+  let {vkr: audios} = await vk.call("audio.get")
 
   console.log(audios.items.length)
 })
