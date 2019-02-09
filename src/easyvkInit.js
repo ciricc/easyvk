@@ -162,6 +162,10 @@ async function checkInitParams (params = {}) {
       params.fields = params.fields.map(a => String(a))
     }
 
+    if (!params.userAgent) {
+      params.userAgent = configuration.DEFAULT_USER_AGENT
+    }
+
     resolve(params)
   })
 }

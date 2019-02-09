@@ -5,7 +5,7 @@ const fs = require('fs')
 
 // Modules
 
-const staticMethods = require('./utils/staticMethods.js')
+const StaticMethods = require('./utils/StaticMethods.js')
 const EasyVKUploader = require('./utils/uploader.js')
 const EasyVKLongPoll = require('./utils/longpoll.js')
 const EasyVKCallbackAPI = require('./utils/callbackapi.js')
@@ -141,7 +141,7 @@ class EasyVK {
           request.get({
             url: configuration.BASE_OAUTH_URL + 'token/?' + getData,
             headers: {
-              'User-Agent': 'KateMobileAndroid/52.2.1 lite-447 (Android 6.0; SDK 23; arm64-v8a; alps Razar; ru)'
+              'User-Agent': params.userAgent
             },
             agent: self.agent
           }, (err, res) => {
@@ -158,7 +158,10 @@ class EasyVK {
 
           request.get({
             url: configuration.BASE_OAUTH_URL + 'token/?' + getData,
-            agent: self.agent
+            agent: self.agent,
+            headers: {
+              'User-Agent': params.userAgent
+            }
           }, (err, res) => {
             completeSession(err, res, {
               credentials_flow: 1
@@ -183,7 +186,7 @@ class EasyVK {
       }
 
       function generateSessionFromResponse (vkr) {
-        let json = staticMethods.checkJSONErrors(vkr, reject)
+        let json = StaticMethods.checkJSONErrors(vkr, reject)
 
         if (json) {
           json = JSON.parse(JSON.stringify(json))
@@ -196,7 +199,7 @@ class EasyVK {
       function prepareRequest (getDataObject = {}) {
         let Obj = Object.assign(getDataObject, defaultDataParams)
 
-        Obj = staticMethods.urlencode(Obj)
+        Obj = StaticMethods.urlencode(Obj)
 
         if (self.debuggerRun) {
           try {
@@ -245,16 +248,19 @@ class EasyVK {
               fields: params.fields.join(',')
             }
 
-            getData = staticMethods.urlencode(getData)
+            getData = StaticMethods.urlencode(getData)
 
             request.get({
               url: configuration.BASE_CALL_URL + 'users.get?' + getData,
-              agent: self.agent
+              agent: self.agent,
+              headers: {
+                'User-agent': params.userAgent
+              }
             }, (err, res) => {
               let vkr = prepareResponse(err, res)
 
               if (vkr) {
-                let json = staticMethods.checkJSONErrors(vkr, reject)
+                let json = StaticMethods.checkJSONErrors(vkr, reject)
                 if (json) {
                   if (Array.isArray(json) && json.length === 0) {
                     appToken()
@@ -290,7 +296,7 @@ class EasyVK {
       function appToken () {
         let getData
 
-        getData = staticMethods.urlencode({
+        getData = StaticMethods.urlencode({
           access_token: params.access_token,
           v: params.api_v,
           lang: params.lang,
@@ -307,7 +313,10 @@ class EasyVK {
 
         request.get({
           url: configuration.BASE_CALL_URL + 'apps.get?' + getData,
-          agent: self.agent
+          agent: self.agent,
+          headers: {
+            'User-Agent': params.userAgent
+          }
         }, (err, res) => {
           if (err) {
             return reject(new Error(err))
@@ -326,7 +335,7 @@ class EasyVK {
           if (vkr) {
             let json
 
-            json = staticMethods.checkJSONErrors(vkr, (e) => {
+            json = StaticMethods.checkJSONErrors(vkr, (e) => {
               if (e.error_code === 5) {
                 groupToken()
               } else {
@@ -373,7 +382,7 @@ class EasyVK {
       function groupToken () {
         let getData
 
-        getData = staticMethods.urlencode({
+        getData = StaticMethods.urlencode({
           access_token: params.access_token,
           v: params.api_v,
           lang: params.lang,
@@ -390,7 +399,10 @@ class EasyVK {
 
         request.get({
           url: configuration.BASE_CALL_URL + 'groups.getById?' + getData,
-          proxy: params.proxy
+          proxy: params.proxy,
+          headers: {
+            'User-Agent': params.userAgent
+          }
         }, (err, res) => {
           if (err) {
             return reject(new Error(err))
@@ -407,7 +419,7 @@ class EasyVK {
           }
 
           if (vkr) {
-            let json = staticMethods.checkJSONErrors(vkr, reject)
+            let json = StaticMethods.checkJSONErrors(vkr, reject)
 
             if (json) {
               if (Array.isArray(json) && json.length === 0) {
@@ -459,6 +471,9 @@ class EasyVK {
         self.widgets = new EasyVKWidgets(self)
         self.bots = {}
         self.bots.longpoll = new EasyVKBotsLongPoll(self)
+        self._static = new StaticMethods({
+          userAgent: params.userAgent
+        })
 
         // Here is a middlewares will be saved
         self.middleWares = [async (data) => {
@@ -537,7 +552,7 @@ class EasyVK {
           methodType = 'get'
         }
 
-        if (!staticMethods.isObject(data)) reject(new Error('Data must be an object'))
+        if (!StaticMethods.isObject(data)) reject(new Error('Data must be an object'))
         if (!data.access_token) data.access_token = self.session.access_token
         if (!data.v) data.v = self.params.api_v
 
@@ -566,7 +581,7 @@ class EasyVK {
 
         data = FromMiddleWare.query
 
-        return staticMethods.call(methodName, data, methodType, self.debugger, self.agent).then((vkr) => {
+        return self._static.call(methodName, data, methodType, self.debugger, self.agent).then((vkr) => {
           if (_needSolve) {
             try {
               _resolverReCall(true)
@@ -663,6 +678,6 @@ module.exports.class = {
   AudioItem: 'AudioItem'
 }
 
-module.exports.version = '2.2.13'
+module.exports.version = '2.2.14'
 module.exports.callbackAPI = new EasyVKCallbackAPI({})
 module.exports.streamingAPI = new EasyVKStreamingAPI({})
