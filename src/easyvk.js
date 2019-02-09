@@ -5,7 +5,7 @@ const fs = require('fs')
 
 // Modules
 
-const StaticMethods = require('./utils/StaticMethods.js')
+const StaticMethods = require('./utils/staticMethods.js')
 const EasyVKUploader = require('./utils/uploader.js')
 const EasyVKLongPoll = require('./utils/longpoll.js')
 const EasyVKCallbackAPI = require('./utils/callbackapi.js')
