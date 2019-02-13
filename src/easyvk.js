@@ -1,6 +1,6 @@
 
 const request = require('request')
-const URL = require('url')
+const { URL } = require('url')
 const fs = require('fs')
 
 // Modules
@@ -19,8 +19,7 @@ const EasyVKHttp = require('./utils/http.js')
 const easyVKErrors = require('./utils/easyvkErrors.js')
 const EasyVKMiddlewares = require('./utils/middlewares.js')
 
-const HttpsProxyAgent = require('https-proxy-agent')
-const SocksProxyAgent = require('socks-proxy-agent')
+const ProxyAgent = require('proxy-agent')
 
 const https = require('https')
 
@@ -54,14 +53,20 @@ class EasyVK {
       params = self.params
 
       if (params.proxy) {
-        let options = new URL(params.proxy)
+
+        let options = new URL (params.proxy)
+        let opts = {}
+
+        for (let i in options) {
+          opts[i] = options[i]  
+        }
+        
+        options = opts
 
         options.keepAlive = true
         options.keepAliveMsecs = 30000
 
-        if (options.protocol.match('socks')) {
-          self.agent = new SocksProxyAgent(options, true)
-        } else { self.agent = new HttpsProxyAgent(options) }
+        self.agent = new ProxyAgent(options, true)
       } else {
         self.agent = new https.Agent({
           keepAlive: true,
