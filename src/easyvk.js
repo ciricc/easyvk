@@ -1,4 +1,3 @@
-
 const request = require('request')
 const { URL } = require('url')
 const fs = require('fs')
@@ -53,14 +52,13 @@ class EasyVK {
       params = self.params
 
       if (params.proxy) {
-
-        let options = new URL (params.proxy)
+        let options = new URL(params.proxy)
         let opts = {}
 
         for (let i in options) {
-          opts[i] = options[i]  
+          opts[i] = options[i]
         }
-        
+
         options = opts
 
         options.keepAlive = true
