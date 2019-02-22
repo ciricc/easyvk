@@ -551,7 +551,7 @@ class EasyVK {
       async function reCall (_needSolve, _resolverReCall, _rejecterReCall) {
         methodType = String(methodType).toLowerCase()
 
-        if (methodType !== 'get' || methodType !== 'post') {
+        if (methodType !== 'post') {
           methodType = 'get'
         }
 
@@ -681,6 +681,6 @@ module.exports.class = {
   AudioItem: 'AudioItem'
 }
 
-module.exports.version = '2.2.15'
+module.exports.version = '2.2.16'
 module.exports.callbackAPI = new EasyVKCallbackAPI({})
 module.exports.streamingAPI = new EasyVKStreamingAPI({})

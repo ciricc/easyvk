@@ -1,6 +1,10 @@
 # Изменения
 
 Все доступные изменения, начиная с <b>2.1.1</b> версии
+## \[2.2.16\] - 2019-02-22
+## Исправления
+-   Исправлена отправка post запроса
+-   Исправлена работа с прокси на более новых версиях Node.JS
 
 ## \[2.2.14\] - 2019-02-09
 ### Добавления
@@ -13,7 +17,7 @@ easyvk({
   access_token: 'USER_TOKEN',
   reauth: true
 }).then(async (vk) => {
-  let {vkr: audios} = await vk.call("audio.get")
+  let {vkr: audios} = vk.call("audio.get")
 
   console.log(audios.items.length)
 })
