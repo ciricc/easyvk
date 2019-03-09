@@ -134,7 +134,7 @@ class StaticMethods {
         url: configuration.BASE_CALL_URL + methodName
       }
 
-      let data2 = JSON.parse(JSON.stringify(data))
+      let data2 = Object.assign({}, data)
 
       if (methodType === 'post') {
         // prepare post request

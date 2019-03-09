@@ -153,13 +153,20 @@ class AudioAPI {
         offset: offset,
         owner_id: params.owner_id,
         playlist_id: playlistId,
-        type: 'playlist'
+        type: 'playlist',
+        track_type: 'default'
       }).then(res => {
         let json
 
         json = self._parseJSON(res.body, reject)
 
+        if (!params.count) {
+          params.count = 200
+        }
+
         let audios = json.list
+
+        audios = audios.slice(0, params.count)
 
         return self._getNormalAudiosWithURL(audios).then(audios => {
           if (!params.needAll) {
@@ -401,7 +408,7 @@ class AudioAPI {
           }
 
           if (withoutURL.length) {
-            setTimeout(nextAudios, 300)
+            setTimeout(nextAudios, 500)
           } else {
             let endAudios = []
 

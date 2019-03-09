@@ -1,11 +1,10 @@
-
 const request = require('request')
-const URL = require('url')
+const { URL } = require('url')
 const fs = require('fs')
 
 // Modules
 
-const StaticMethods = require('./utils/StaticMethods.js')
+const StaticMethods = require('./utils/staticMethods.js')
 const EasyVKUploader = require('./utils/uploader.js')
 const EasyVKLongPoll = require('./utils/longpoll.js')
 const EasyVKCallbackAPI = require('./utils/callbackapi.js')
@@ -19,8 +18,7 @@ const EasyVKHttp = require('./utils/http.js')
 const easyVKErrors = require('./utils/easyvkErrors.js')
 const EasyVKMiddlewares = require('./utils/middlewares.js')
 
-const HttpsProxyAgent = require('https-proxy-agent')
-const SocksProxyAgent = require('socks-proxy-agent')
+const ProxyAgent = require('proxy-agent')
 
 const https = require('https')
 
@@ -55,13 +53,18 @@ class EasyVK {
 
       if (params.proxy) {
         let options = new URL(params.proxy)
+        let opts = {}
+
+        for (let i in options) {
+          opts[i] = options[i]
+        }
+
+        options = opts
 
         options.keepAlive = true
         options.keepAliveMsecs = 30000
 
-        if (options.protocol.match('socks')) {
-          self.agent = new SocksProxyAgent(options, true)
-        } else { self.agent = new HttpsProxyAgent(options) }
+        self.agent = new ProxyAgent(options, true)
       } else {
         self.agent = new https.Agent({
           keepAlive: true,
@@ -548,7 +551,7 @@ class EasyVK {
       async function reCall (_needSolve, _resolverReCall, _rejecterReCall) {
         methodType = String(methodType).toLowerCase()
 
-        if (methodType !== 'get' || methodType !== 'post') {
+        if (methodType !== 'post') {
           methodType = 'get'
         }
 
@@ -678,6 +681,6 @@ module.exports.class = {
   AudioItem: 'AudioItem'
 }
 
-module.exports.version = '2.2.14'
+module.exports.version = '2.2.17'
 module.exports.callbackAPI = new EasyVKCallbackAPI({})
 module.exports.streamingAPI = new EasyVKStreamingAPI({})

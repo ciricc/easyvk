@@ -215,9 +215,10 @@ class HTTPEasyVKClient {
         'user_agent': self._config.user_agent
       }
 
-      if (isMobile && method === 'post') {
+      if (isMobile || method === 'post') {
         headers['x-requested-with'] = 'XMLHttpRequest'
       }
+
       let requestParams = {
         jar: self._authjar,
         url: `${configuration.PROTOCOL}://${mobile}${configuration.BASE_DOMAIN}/` + file,
@@ -248,7 +249,7 @@ class HTTPEasyVKClient {
           if (typeof json[indexJson] === 'object') json[5] = json[indexJson]
 
           if (typeof json[5] === 'string' && !ignoreStringError) {
-            return reject(new Error(json[5].slice(0, 250)))
+            return reject(new Error(json[5].slice(0, 250) || 'Empty error responded'))
           }
 
           if (!json[5] && !ignoreStringError) {
