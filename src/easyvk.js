@@ -125,6 +125,16 @@ class EasyVK {
         defaultDataParams.code = params.code
       }
 
+      if (!params.captchaHandler || !Object.prototype.toString.call(params.captchaHandler).match(/Function/)) {
+        params.captchaHandler = (thread) => {
+          throw self._error('captcha_error', {
+            captcha_key: thread.captcha_key,
+            captcha_sid: thread.captcha_sid,
+            captcha_img: thread.captcha_img
+          })
+        }
+      }
+
       self.captchaHandler = params.captchaHandler
 
       if (!session.access_token) { // If session file contents access_token, try auth with it
@@ -141,31 +151,7 @@ class EasyVK {
             libverify_support: 1
           }
 
-
-
-          async function makeAuth (_needSolve, _resolverReCall, _rejecterReCall) {
-            let queryData = prepareRequest(getData)
-            request.get({
-              url: configuration.BASE_OAUTH_URL + 'token/?' + queryData,
-              headers: {
-                'User-Agent': params.userAgent
-              },
-              agent: self.agent
-            }, (err, res) => {
-              completeSession(err, res, {
-                user_id: null
-              }).catch((err) => {
-                try {
-                  self._catchCaptcha({err, reCall: makeAuth, _needSolve, _resolverReCall, _rejecterReCall, data:getData, reject})
-                } catch (e) {
-                  reject(err)
-                }
-              })
-            })
-          }
-
-          makeAuth()
-
+          makeAuth(0, 0, 0, getData) // пиздец
         } else if (params.client_id) {
           let getData = {
             grant_type: 'client_credentials'
@@ -185,6 +171,27 @@ class EasyVK {
             }).catch(reject)
           })
         }
+      }
+
+      async function makeAuth (_needSolve, _resolverReCall, _rejecterReCall, getData) {
+        let queryData = prepareRequest(getData)
+        request.get({
+          url: configuration.BASE_OAUTH_URL + 'token/?' + queryData,
+          headers: {
+            'User-Agent': params.userAgent
+          },
+          agent: self.agent
+        }, (err, res) => {
+          completeSession(err, res, {
+            user_id: null
+          }).catch((err) => {
+            try {
+              self._catchCaptcha({ err, reCall: makeAuth, _needSolve, _resolverReCall, _rejecterReCall, data: getData, reject })
+            } catch (e) {
+              reject(err)
+            }
+          })
+        })
       }
 
       function completeSession (err, res, object = {}) {
@@ -604,7 +611,7 @@ class EasyVK {
           })
         }).catch((err) => {
           try {
-            self._catchCaptcha({err, reCall, _needSolve, _resolverReCall, _rejecterReCall, data, reject})
+            self._catchCaptcha({ err, reCall, _needSolve, _resolverReCall, _rejecterReCall, data, reject })
           } catch (e) {
             reject(err)
           }
@@ -616,11 +623,10 @@ class EasyVK {
   }
 
   _catchCaptcha (params = {}) {
-    
     let self = this
 
-    let {err, reCall, _needSolve, _resolverReCall, _rejecterReCall, data, reject} = params;
-    
+    let { err, reCall, _needSolve, _rejecterReCall, data, reject } = params
+
     let vkr = JSON.parse(err.message)
 
     if (vkr.error === 'need_captcha' || vkr.error.error_code === 14) {
@@ -648,7 +654,7 @@ class EasyVK {
           data.captcha_sid = captchaSid
 
           try {
-            reCall('NEED SOLVE', resolve, reject)
+            reCall('NEED SOLVE', resolve, reject, data)
           } catch (errorRecall) { /* Need pass it */ }
         })
       }
