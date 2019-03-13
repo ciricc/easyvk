@@ -215,7 +215,7 @@ class HTTPEasyVKClient {
         'user_agent': self._config.user_agent
       }
 
-      if (isMobile || method === 'post') {
+      if (isMobile && method === 'post') {
         headers['x-requested-with'] = 'XMLHttpRequest'
       }
 
@@ -236,8 +236,6 @@ class HTTPEasyVKClient {
         if (err) {
           return reject(err)
         }
-
-        res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString()
 
         if (!res.body.length) {
           return reject(self._vk._error('audio_api', {}, 'not_have_access'))

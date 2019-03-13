@@ -2,6 +2,7 @@
 
 const staticMethods = require('./staticMethods.js')
 const VKResponse = require('./VKResponse.js')
+const encoding = require('encoding')
 
 const querystring = require('querystring')
 
@@ -156,6 +157,8 @@ class AudioAPI {
         type: 'playlist',
         track_type: 'default'
       }).then(res => {
+        res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString()
+
         let json
 
         json = self._parseJSON(res.body, reject)
@@ -469,6 +472,8 @@ class AudioAPI {
           _ajax: 1,
           offset: params.offset
         }).then(res => {
+          res.body = encoding.convert(res.body, 'cp-1251', 'windows-1251').toString()
+
           let json = res.body
 
           if (!json) return reject(new Error('Not founded audios'))
@@ -672,9 +677,16 @@ class AudioAPI {
 
     function r (e) {
       if (!o() && ~e.indexOf('audio_api_unavailable')) {
-        var t = e.split('?extra=')[1].split('#')
-
-        var n = t[1] === '' ? '' : a(t[1])
+        let t
+        let alter
+        if (e.split('?extra=')[1] != undefined) {
+          t = e.split('?extra=')[1].split('#')
+          alter = t[1]
+        } else {
+          t = e.split('?extra')[0]
+          alter = t[0]
+        }
+        var n = alter === '' ? '' : a(alter)
         t = a(t[0])
         if (typeof n !== 'string' || !t) return e
         n = n ? n.split(String.fromCharCode(9)) : []
@@ -960,6 +972,8 @@ class AudioAPI {
         offset: params.offset || 0,
         owner_id: params.owner_id || self._vk.session.user_id
       }).then((res) => {
+        res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString()
+
         let json = self._parseJSON(res.body, reject)
 
         let playlists = json
