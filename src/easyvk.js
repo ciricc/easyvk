@@ -480,18 +480,39 @@ class EasyVK {
           fs.writeFileSync(params.session_file, '{}')
         }
 
-        self.uploader = new EasyVKUploader(self)
-        self.longpoll = new EasyVKLongPoll(self)
-        self.config = configuration
-        self.callbackAPI = new EasyVKCallbackAPI(self)
-        self.streamingAPI = new EasyVKStreamingAPI(self)
-        self.widgets = new EasyVKWidgets(self)
-        self.bots = {}
-        self.bots.longpoll = new EasyVKBotsLongPoll(self)
-        self._static = new StaticMethods({
-          userAgent: params.userAgent
-        })
+        if (params.utils.uploader !== false) {
+          self.uploader = new EasyVKUploader(self)
+        }
 
+        if (params.utils.widgets === false) {
+          self.widgets = new EasyVKWidgets(self)
+        }
+
+        if (params.utils.streamingAPI === true) {
+          self.streamingAPI = new EasyVKStreamingAPI(self)
+        }
+
+        if (params.utils.callbackAPI === true) {
+          self.callbackAPI = new EasyVKCallbackAPI(self)
+        }
+
+        if ((params.utils.http !== false && self.session.user_id) || params.utils.http === true) {
+          self.http = new EasyVKHttp(self)
+        }
+
+        if ((params.utils.bots !== false && (self.session.group_id || self.session.user_id)) || params.utils.bots === true) {
+          self.bots = {}
+          self.bots.longpoll = new EasyVKBotsLongPoll(self)
+          self._static = new StaticMethods({
+            userAgent: params.userAgent
+          })
+        }
+
+        if ((params.utils.longpoll !== false && (self.session.user_id)) || params.utils.longpoll === true) {
+          self.longpoll = new EasyVKLongPoll(self)
+        }
+
+        self.config = configuration
         // Here is a middlewares will be saved
         self.middleWares = [async (data) => {
           let next = data.next
@@ -502,7 +523,6 @@ class EasyVK {
         self._middlewaresController = new EasyVKMiddlewares(self)
 
         // http module for http requests from cookies and jar session
-        self.http = new EasyVKHttp(self)
 
         // Re init all cases
         self.session = new EasyVKSession(self, self.session)

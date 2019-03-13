@@ -80,6 +80,7 @@ easyvk({
 *   Use helpers - utility for creating something that you need everyday
 *   Use saved session, cache data to saved session
 *   Catch errors like Captcha error and others
+*   Configure all that you want or not (utils can bee disabled or enabled by you)
 
 ## EasyVK provide
 
@@ -98,7 +99,7 @@ You can read documentation <a href="https://ciricc.github.io/">here</a>
 ```javascript
 
 easyvk({
-  access_token: "{GROUP_TOKEN}",
+  access_token: "{USER_TOKEN}",
   reauth: true
 }).then(async (vk) => {
   
@@ -207,6 +208,9 @@ easyvk({
   easyvk({
     client_id: '{APP_SECRET_CODE}',
     client_secret: '{CLIENT_SECRET_CODE}',
+    utils: {
+      streamingAPI: true
+    }
   }).then((vk) => {
 
     const StreamingAPI = vk.streamingAPI
@@ -294,26 +298,34 @@ easyvk({
 
 ```javascript
     
-  vk.streamingAPI.connect(({connection: stream}) => {
-      
-      stream.initRules({
-        key1: 'кошка',
-        key2: 'собака -кот'
-      }).then(({log: changes}) => {
+  easyvk({
+    client_id: '{APP_SECRET_CODE}',
+    client_secret: '{CLIENT_SECRET_CODE}',
+    utils: {
+      streamingAPI: true
+    }
+  }).then(vk => {
+    vk.streamingAPI.connect(({connection: stream}) => {
         
-        console.log(changes.changedRules, changes.deletedRules, changes.addedRules);
+        stream.initRules({
+          key1: 'кошка',
+          key2: 'собака -кот'
+        }).then(({log: changes}) => {
+          
+          console.log(changes.changedRules, changes.deletedRules, changes.addedRules);
 
-        stream.on("post", (postEvent) => {
-          console.log("Post info: ", postEvent);
+          stream.on("post", (postEvent) => {
+            console.log("Post info: ", postEvent);
+          });
+          
+          //.on(...)
+          //.on("share")
+          //.on("comment") etc...
+
         });
-        
-        //.on(...)
-        //.on("share")
-        //.on("comment") etc...
 
-      });
-
-  });
+    });
+  })
 
 ```
 

@@ -166,6 +166,10 @@ async function checkInitParams (params = {}) {
       params.userAgent = configuration.DEFAULT_USER_AGENT
     }
 
+    if (!params.utils) {
+      params.utils = configuration.DEFAULT_UTILS
+    }
+
     resolve(params)
   })
 }
