@@ -69,7 +69,8 @@ class AudioAPI {
       AUDIO_ITEM_LONG_PERFORMER_BIT: 32,
       AUDIO_ITEM_UMA_BIT: 128,
       AUDIO_ITEM_REPLACEABLE: 512,
-      AUDIO_ITEM_EXPLICIT_BIT: 1024
+      AUDIO_ITEM_EXPLICIT_BIT: 1024,
+      AUDIO_ITEM_INDEX_RESTRICTION: 21
     }
 
     self.AudioMobileObject = {
@@ -388,7 +389,7 @@ class AudioAPI {
       for (let i = 0; i < audios.length; i++) {
         let audio = audios[i]
 
-        if (!audio[self.AudioObject.AUDIO_ITEM_INDEX_URL]) {
+        if (!audio[self.AudioObject.AUDIO_ITEM_INDEX_URL] && !audio[self.AudioObject.AUDIO_ITEM_INDEX_RESTRICTION]) {
           withoutURL.push(i)
         } else {
           audios_[i] = self._getAudioAsObject(audio)
@@ -558,7 +559,7 @@ class AudioAPI {
       })
     }
 
-    if (!source || source.length === 0) {
+    if ((!source || source.length === 0) && !audio[self.AudioObject.AUDIO_ITEM_INDEX_RESTRICTION]) {
       // need get reloaded audio
       return getAudioWithURL()
     }
@@ -575,6 +576,8 @@ class AudioAPI {
       performer: audio[self.AudioObject.AUDIO_ITEM_INDEX_PERFORMER],
       duration: audio[self.AudioObject.AUDIO_ITEM_INDEX_DURATION],
       covers: c,
+      is_restriction: !!audio[self.AudioObject.AUDIO_ITEM_INDEX_RESTRICTION],
+      extra: audio[self.AudioObject.AUDIO_ITEM_INDEX_EXTRA],
       coverUrl_s: cl[0] || '',
       coverUrl_p: cl[1] || '',
       flags: audio[self.AudioObject.AUDIO_ITEM_INDEX_FLAGS],
