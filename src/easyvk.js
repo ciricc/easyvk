@@ -125,6 +125,8 @@ class EasyVK {
         defaultDataParams.code = params.code
       }
 
+      self.captchaHandler = params.captchaHandler
+
       if (!session.access_token) { // If session file contents access_token, try auth with it
         if (params.access_token) {
           session.access_token = params.access_token
@@ -139,19 +141,31 @@ class EasyVK {
             libverify_support: 1
           }
 
-          getData = prepareRequest(getData)
 
-          request.get({
-            url: configuration.BASE_OAUTH_URL + 'token/?' + getData,
-            headers: {
-              'User-Agent': params.userAgent
-            },
-            agent: self.agent
-          }, (err, res) => {
-            completeSession(err, res, {
-              user_id: null
+
+          async function makeAuth (_needSolve, _resolverReCall, _rejecterReCall) {
+            let queryData = prepareRequest(getData)
+            request.get({
+              url: configuration.BASE_OAUTH_URL + 'token/?' + queryData,
+              headers: {
+                'User-Agent': params.userAgent
+              },
+              agent: self.agent
+            }, (err, res) => {
+              completeSession(err, res, {
+                user_id: null
+              }).catch((err) => {
+                try {
+                  self._catchCaptcha({err, reCall: makeAuth, _needSolve, _resolverReCall, _rejecterReCall, data:getData, reject})
+                } catch (e) {
+                  reject(err)
+                }
+              })
             })
-          })
+          }
+
+          makeAuth()
+
         } else if (params.client_id) {
           let getData = {
             grant_type: 'client_credentials'
@@ -168,28 +182,31 @@ class EasyVK {
           }, (err, res) => {
             completeSession(err, res, {
               credentials_flow: 1
-            })
+            }).catch(reject)
           })
         }
       }
 
       function completeSession (err, res, object = {}) {
-        let vkr = prepareResponse(err, res)
-        let json = generateSessionFromResponse(vkr)
+        return new Promise((resolve, reject) => {
+          let vkr = prepareResponse(err, res)
+          let json = generateSessionFromResponse(vkr, reject)
 
-        if (json) {
-          session = json
-          Object.assign(session, object)
-          initToken()
-        } else {
-          return reject(self._error('empty_response', {
-            response: vkr
-          }))
-        }
+          if (json) {
+            session = json
+            Object.assign(session, object)
+            initToken()
+            resolve(true)
+          } else {
+            return reject(self._error('empty_response', {
+              response: vkr
+            }))
+          }
+        })
       }
 
-      function generateSessionFromResponse (vkr) {
-        let json = StaticMethods.checkJSONErrors(vkr, reject)
+      function generateSessionFromResponse (vkr, rej) {
+        let json = StaticMethods.checkJSONErrors(vkr, rej || reject)
 
         if (json) {
           json = JSON.parse(JSON.stringify(json))
@@ -456,16 +473,6 @@ class EasyVK {
           fs.writeFileSync(params.session_file, '{}')
         }
 
-        if (!params.captchaHandler || !Object.prototype.toString.call(params.captchaHandler).match(/Function/)) {
-          params.captchaHandler = ({ captcha_sid: captchaSid, captcha_key: captchaKey }) => {
-            throw self._error('captcha_error', {
-              captcha_key: captchaKey,
-              captcha_sid: captchaSid
-            })
-          }
-        }
-
-        self.captchaHandler = params.captchaHandler
         self.uploader = new EasyVKUploader(self)
         self.longpoll = new EasyVKLongPoll(self)
         self.config = configuration
@@ -597,42 +604,7 @@ class EasyVK {
           })
         }).catch((err) => {
           try {
-            let vkr = JSON.parse(err.message)
-
-            if (vkr.error === 'need_captcha' || vkr.error.error_code === 14) {
-              if (_needSolve) {
-                try {
-                  _rejecterReCall({
-                    error: false,
-                    reCall: () => {
-                      return reCall()
-                    }
-                  })
-                } catch (e) {}
-
-                return
-              }
-
-              // Captcha error, handle it
-              const captchaSid = vkr.error.captcha_sid || vkr.captcha_sid
-              const captchaImg = vkr.error.captcha_img || vkr.captcha_img
-              let paramsForHandler = { captcha_sid: captchaSid, captcha_img: captchaImg, vk: self, params: data }
-
-              paramsForHandler.resolve = (captchaKey) => {
-                return new Promise((resolve, reject) => {
-                  data.captcha_key = captchaKey
-                  data.captcha_sid = captchaSid
-
-                  try {
-                    reCall('NEED SOLVE', resolve, reject)
-                  } catch (errorRecall) { /* Need pass it */ }
-                })
-              }
-
-              self.captchaHandler(paramsForHandler)
-            } else {
-              reject(err)
-            }
+            self._catchCaptcha({err, reCall, _needSolve, _resolverReCall, _rejecterReCall, data, reject})
           } catch (e) {
             reject(err)
           }
@@ -643,6 +615,49 @@ class EasyVK {
     })
   }
 
+  _catchCaptcha (params = {}) {
+    
+    let self = this
+
+    let {err, reCall, _needSolve, _resolverReCall, _rejecterReCall, data, reject} = params;
+    
+    let vkr = JSON.parse(err.message)
+
+    if (vkr.error === 'need_captcha' || vkr.error.error_code === 14) {
+      if (_needSolve) {
+        try {
+          _rejecterReCall({
+            error: false,
+            reCall: () => {
+              return reCall()
+            }
+          })
+        } catch (e) {}
+
+        return
+      }
+
+      // Captcha error, handle it
+      const captchaSid = vkr.error.captcha_sid || vkr.captcha_sid
+      const captchaImg = vkr.error.captcha_img || vkr.captcha_img
+      let paramsForHandler = { captcha_sid: captchaSid, captcha_img: captchaImg, vk: self, params: data }
+
+      paramsForHandler.resolve = (captchaKey) => {
+        return new Promise((resolve, reject) => {
+          data.captcha_key = captchaKey
+          data.captcha_sid = captchaSid
+
+          try {
+            reCall('NEED SOLVE', resolve, reject)
+          } catch (errorRecall) { /* Need pass it */ }
+        })
+      }
+
+      self.captchaHandler(paramsForHandler)
+    } else {
+      reject(err)
+    }
+  }
   /**
  *
  *  This function saves your session chnages to a params.sessionf_file file

@@ -166,6 +166,15 @@ async function checkInitParams (params = {}) {
       params.userAgent = configuration.DEFAULT_USER_AGENT
     }
 
+    if (!params.captchaHandler || !Object.prototype.toString.call(params.captchaHandler).match(/Function/)) {
+      params.captchaHandler = ({ captcha_sid: captchaSid, captcha_key: captchaKey }) => {
+        throw self._error('captcha_error', {
+          captcha_key: captchaKey,
+          captcha_sid: captchaSid
+        })
+      }
+    }
+
     resolve(params)
   })
 }
