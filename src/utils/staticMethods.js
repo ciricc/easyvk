@@ -8,8 +8,24 @@ const configuration = require('./configuration.js')
 const VKResponseError = require('./VKResponseError.js')
 
 class StaticMethods {
-  constructor (settings = {}) {
+  constructor (settings = {}, evkParams = {}) {
+    this.params = evkParams
     this.settings = settings
+
+    if (evkParams.mode.name === 'highload') {
+      this._requests = {}
+      this.canComplete = true
+
+      evkParams.mode.timeout = Number(evkParams.mode.timeout)
+
+      if (!evkParams.mode.timeout) {
+        evkParams.mode.timeout = 15
+      }
+    }
+  }
+
+  static createExecute (method = '', params = {}) {
+    return `API.${method}(${JSON.stringify(params)})`
   }
 
   static isString (n) {
@@ -217,7 +233,105 @@ class StaticMethods {
     })
   }
 
+  async _completeExecute (token = '') {
+    if (!token) throw 'Unused token'
+
+    let requests = this._requests[token]
+
+    if (!requests.stack) throw 'Unknow error'
+
+    let execCode
+    let execs = []
+    let stack = [...requests.stack]
+
+    requests.stack = []
+    this.canComplete = true
+
+    stack.forEach((requestExec) => {
+      execs.push(requestExec.exec)
+    })
+
+    execCode = `return [${execs.join(',')}];`
+
+    StaticMethods.call('execute', {
+      access_token: token,
+      v: this.params.api_v,
+      code: execCode
+    }, 'post').then((vkr) => {
+      vkr.forEach((val, i) => {
+        let req = stack[i]
+
+        if (val === false) {
+          let err = new Error('Error occured in execute method')
+
+          err.response = val
+          err.request = req
+          req.reject(err)
+        } else {
+          let vkr = VKResponse(StaticMethods, val)
+          req.resolve(vkr)
+        }
+      })
+    })
+  }
+
+  async initHighLoadRequest (method, data) {
+    let self = this
+
+    return new Promise((resolve, reject) => {
+      // disable custom version and language in execute methods
+      data.v = undefined
+      data.lang = undefined
+
+      let access_token = data.access_token
+      data.access_token = undefined
+
+      let requests = self._requests[access_token]
+
+      if (!requests) {
+        requests = self._requests[access_token] = {
+          stack: [],
+          timeoutId: 0
+        }
+      }
+
+      if (requests.timeoutId) {
+        clearTimeout(requests.timeoutId)
+      }
+
+      requests.stack.push({
+        exec: self.createExecute(method, data),
+        resolve,
+        reject
+      })
+
+      function complete () {
+        if (self.canComplete) {
+          self.canComplete = false
+          self._completeExecute(access_token)
+        }
+      }
+
+      if (requests.stack.length === 25) {
+        complete()
+        return
+      }
+
+      requests.timeoutId = setTimeout(function () {
+        complete()
+      }, self.params.mode.timeout)
+    })
+  }
+
+  createExecute () {
+    return StaticMethods.createExecute(...arguments)
+  }
+
   async call () {
+    if (this.params.mode.name === 'highload') {
+      return this.initHighLoadRequest(...arguments)
+    }
+
     return StaticMethods.call(...arguments, this.settings)
   }
 }

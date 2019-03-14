@@ -170,6 +170,20 @@ async function checkInitParams (params = {}) {
       params.utils = configuration.DEFAULT_UTILS
     }
 
+    if (!params.mode) {
+      params.mode = ''
+    }
+
+    if (staticMethods.isString(params.mode)) {
+      params.mode = {
+        name: params.mode
+      }
+    }
+
+    if (!params.mode.name) {
+      params.mode.name = 'default'
+    }
+
     resolve(params)
   })
 }

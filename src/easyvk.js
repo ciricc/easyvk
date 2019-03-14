@@ -503,14 +503,15 @@ class EasyVK {
         if ((params.utils.bots !== false && (self.session.group_id || self.session.user_id)) || params.utils.bots === true) {
           self.bots = {}
           self.bots.longpoll = new EasyVKBotsLongPoll(self)
-          self._static = new StaticMethods({
-            userAgent: params.userAgent
-          })
         }
 
         if ((params.utils.longpoll !== false && (self.session.user_id)) || params.utils.longpoll === true) {
           self.longpoll = new EasyVKLongPoll(self)
         }
+
+        self._static = new StaticMethods({
+          userAgent: params.userAgent
+        }, self.params)
 
         self.config = configuration
         // Here is a middlewares will be saved
