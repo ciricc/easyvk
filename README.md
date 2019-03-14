@@ -72,6 +72,7 @@ easyvk({
 *   <b> Create Bots </b>
 *   Manage groups
 *   Use LongPoll: <b>Bots LongPoll (groups) and User LongPoll</b>
+*   Create high loading projects with highload mode
 *   Use <b>Callback API</b> (like creating your server to listen to group events)
 *   Manage your stream based on official <b>Streaming API</b>, listen to events and collect data to create statistic and metrics
 *   Upload your files to the server
@@ -94,13 +95,14 @@ You can read documentation <a href="https://ciricc.github.io/">here</a>
 
 ## Рекомендации по производительности ботов
 Чтобы Ваши боты работали еще быстрее, я рекомендую использовать не Bots Longpoll API, а обычный LongPoll API.
-Обновление, которое повышает производтельность находится на версии 2.1.1, версии ниже работают в два раза медленнее, поэтому проверьте, какая версия у Вас установлена.
+Обновление, которое повышает производительность находится на версии 2.1.1, версии ниже работают в два раза медленнее, поэтому проверьте, какая версия у Вас установлена. Также, чтобы ваши боты работали с большим количеством пользователей, я рекомендую использовать режим highload
 
 ```javascript
 
 easyvk({
   access_token: "{USER_TOKEN}",
-  reauth: true
+  reauth: true,
+  mode: 'highload'
 }).then(async (vk) => {
   
   let { connection } = await (vk.longpoll.connect());
@@ -130,6 +132,29 @@ easyvk({
 ## Что дает EasyVK
 
 Узнайте, зачем Вам может понадобиться EasyVK, и что именно он может Вам дать!
+
+### Режим больших нагрузок
+
+В Easy VK есть режим `highload`, включая который, вы сможете использовать все возможности API ВКонтакте даже при высоких нагрузках. Этот режим дает знать библиотеке ,что все запросы необходимо выполнять через метод execute, который выполняет до 25 запросов в секунду.
+
+Может пригодиться чат-ботам, в которых сообщений в тысячи раз больше, чем пользователей, или тем ботам, в которых очень большая нагрузка
+
+```javascript
+easyvk({
+  access_token: "{GROUP_TOKEN}",
+  reauth: true,
+  mode: {
+    timeout: 10,
+    name: 'highload'
+  }
+}).then(async (vk) => {
+  
+  let { connection } = await vk.bots.longpoll.connect()
+
+  connection.on('message_new', console.log)
+
+})
+```
 
 ### Плагины
 
