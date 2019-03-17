@@ -234,11 +234,11 @@ class StaticMethods {
   }
 
   async _completeExecute (token = '') {
-    if (!token) throw 'Unused token'
+    if (!token) throw new Error('Unused token')
 
     let requests = this._requests[token]
 
-    if (!requests.stack) throw 'Unknow error'
+    if (!requests.stack) throw new Error('Unknow error')
 
     let execCode
     let execs = []
@@ -284,13 +284,13 @@ class StaticMethods {
       data.v = undefined
       data.lang = undefined
 
-      let access_token = data.access_token
+      let accessToken = data.access_token
       data.access_token = undefined
 
-      let requests = self._requests[access_token]
+      let requests = self._requests[accessToken]
 
       if (!requests) {
-        requests = self._requests[access_token] = {
+        requests = self._requests[accessToken] = {
           stack: [],
           timeoutId: 0
         }
@@ -309,7 +309,7 @@ class StaticMethods {
       function complete () {
         if (self.canComplete) {
           self.canComplete = false
-          self._completeExecute(access_token)
+          self._completeExecute(accessToken)
         }
       }
 
@@ -329,7 +329,7 @@ class StaticMethods {
   }
 
   async call () {
-    if (this.params.mode.name === 'highload' && arguments[0] !== "execute") {
+    if (this.params.mode.name === 'highload' && arguments[0] !== 'execute') {
       return this.initHighLoadRequest(...arguments)
     }
 

@@ -10,7 +10,6 @@
 'use strict'
 
 const configuration = require('./configuration.js')
-const encoding = require('encoding')
 
 const fs = require('fs')
 const request = require('request')

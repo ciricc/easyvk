@@ -682,7 +682,7 @@ class AudioAPI {
       if (!o() && ~e.indexOf('audio_api_unavailable')) {
         let t
         let alter
-        if (e.split('?extra=')[1] != undefined) {
+        if (e.split('?extra=')[1] !== undefined) {
           t = e.split('?extra=')[1].split('#')
           alter = t[1]
         } else {
