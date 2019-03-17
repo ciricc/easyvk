@@ -143,7 +143,7 @@ easyvk({
 easyvk({
   access_token: "{GROUP_TOKEN}",
   reauth: true,
-  mode: {
+  mode: 'highload' || {
     timeout: 10,
     name: 'highload'
   }

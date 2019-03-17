@@ -256,7 +256,8 @@ class StaticMethods {
     StaticMethods.call('execute', {
       access_token: token,
       v: this.params.api_v,
-      code: execCode
+      code: execCode,
+      lang: this.params.lang
     }, 'post').then((vkr) => {
       vkr.forEach((val, i) => {
         let req = stack[i]
@@ -328,7 +329,7 @@ class StaticMethods {
   }
 
   async call () {
-    if (this.params.mode.name === 'highload') {
+    if (this.params.mode.name === 'highload' && arguments[0] !== "execute") {
       return this.initHighLoadRequest(...arguments)
     }
 
