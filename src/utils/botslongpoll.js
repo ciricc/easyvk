@@ -157,6 +157,11 @@ class LongPollConnection extends EventEmitter {
             return self.emit('failure', vkr)
           }
         }
+
+        if (vkr.error) {
+          self.emit('error', vkr.error)
+          return reconnect()
+        }
       })
     }
   }
@@ -215,6 +220,8 @@ class LongPollConnection extends EventEmitter {
 
   debug (debugg) {
     let self = this
+
+    console.warn('This method will be deprecated in next releases, please, use new feature params.debug = new easyvk.Debugger()')
 
     if (Object.prototype.toString.call(debugg).match(/function/i)) {
       self._debug = debugg

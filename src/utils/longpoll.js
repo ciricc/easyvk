@@ -30,6 +30,18 @@ class LongPollConnection extends EventEmitter {
 
     init()
 
+    async function reconnect () {
+      return self._vk.call('messages.getLongPollServer', self.config.userConfig.forGetLongPollServer).then(({ vkr }) => {
+        self.config.longpollServer = vkr.server
+        self.config.longpollTs = vkr.ts
+        self.config.longpollKey = vkr.key
+
+        return init() // reconnect with new parameters
+      }).catch((err) => {
+        self.emit('reconnectError', new Error(err))
+      })
+    }
+
     async function init () {
       let server, forLongPollServer, _w
       let httpsPref = 'https://'
@@ -153,6 +165,11 @@ class LongPollConnection extends EventEmitter {
           } else {
             return self.emit('failure', vkr)
           }
+        }
+
+        if (vkr.error) {
+          self.emit('error', vkr.error)
+          return reconnect()
         }
       })
     }

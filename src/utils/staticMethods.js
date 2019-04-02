@@ -300,6 +300,9 @@ class StaticMethods {
           req.resolve(vkr)
         }
       })
+    }).catch(err => {
+      let req = stack[stack.length - 1]
+      req.reject(err)
     })
   }
 
