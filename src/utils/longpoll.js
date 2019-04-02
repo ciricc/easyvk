@@ -4,6 +4,7 @@ const request = require('request')
 const staticMethods = require('./staticMethods.js')
 const EventEmitter = require('fast-event-emitter')
 const EasyVKMiddlewares = require('./middlewares.js')
+const Debugger = require('./debugger.class.js')
 
 class LongPollConnection extends EventEmitter {
   constructor (lpSettings, vk) {
@@ -74,18 +75,27 @@ class LongPollConnection extends EventEmitter {
         data: params
       })
 
+      self._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
+        url: params.url,
+        query: forLongPollServer,
+        method: 'GET',
+        section: 'longpoll'
+      })
+
       self.lpConnection = request.get(params, (err, res) => {
         if (err) {
           return self.emit('error', err)
         }
 
-        if (self._vk.debugger) {
+        if (self._vk._debugger) {
           try {
-            self._vk.debugger.push('response', res.body)
+            self._vk._debugger.push('response', res.body)
           } catch (e) {
             // Ignore
           }
         }
+
+        self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, { body: res.body, section: 'longpoll' })
 
         self._debug({
           type: 'pollResponse',
@@ -235,6 +245,8 @@ class LongPollConnection extends EventEmitter {
 
   debug (debugg) {
     let self = this
+
+    console.warn('This method will be deprecated in next releases, please, use new feature params.debug = new easyvk.Debugger()')
 
     if (Object.prototype.toString.call(debugg).match(/function/i)) {
       self._debugg = debugg

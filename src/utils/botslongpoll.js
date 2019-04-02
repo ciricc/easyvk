@@ -11,6 +11,8 @@ const request = require('request')
 const staticMethods = require('./staticMethods.js')
 const EasyVKMiddlewares = require('./middlewares.js')
 
+const Debugger = require('./debugger.class.js')
+
 const EventEmitter = require('fast-event-emitter')
 
 // LongPollConnection initing automatically by me
@@ -82,6 +84,13 @@ class LongPollConnection extends EventEmitter {
         })
       }
 
+      self._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
+        url: params.url,
+        query: forLongPollServer,
+        method: 'GET',
+        section: 'bots.longpoll'
+      })
+
       self.lpConnection = request.get(params, (err, res) => {
         if (err) {
           if (err.toString().match('TIMEDOUT') || err.toString().match('ENOENT')) {
@@ -91,13 +100,18 @@ class LongPollConnection extends EventEmitter {
           return self.emit('error', err)
         }
 
-        if (self._vk.debugger) {
+        if (self._vk._debugger) {
           try {
-            self._vk.debugger.push('response', res.body)
+            self._vk._debugger.push('response', res.body)
           } catch (e) {
             // Ignore
           }
         }
+
+        self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
+          body: res.body,
+          section: 'bots.longpoll'
+        })
 
         if (self._debug) {
           self._debug({

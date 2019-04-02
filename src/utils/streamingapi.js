@@ -16,6 +16,7 @@ const EventEmitter = require('fast-event-emitter')
 
 const configuration = require('./configuration.js')
 const WS = require('ws')
+const Debugger = require('./debugger.class.js')
 
 class StreamingAPIConnection extends EventEmitter {
   constructor (vk, session, wsc) {
@@ -92,6 +93,15 @@ class StreamingAPIConnection extends EventEmitter {
           agent: self._vk.agent
         }
 
+        if (this._vk) {
+          this._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
+            url: queryParams.uri,
+            query: json,
+            section: 'streamingAPI',
+            method: method.toUpperCase()
+          })
+        }
+
         request[method](queryParams, (err, res) => {
           if (err) {
             return reject(new Error(err))
@@ -99,12 +109,19 @@ class StreamingAPIConnection extends EventEmitter {
 
           let vkr = res.body
 
-          if (self._vk.debugger) {
+          if (self._vk && self._vk._debugger) {
             try {
-              self._vk.debugger.push('response', vkr)
+              self._vk._debugger.push('response', vkr)
             } catch (e) {
               // Ignore
             }
+          }
+
+          if (this._vk) {
+            this._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
+              body: vkr,
+              section: 'streamingAPI'
+            })
           }
 
           if (vkr) {
@@ -446,8 +463,19 @@ class StreamingAPIConnector {
 
           getParams = staticMethods.urlencode(getParams)
 
+          let url = `${configuration.BASE_OAUTH_URL}access_token?${getParams}`
+
+          if (this._vk) {
+            this._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
+              url,
+              query: getParams,
+              section: 'streamingAPI',
+              method: 'GET'
+            })
+          }
+
           request.get({
-            url: `${configuration.BASE_OAUTH_URL}access_token?${getParams}`,
+            url,
             agent: self._vk.agent
           }, (err, res) => {
             if (err) {
@@ -455,12 +483,19 @@ class StreamingAPIConnector {
             }
 
             let vkr = res.body
-            if (self._vk.debugger) {
+            if (self._vk && self._vk._debugger) {
               try {
-                self._vk.debugger.push('response', vkr)
+                self._vk._debugger.push('response', vkr)
               } catch (e) {
                 // Ignore
               }
+            }
+
+            if (this._vk) {
+              this._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
+                body: vkr,
+                section: 'streamingAPI'
+              })
             }
 
             if (vkr) {

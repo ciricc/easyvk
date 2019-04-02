@@ -11,9 +11,11 @@
 
 'use strict'
 
+const Debugger = require('./utils/debugger.class.js')
 const staticMethods = require('./utils/staticMethods.js')
 const configuration = require('./utils/configuration.js')
 const EasyVKRequestsDebugger = require('./utils/debugger.js')
+
 const EasyVK = require('./easyvk.js')
 
 let debuggerRun = new EasyVKRequestsDebugger(Boolean(false))
@@ -26,6 +28,7 @@ module.exports.callbackAPI = EasyVK.callbackAPI
 module.exports.streamingAPI = EasyVK.streamingAPI
 module.exports.classes = EasyVK.class
 module.exports.is = EasyVK.is
+module.exports.Debugger = Debugger
 
 /**
  *
@@ -183,6 +186,8 @@ async function checkInitParams (params = {}) {
     if (!params.mode.name) {
       params.mode.name = 'default'
     }
+
+    if (params.debug && !(params.debug instanceof Debugger)) return reject(new Error('Debug parameter must instances only from Debugger class'))
 
     resolve(params)
   })

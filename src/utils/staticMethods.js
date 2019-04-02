@@ -6,6 +6,7 @@ const querystring = require('querystring')
 const VKResponse = require('./VKResponse.js')
 const configuration = require('./configuration.js')
 const VKResponseError = require('./VKResponseError.js')
+const Debugger = require('./debugger.class.js')
 
 class StaticMethods {
   constructor (settings = {}, evkParams = {}) {
@@ -162,6 +163,15 @@ class StaticMethods {
           'User-agent': settings.userAgent
         }
 
+        if (settings.debug) {
+          settings.debug(Debugger.EVENT_REQUEST_TYPE, {
+            url: callParams.url,
+            method: 'POST',
+            query: data,
+            section: 'vk.call'
+          })
+        }
+
         // Nice request recommendtion
         for (let i in callParams.form) {
           if (self.isObject(callParams.form[i])) { callParams.form[i] = JSON.stringify(callParams.form[i]) }
@@ -189,6 +199,16 @@ class StaticMethods {
             'User-Agent': settings.userAgent
           }
         }
+
+        if (settings.debug) {
+          settings.debug(Debugger.EVENT_REQUEST_TYPE, {
+            url: 'https://' + options.host + options.path,
+            method: 'GET',
+            query: data,
+            section: 'vk.call'
+          })
+        }
+
         return https.get(options, (res) => {
           let vkr = ''
           res.on('data', (chu) => {
@@ -215,6 +235,13 @@ class StaticMethods {
             try {
               debuggerIS.push('response', vkr)
             } catch (e) {}
+          }
+
+          if (settings.debug) {
+            settings.debug(Debugger.EVENT_RESPONSE_TYPE, {
+              body: vkr,
+              section: 'vk.call'
+            })
           }
 
           let json = self.checkJSONErrors(vkr, reject)

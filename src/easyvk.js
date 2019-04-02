@@ -17,6 +17,7 @@ const EasyVKSession = require('./utils/session.js')
 const EasyVKHttp = require('./utils/http.js')
 const easyVKErrors = require('./utils/easyvkErrors.js')
 const EasyVKMiddlewares = require('./utils/middlewares.js')
+const DebuggerClass = require('./utils/debugger.class.js')
 
 const ProxyAgent = require('proxy-agent')
 
@@ -35,12 +36,28 @@ class EasyVK {
   constructor (params, debuggerRun) {
     this.params = params
 
-    this.debugger = new EasyVKRequestsDebugger(this)
+    this._debugger = new EasyVKRequestsDebugger(this)
 
-    this.debuggerRun = debuggerRun || this.debugger
+    this.debug = (t, d) => {
+      if (this.params.debug) {
+        this.params.debug.emit(DebuggerClass._toRaw(t), d)
+      }
+    }
+
+    this.debuggerRun = debuggerRun || this._debugger
+
     this._errors = easyVKErrors
 
     this._errors.setLang(params.lang)
+  }
+
+  get debugger () {
+    console.warn('Debugger property will be deprecated in next releases. Please, use new Debugger() and set it up in the easyvk configuration like params.debug')
+    return this._debugger
+  }
+
+  set debugger (d) {
+    return this._debugger = d
   }
 
   async _init () {
@@ -159,12 +176,21 @@ class EasyVK {
 
           getData = prepareRequest(getData)
 
+          let url = configuration.BASE_OAUTH_URL + 'token/?' + getData
+          let headers = {
+            'User-Agent': params.userAgent
+          }
+
+          self.debug(DebuggerClass.EVENT_REQUEST_TYPE, {
+            url: url,
+            query: getData,
+            method: 'GET'
+          })
+
           request.get({
-            url: configuration.BASE_OAUTH_URL + 'token/?' + getData,
+            url,
             agent: self.agent,
-            headers: {
-              'User-Agent': params.userAgent
-            }
+            headers: headers
           }, (err, res) => {
             completeSession(err, res, {
               credentials_flow: 1
@@ -175,8 +201,16 @@ class EasyVK {
 
       async function makeAuth (_needSolve, _resolverReCall, _rejecterReCall, getData) {
         let queryData = prepareRequest(getData)
+        let url = configuration.BASE_OAUTH_URL + 'token/?' + queryData
+
+        self.debug(DebuggerClass.EVENT_REQUEST_TYPE, {
+          url: url,
+          query: queryData,
+          method: 'GET'
+        })
+
         request.get({
-          url: configuration.BASE_OAUTH_URL + 'token/?' + queryData,
+          url,
           headers: {
             'User-Agent': params.userAgent
           },
@@ -254,6 +288,8 @@ class EasyVK {
           }
         }
 
+        self.debug(DebuggerClass.EVENT_RESPONSE_TYPE, { body: vkr })
+
         return vkr
       }
 
@@ -276,9 +312,16 @@ class EasyVK {
             }
 
             getData = StaticMethods.urlencode(getData)
+            let url = configuration.BASE_CALL_URL + 'users.get?' + getData
+
+            self.debug(DebuggerClass.EVENT_REQUEST_TYPE, {
+              url,
+              query: getData,
+              method: 'GET'
+            })
 
             request.get({
-              url: configuration.BASE_CALL_URL + 'users.get?' + getData,
+              url,
               agent: self.agent,
               headers: {
                 'User-agent': params.userAgent
@@ -338,8 +381,16 @@ class EasyVK {
           }
         }
 
+        let url = configuration.BASE_CALL_URL + 'apps.get?' + getData
+
+        self.debug(DebuggerClass.EVENT_REQUEST_TYPE, {
+          url,
+          query: getData,
+          method: 'GET'
+        })
+
         request.get({
-          url: configuration.BASE_CALL_URL + 'apps.get?' + getData,
+          url,
           agent: self.agent,
           headers: {
             'User-Agent': params.userAgent
@@ -358,6 +409,8 @@ class EasyVK {
               // Ignore
             }
           }
+
+          self.debug(DebuggerClass.EVENT_RESPONSE_TYPE, { body: vkr })
 
           if (vkr) {
             let json
@@ -424,8 +477,16 @@ class EasyVK {
           }
         }
 
+        let url = configuration.BASE_CALL_URL + 'groups.getById?' + getData
+
+        self.debug(DebuggerClass.EVENT_REQUEST_TYPE, {
+          url,
+          query: getData,
+          method: 'GET'
+        })
+
         request.get({
-          url: configuration.BASE_CALL_URL + 'groups.getById?' + getData,
+          url,
           proxy: params.proxy,
           headers: {
             'User-Agent': params.userAgent
@@ -444,6 +505,8 @@ class EasyVK {
               // Ignore
             }
           }
+
+          self.debug(DebuggerClass.EVENT_RESPONSE_TYPE, { body: vkr })
 
           if (vkr) {
             let json = StaticMethods.checkJSONErrors(vkr, reject)
@@ -510,7 +573,8 @@ class EasyVK {
         }
 
         self._static = new StaticMethods({
-          userAgent: params.userAgent
+          userAgent: params.userAgent,
+          debug: self.debug
         }, self.params)
 
         self.config = configuration
@@ -527,15 +591,6 @@ class EasyVK {
 
         // Re init all cases
         self.session = new EasyVKSession(self, self.session)
-
-        Object.defineProperty(self, 'helpers', {
-          get: () => {
-            throw self._error('method_deprecated', {
-              from: '1.3.0',
-              method: 'helpers'
-            })
-          }
-        })
 
         if (params.save_session) {
           return self.session.save().then(() => {
@@ -619,7 +674,7 @@ class EasyVK {
 
         data = FromMiddleWare.query
 
-        return self._static.call(methodName, data, methodType, self.debugger, self.agent).then((vkr) => {
+        return self._static.call(methodName, data, methodType, self._debugger, self.agent).then((vkr) => {
           if (_needSolve) {
             try {
               _resolverReCall(true)
@@ -685,23 +740,6 @@ class EasyVK {
       reject(err)
     }
   }
-  /**
- *
- *  This function saves your session chnages to a params.sessionf_file file
- *
- *  @deprecated
- *  @return EasyVK
- *
- */
-
-  saveSession () {
-    let self = this
-
-    throw self._error('method_deprecated', {
-      from: '1.2',
-      method: 'saveSession'
-    })
-  }
 
   // Ony for mer
   _error (...args) {
@@ -723,6 +761,6 @@ module.exports.class = {
   AudioItem: 'AudioItem'
 }
 
-module.exports.version = '2.3.0'
+module.exports.version = '2.4.0'
 module.exports.callbackAPI = new EasyVKCallbackAPI({})
 module.exports.streamingAPI = new EasyVKStreamingAPI({})
