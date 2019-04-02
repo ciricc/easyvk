@@ -57,7 +57,7 @@ class EasyVK {
   }
 
   set debugger (d) {
-    return this._debugger = d
+    this._debugger = d
   }
 
   async _init () {
