@@ -52,7 +52,7 @@ class EasyVK {
   }
 
   get debugger () {
-    console.warn('Debugger property will be deprecated in next releases. Please, use new Debugger() and set it up in the easyvk configuration like params.debug')
+    console.warn('[Deprecated property warning] \nvk.debugger property will be deprecated in next releases. Please, use new easyvk.Debugger() and set it up in the easyvk configuration like params.debug = myDebugger')
     return this._debugger
   }
 

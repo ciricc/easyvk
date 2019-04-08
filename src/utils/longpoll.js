@@ -263,7 +263,7 @@ class LongPollConnection extends EventEmitter {
   debug (debugg) {
     let self = this
 
-    console.warn('This method will be deprecated in next releases, please, use new feature params.debug = new easyvk.Debugger()')
+    console.warn('[Deprecated method warning] \nThis method will be deprecated in next releases. Please, use new easyvk.Debugger() and set it up in the easyvk configuration like params.debug = myDebugger')
 
     if (Object.prototype.toString.call(debugg).match(/function/i)) {
       self._debugg = debugg
