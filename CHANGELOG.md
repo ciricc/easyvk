@@ -24,6 +24,28 @@ easyvk({...{
 -   Исправлена работа метода `client.readFeedStories()` для прочтения историй со стены
 
 ### Добавления и изменения
+-   Добавлена работа с `fs.ReadStream` для метода `uploader.uploadFile`. Теперь кроме имени файла можно передавать объект `ReadStream`
+```javascript
+const fs = require('fs')
+const path = require('path')
+
+easyvk({... {
+  utils: {
+    uploader: true
+  }
+}}).then(vk => {
+  vk.uploader.getUploadURL('docs.getUploadServer').then(({url}) => {
+    
+    let stream = fs.createReadStream(path.join(__dirname, 't.txt'))
+    
+    vk.uploader.uploadFile(url, stream, 'file').then(({vkr}) => {
+      console.log(vkr);
+    }).catch(console.log)
+
+  })
+})
+
+```
 -   Для `static` методов добавлен новый метод `static.createExecute()`
 
 Метод создает строковое представление запроса для VK Script
