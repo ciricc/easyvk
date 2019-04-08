@@ -104,13 +104,18 @@ class EasyVK {
         if (data) {
           try {
             data = JSON.parse(data)
-
-            if (data.access_token) {
-              session = new EasyVKSession(self, data)
-              initToken()
-            } else {
-              if (!(params.username && params.password) && !params.access_token && !params.client_id && params.client_secret) {
-                return reject(self._error('empty_session'))
+            if (
+              (data.access_token && data.access_token === params.access_token) || // If config token is session token
+              (params.username && params.username === data.username) ||
+              (params.client_id && params.client_id === data.client_id)// or if login given, it need be same
+            ) {
+              if (data.access_token) {
+                session = new EasyVKSession(self, data)
+                return initToken()
+              } else {
+                if (!(params.username && params.password) && !params.access_token && !params.client_id && params.client_secret) {
+                  return reject(self._error('empty_session'))
+                }
               }
             }
           } catch (e) {
@@ -193,7 +198,8 @@ class EasyVK {
             headers: headers
           }, (err, res) => {
             completeSession(err, res, {
-              credentials_flow: 1
+              credentials_flow: 1,
+              client_id: params.client_id
             }).catch(reject)
           })
         }
@@ -338,6 +344,7 @@ class EasyVK {
                     session.user_id = json[0].id
                     session.first_name = json[0].first_name
                     session.last_name = json[0].last_name
+                    session.username = params.username
 
                     for (let i = 0; i < params.fields.length; i++) {
                       if (json[0][params.fields[i]] && session[params.fields[i]] === undefined) {
