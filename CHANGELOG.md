@@ -24,6 +24,16 @@ easyvk({...{
 -   Исправлена работа метода `client.readFeedStories()` для прочтения историй со стены
 
 ### Добавления и изменения
+-   Для `static` методов добавлен новый метод `static.createExecute()`
+
+Метод создает строковое представление запроса для VK Script
+```javascript
+easyvk.static.createExecute('messages.send', {
+  peer_id: 1,
+  v: '5.90',
+  lang: 'en'
+}) // 'API.messages.send({"peer_id": 1})'
+```
 -   Добавлен новый объект (переписанный старый) `Debugger`, теперь дебагинг всех запросов и их ответов возможен с помощью него <b>В следующих обновлениях все методы, связанные с работой прошлого Debugger'а, в том числе и DebuggerRun, будут удалены (сейчас об этом идет предупреждение)</b>
 ```javascript
 const easyvk = require('easyvk');

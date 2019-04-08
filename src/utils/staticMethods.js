@@ -26,6 +26,8 @@ class StaticMethods {
   }
 
   static createExecute (method = '', params = {}) {
+    params.v = undefined
+    params.lang = undefined
     return `API.${method}(${JSON.stringify(params)})`
   }
 
