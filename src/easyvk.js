@@ -107,7 +107,7 @@ class EasyVK {
             if (
               (data.access_token && data.access_token === params.access_token) || // If config token is session token
               (params.username && params.username === data.username) ||
-              (params.client_id && params.client_id === data.client_id)// or if login given, it need be same
+              (params.client_id && params.client_id === data.client_id && !params.access_token && !params.username)// or if login given, it need be same
             ) {
               if (data.access_token) {
                 session = new EasyVKSession(self, data)

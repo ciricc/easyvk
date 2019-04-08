@@ -109,8 +109,13 @@ class HTTPEasyVKClient {
 
     let storiesMatch, superStories
 
-    storiesMatch = /cur\['stories_list_profile'\]=\[(.*?)\];/
-    superStories = /cur\['stories_list_profile'\]=/
+    if (type === 'feed') {
+      storiesMatch = /cur\['stories_list_feed'\]=\[(.*?)\];/
+      superStories = /cur\['stories_list_feed'\]=/
+    } else {
+      storiesMatch = /cur\['stories_list_profile'\]=\[(.*?)\];/
+      superStories = /cur\['stories_list_profile'\]=/
+    }
 
     let stories = response.match(storiesMatch)
 
@@ -196,12 +201,13 @@ class HTTPEasyVKClient {
         // parse stories
 
         let stories = self.__getStories(res.body, 'feed')
+
         let i = 0
 
         stories.forEach((story) => {
           if (Array.isArray(story.items)) {
             story.items.forEach(item => {
-              self.__readStory(story.read_hash, item.raw_id, 'feed')
+              self.__readStory(story.read_hash, item.raw_id, 'feed', () => {})
               i++
             })
           }
