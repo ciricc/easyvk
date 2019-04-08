@@ -7,8 +7,8 @@
 This library helps you easily create a javascript application with VKontakte API!
 Official VK API: [vk.com/dev/](https://vk.com/dev/)
 
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/cfce75d7342d487c8b8766b7d2085d1d)](https://www.codacy.com/app/ciricc/easyvk?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ciricc/easyvk&amp;utm_campaign=Badge_Grade) [![Build Status](https://travis-ci.org/ciricc/easyvk.svg?branch=master)](https://travis-ci.org/ciricc/easyvk) ![Downloads](https://img.shields.io/npm/dt/easyvk.svg?style=flat) ![Issues](https://img.shields.io/github/issues/ciricc/easyvk.svg?style=flat)
-![Node version support](https://img.shields.io/node/v/easyvk.svg?style=flat) ![Npm version released](https://img.shields.io/npm/v/easyvk.svg?style=flat)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/cfce75d7342d487c8b8766b7d2085d1d)](https://www.codacy.com/app/ciricc/easyvk?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ciricc/easyvk&amp;utm_campaign=Badge_Grade) [![Build Status](https://travis-ci.org/ciricc/easyvk.svg?branch=master)](https://travis-ci.org/ciricc/easyvk) [![Downloads](https://img.shields.io/npm/dt/easyvk.svg?style=flat)](https://npms.io/search?q=easyvk) [![Issues](https://img.shields.io/github/issues/ciricc/easyvk.svg?style=flat)](https://github.com/ciricc/easyvk/issues)
+[![Node version support](https://img.shields.io/node/v/easyvk.svg?style=flat)](https://github.com/nodejs/node/blob/master/doc/changelogs/CHANGELOG_V10.md#10.15.3) [![Npm version released](https://img.shields.io/npm/v/easyvk.svg?style=flat)](https://www.npmjs.com/package/easyvk)
 
 | [Community](https://vk.com/club162208999) | [Документация на русском](https://ciricc.github.io/) |
 | ------------------------------------------| -------------|
@@ -49,8 +49,7 @@ var easyvk = require("easyvk")
 easyvk({
    username: 'your_login',
    password: 'your_password',
-   save_session: false,
-   reauth: true
+   save_session: false
 }).then(vk => {
   
    //Getting user id from authenticated session
@@ -72,7 +71,7 @@ easyvk({
 *   <b> Create Bots </b>
 *   Manage groups
 *   Use LongPoll: <b>Bots LongPoll (groups) and User LongPoll</b>
-*   Create high loading projects with highload mode
+*   Create high loading projects with <b>highload mode</b>
 *   Use <b>Callback API</b> (like creating your server to listen to group events)
 *   Manage your stream based on official <b>Streaming API</b>, listen to events and collect data to create statistic and metrics
 *   Upload your files to the server
@@ -82,6 +81,8 @@ easyvk({
 *   Use saved session, cache data to saved session
 *   Catch errors like Captcha error and others
 *   Configure all that you want or not (utils can bee disabled or enabled by you)
+*   Read stories from feed or other accounts with <b>Stories API</b>
+*   Getting audios and searching with not official <b>Audio API</b>
 
 ## EasyVK provide
 
