@@ -696,7 +696,6 @@ class EasyVK {
           try {
             self._catchCaptcha({ err, reCall, _needSolve, _resolverReCall, _rejecterReCall, data, reject })
           } catch (e) {
-            let err = new Error(e)
             err.fullError = e
             reject(err)
           }
