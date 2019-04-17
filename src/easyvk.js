@@ -89,6 +89,35 @@ class EasyVK {
         })
       }
 
+      let defaultDataParams = {
+        client_id: params.client_id || configuration.WINDOWS_CLIENT_ID,
+        client_secret: params.client_secret || configuration.WINDOWS_CLIENT_SECRET,
+        v: params.api_v,
+        lang: params.lang || 'ru'
+      }
+
+      if (params.captcha_key) {
+        defaultDataParams.captcha_sid = params.captcha_sid
+        defaultDataParams.captcha_key = params.captcha_key
+      }
+
+      if (params.code && params.code.toString().length !== 0) {
+        defaultDataParams['2fa_supported'] = 1
+        defaultDataParams.code = params.code
+      }
+
+      if (!params.captchaHandler || !Object.prototype.toString.call(params.captchaHandler).match(/Function/)) {
+        params.captchaHandler = (thread) => {
+          throw self._error('captcha_error', {
+            captcha_key: thread.captcha_key,
+            captcha_sid: thread.captcha_sid,
+            captcha_img: thread.captcha_img
+          })
+        }
+      }
+
+      self.captchaHandler = params.captchaHandler
+
       /* if user wants to get data from file, need get data from file
          or generate this file automatically with new data */
 
@@ -129,35 +158,6 @@ class EasyVK {
           }
         }
       }
-
-      let defaultDataParams = {
-        client_id: params.client_id || configuration.WINDOWS_CLIENT_ID,
-        client_secret: params.client_secret || configuration.WINDOWS_CLIENT_SECRET,
-        v: params.api_v,
-        lang: params.lang || 'ru'
-      }
-
-      if (params.captcha_key) {
-        defaultDataParams.captcha_sid = params.captcha_sid
-        defaultDataParams.captcha_key = params.captcha_key
-      }
-
-      if (params.code && params.code.toString().length !== 0) {
-        defaultDataParams['2fa_supported'] = 1
-        defaultDataParams.code = params.code
-      }
-
-      if (!params.captchaHandler || !Object.prototype.toString.call(params.captchaHandler).match(/Function/)) {
-        params.captchaHandler = (thread) => {
-          throw self._error('captcha_error', {
-            captcha_key: thread.captcha_key,
-            captcha_sid: thread.captcha_sid,
-            captcha_img: thread.captcha_img
-          })
-        }
-      }
-
-      self.captchaHandler = params.captchaHandler
 
       if (!session.access_token) { // If session file contents access_token, try auth with it
         if (params.access_token) {
@@ -696,6 +696,8 @@ class EasyVK {
           try {
             self._catchCaptcha({ err, reCall, _needSolve, _resolverReCall, _rejecterReCall, data, reject })
           } catch (e) {
+            let err = new Error(e)
+            err.fullError = e
             reject(err)
           }
         })
@@ -768,6 +770,6 @@ module.exports.class = {
   AudioItem: 'AudioItem'
 }
 
-module.exports.version = '2.4.0'
+module.exports.version = '2.4.1'
 module.exports.callbackAPI = new EasyVKCallbackAPI({})
 module.exports.streamingAPI = new EasyVKStreamingAPI({})
