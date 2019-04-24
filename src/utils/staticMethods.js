@@ -213,6 +213,7 @@ class StaticMethods {
 
         return https.get(options, (res) => {
           let vkr = ''
+          res.setEncoding('utf8')
           res.on('data', (chu) => {
             vkr += chu
           })

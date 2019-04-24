@@ -140,7 +140,8 @@ class EasyVK {
             ) {
               if (data.access_token) {
                 session = new EasyVKSession(self, data)
-                return initToken()
+                self.session = session
+                return initResolve(self)
               } else {
                 if (!(params.username && params.password) && !params.access_token && !params.client_id && params.client_secret) {
                   return reject(self._error('empty_session'))
@@ -339,8 +340,16 @@ class EasyVK {
                 let json = StaticMethods.checkJSONErrors(vkr, reject)
                 if (json) {
                   if (Array.isArray(json) && json.length === 0) {
+                    session = {
+                      access_token: session.access_token
+                    }
+
                     appToken()
                   } else {
+                    session = {
+                      access_token: session.access_token
+                    }
+
                     session.user_id = json[0].id
                     session.first_name = json[0].first_name
                     session.last_name = json[0].last_name
@@ -352,7 +361,8 @@ class EasyVK {
                       }
                     }
 
-                    self.session = session
+                    self.session = new EasyVKSession(self, session)
+
                     initResolve(self)
                   }
                 }
@@ -452,7 +462,7 @@ class EasyVK {
                   }
                 }
 
-                self.session = session
+                self.session = new EasyVKSession(self, session)
 
                 initResolve(self)
               }
@@ -522,6 +532,10 @@ class EasyVK {
               if (Array.isArray(json) && json.length === 0) {
                 reject(self._error('access_token_not_valid'))
               } else {
+                session = {
+                  access_token: session.access_token
+                }
+
                 session.group_id = json[0].id
                 session.group_name = json[0].name
                 session.group_screen = json[0].screen_name
@@ -532,7 +546,8 @@ class EasyVK {
                   }
                 }
 
-                self.session = session
+                self.session = new EasyVKSession(self, session)
+
                 initResolve(self)
               }
             }
@@ -769,6 +784,6 @@ module.exports.class = {
   AudioItem: 'AudioItem'
 }
 
-module.exports.version = '2.4.1'
+module.exports.version = '2.4.11'
 module.exports.callbackAPI = new EasyVKCallbackAPI({})
 module.exports.streamingAPI = new EasyVKStreamingAPI({})
