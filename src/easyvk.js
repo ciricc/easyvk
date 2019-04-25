@@ -282,7 +282,7 @@ class EasyVK {
 
       function prepareResponse (err, res) {
         if (err) {
-          return reject(new Error(`Server was down or we don't know what happaned [responseCode ${res.statusCode}]`))
+          return reject(new Error(err))
         }
 
         let vkr = res.body
