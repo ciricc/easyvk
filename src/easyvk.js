@@ -132,7 +132,8 @@ class EasyVK {
 
         if (data) {
           try {
-            data = JSON.parse(data)
+            data = JSON.parse(data.toString())
+
             if (
               (data.access_token && data.access_token === params.access_token) || // If config token is session token
               (params.username && params.username === data.username) ||
@@ -383,16 +384,19 @@ class EasyVK {
       function appToken () {
         let getData
 
-        getData = StaticMethods.urlencode({
+        let data = {
           access_token: params.access_token,
           v: params.api_v,
-          lang: params.lang,
           fields: params.fields.join(',')
-        })
+        }
+
+        if (params.lang !== undefined) data.lang = params.lang
+
+        getData = StaticMethods.urlencode(data)
 
         if (self.debuggerRun) {
           try {
-            self.debuggerRun.push('request', configuration.BASE_CALL_URL + 'groups.getById?' + getData)
+            self.debuggerRun.push('request', configuration.BASE_CALL_URL + 'apps.get?' + getData)
           } catch (e) {
             // Ignore
           }
@@ -784,6 +788,6 @@ module.exports.class = {
   AudioItem: 'AudioItem'
 }
 
-module.exports.version = '2.4.11'
+module.exports.version = '2.4.12'
 module.exports.callbackAPI = new EasyVKCallbackAPI({})
 module.exports.streamingAPI = new EasyVKStreamingAPI({})

@@ -263,7 +263,7 @@ class StaticMethods {
     })
   }
 
-  async _completeExecute (token = '') {
+  async _completeExecute (token = '', Agent, settings) {
     if (!token) throw new Error('Unused token')
 
     let requests = this._requests[token]
@@ -272,6 +272,7 @@ class StaticMethods {
 
     let execCode
     let execs = []
+    let execsData = []
     let stack = [...requests.stack]
 
     requests.stack = []
@@ -279,20 +280,33 @@ class StaticMethods {
 
     stack.forEach((requestExec) => {
       execs.push(requestExec.exec)
+      execsData.push(requestExec.data)
     })
 
     execCode = `return [${execs.join(',')}];`
 
-    StaticMethods.call('execute', {
+    let data = {
       access_token: token,
       v: this.params.api_v,
-      code: execCode,
-      lang: this.params.lang
-    }, 'post').then((vkr) => {
+      code: execCode
+    }
+
+    if (this.params.lang !== 'undefined') data.lang = this.params.lang
+
+    StaticMethods.call('execute', data, 'post', null, Agent, settings).then((vkr) => {
       vkr.forEach((val, i) => {
         let req = stack[i]
 
         if (val === false) {
+          let vkrFull = vkr.getFullResponse()
+          if (vkrFull.execute_errors) {
+            let err = vkrFull.execute_errors[i]
+            if (execs[i].match(err.method)) { // "API.messages.send()".match("messages.send")
+              err = new VKResponseError(err.error_msg, err.error_code, execsData[i].data)
+              return req.reject(err)
+            }
+          }
+
           let err = new Error('Error occured in execute method')
 
           err.response = val
@@ -309,13 +323,15 @@ class StaticMethods {
     })
   }
 
-  async initHighLoadRequest (method, data) {
+  async initHighLoadRequest (method, data, type, debuggerIS, Agent) {
     let self = this
 
     return new Promise((resolve, reject) => {
       // disable custom version and language in execute methods
       data.v = undefined
       data.lang = undefined
+
+      data = JSON.parse(JSON.stringify(data))
 
       let accessToken = data.access_token
       data.access_token = undefined
@@ -335,6 +351,10 @@ class StaticMethods {
 
       requests.stack.push({
         exec: self.createExecute(method, data),
+        data: {
+          method: method,
+          data: data
+        },
         resolve,
         reject
       })
@@ -342,7 +362,7 @@ class StaticMethods {
       function complete () {
         if (self.canComplete) {
           self.canComplete = false
-          self._completeExecute(accessToken)
+          self._completeExecute(accessToken, Agent, self.settings)
         }
       }
 

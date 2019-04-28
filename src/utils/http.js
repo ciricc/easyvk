@@ -165,7 +165,7 @@ class HTTPEasyVKClient {
         section: 'httpClient'
       })
 
-      return cb(e, res, be)
+      return (cb) ? cb(e, res, be) : true
     })
   }
 
