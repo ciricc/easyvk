@@ -78,6 +78,10 @@ class EasyVK {
 
         options = opts
 
+        if (options.username || options.password) {
+          options.auth = options.username + ':' + options.password
+        }
+
         options.keepAlive = true
         options.keepAliveMsecs = 30000
 
