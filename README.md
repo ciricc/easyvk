@@ -7,8 +7,8 @@
 This library helps you easily create a javascript application with VKontakte API!
 Official VK API: [vk.com/dev/](https://vk.com/dev/)
 
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/cfce75d7342d487c8b8766b7d2085d1d)](https://www.codacy.com/app/ciricc/easyvk?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ciricc/easyvk&amp;utm_campaign=Badge_Grade) [![Build Status](https://travis-ci.org/ciricc/easyvk.svg?branch=master)](https://travis-ci.org/ciricc/easyvk) ![Downloads](https://img.shields.io/npm/dt/easyvk.svg?style=flat) ![Issues](https://img.shields.io/github/issues/ciricc/easyvk.svg?style=flat)
-![Node version support](https://img.shields.io/node/v/easyvk.svg?style=flat) ![Npm version released](https://img.shields.io/npm/v/easyvk.svg?style=flat)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/cfce75d7342d487c8b8766b7d2085d1d)](https://www.codacy.com/app/ciricc/easyvk?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ciricc/easyvk&amp;utm_campaign=Badge_Grade) [![Build Status](https://travis-ci.org/ciricc/easyvk.svg?branch=master)](https://travis-ci.org/ciricc/easyvk) [![Downloads](https://img.shields.io/npm/dt/easyvk.svg?style=flat)](https://npms.io/search?q=easyvk) [![Issues](https://img.shields.io/github/issues/ciricc/easyvk.svg?style=flat)](https://github.com/ciricc/easyvk/issues)
+[![Node version support](https://img.shields.io/node/v/easyvk.svg?style=flat)](https://github.com/nodejs/node/blob/master/doc/changelogs/CHANGELOG_V10.md#10.15.3) [![Npm version released](https://img.shields.io/npm/v/easyvk.svg?style=flat)](https://www.npmjs.com/package/easyvk)
 
 | [Community](https://vk.com/club162208999) | [Документация на русском](https://ciricc.github.io/) |
 | ------------------------------------------| -------------|
@@ -49,8 +49,7 @@ var easyvk = require("easyvk")
 easyvk({
    username: 'your_login',
    password: 'your_password',
-   save_session: false,
-   reauth: true
+   save_session: false
 }).then(vk => {
   
    //Getting user id from authenticated session
@@ -72,6 +71,7 @@ easyvk({
 *   <b> Create Bots </b>
 *   Manage groups
 *   Use LongPoll: <b>Bots LongPoll (groups) and User LongPoll</b>
+*   Create high loading projects with <b>highload mode</b>
 *   Use <b>Callback API</b> (like creating your server to listen to group events)
 *   Manage your stream based on official <b>Streaming API</b>, listen to events and collect data to create statistic and metrics
 *   Upload your files to the server
@@ -80,6 +80,9 @@ easyvk({
 *   Use helpers - utility for creating something that you need everyday
 *   Use saved session, cache data to saved session
 *   Catch errors like Captcha error and others
+*   Configure all that you want or not (utils can bee disabled or enabled by you)
+*   Read stories from feed or other accounts with <b>Stories API</b>
+*   Getting audios and searching with not official <b>Audio API</b>
 
 ## EasyVK provide
 
@@ -88,18 +91,25 @@ easyvk({
 *   Informative documentation
 *   Regular updates and support for newest features
 *   Two factor authentication support
+*   Easy working with captcha errors and captcha handlers
+*   Easy customize your requests and easy control them
+
 
 You can read documentation <a href="https://ciricc.github.io/">here</a>
 
 ## Рекомендации по производительности ботов
-Чтобы Ваши боты работали еще быстрее, я рекомендую использовать не Bots Longpoll API, а обычный LongPoll API.
-Обновление, которое повышает производтельность находится на версии 2.1.1, версии ниже работают в два раза медленнее, поэтому проверьте, какая версия у Вас установлена.
+Чтобы Ваши боты работали еще быстрее, я рекомендую использовать не Bots Longpoll API, а обычный LongPoll API (только, если у вас бот не должен работать в беседе).
+Обновление, которое повышает производительность находится на версии 2.1.1, версии ниже работают в два раза медленнее, поэтому проверьте, какая версия у Вас установлена. 
+
+Также, чтобы ваши боты работали с большим количеством пользователей быстрее, я рекомендую использовать режим highload, который появился в Easy VK 2.3.0
+Если ваш бот предполагает работу в беседах, не выбирайте для бота несколько вариантов LongPoll, выберите что-то одно - Bots LongPoll, чтобы бот отвечал быстрее.
 
 ```javascript
 
 easyvk({
-  access_token: "{GROUP_TOKEN}",
-  reauth: true
+  access_token: "{USER_TOKEN}",
+  reauth: true,
+  mode: 'highload'
 }).then(async (vk) => {
   
   let { connection } = await (vk.longpoll.connect());
@@ -128,11 +138,34 @@ easyvk({
 
 ## Что дает EasyVK
 
-Узнайте, зачем Вам может понадобиться EasyVK, и что именно он может Вам дать!
+Узнайте, зачем Вам может понадобиться Easy VK, и что именно он может вам дать!
+
+### Режим больших нагрузок
+
+В Easy VK есть режим `highload`, включая который, вы сможете использовать все возможности API ВКонтакте даже при высоких нагрузках. Этот режим дает знать библиотеке, что все запросы необходимо выполнять через метод execute, который выполняет до 25 запросов в секунду.
+
+Может пригодиться чат-ботам, в которых сообщений в тысячи раз больше, чем пользователей, или тем ботам, у которых очень большая нагрузка
+
+```javascript
+easyvk({
+  access_token: "{GROUP_TOKEN}",
+  reauth: true,
+  mode: 'highload' || {
+    timeout: 10,
+    name: 'highload'
+  }
+}).then(async (vk) => {
+  
+  let { connection } = await vk.bots.longpoll.connect()
+
+  connection.on('message_new', console.log)
+
+})
+```
 
 ### Плагины
 
-Теперь в Easy VK будет поддерживаться разработка новых плагинов. В скором времени Easy VK значительно сильно изменит кодстайлинг, поэтому в Easy VK уже сейчас внедряются средства для разработчиков, чтобы каждый мог внести вклад в создание Easy VK. Функционал плагинов будет дополняться по мере просьб и нужд разработчиков, я всегда буду рад обновлениям функционала.
+Теперь в Easy VK будет поддерживаться разработка новых плагинов. Функционал API для плагинов будет дополняться по мере просьб и нужд разработчиков, я всегда буду рад обновлениям.
 
 ```javascript
   
@@ -160,8 +193,8 @@ easyvk({
 
 ### Audio API
 
-Вам нужны аудиозаписи для личного использования? EasyVK предлагает объект для работы с аудио.
-Очень мощное Audio API, которое появилось в версии 2.0.0, практически полностью дублирует все методы из официальной документации Audio API, которое, к слову, уже закрыто, но в EasyVK работает.
+Вам нужны аудиозаписи для личного использования? Easy VK предлагает объект для работы с аудио.
+Очень мощное Audio API, которое появилось в версии 2.0.0, практически полностью дублирует все методы из официальной документации Audio API, которое, к слову, уже закрыто, но в Easy VK работает.
 
 ```javascript
   
@@ -207,6 +240,9 @@ easyvk({
   easyvk({
     client_id: '{APP_SECRET_CODE}',
     client_secret: '{CLIENT_SECRET_CODE}',
+    utils: {
+      streamingAPI: true
+    }
   }).then((vk) => {
 
     const StreamingAPI = vk.streamingAPI
@@ -228,7 +264,7 @@ easyvk({
 ### Stories API
 
 Используйте все возможности ВКонтакте.
-С недавних пор в EasyVK существует возможнсть "просматривать" истории.
+С недавних пор в Easy VK существует возможнсть "просматривать" истории.
 
 ```javascript
   
@@ -250,7 +286,7 @@ easyvk({
 
 ### LongPoll API
 
-Создавайте своих чат-ботов с помощью EasyVK и его возможностей LongPoll API
+Создавайте своих чат-ботов с помощью Easy VK и его возможностей LongPoll API
 
 ```javascript
   
@@ -290,36 +326,44 @@ easyvk({
 
 ### Streaming API
 
-Собирайте статистические данные о популярности тех или инных продуктов, проектов, чего угодно! Это позволит Вам знать, о чем пишут пользователи ВКонтакте, и кто Ваши клиенты!
+Собирайте статистические данные о популярности тех или инных продуктов, проектов - чего угодно! Это позволит Вам знать, о чем пишут пользователи ВКонтакте, и кто из них - ваши клиенты!
 
 ```javascript
     
-  vk.streamingAPI.connect(({connection: stream}) => {
-      
-      stream.initRules({
-        key1: 'кошка',
-        key2: 'собака -кот'
-      }).then(({log: changes}) => {
+  easyvk({
+    client_id: '{APP_SECRET_CODE}',
+    client_secret: '{CLIENT_SECRET_CODE}',
+    utils: {
+      streamingAPI: true
+    }
+  }).then(vk => {
+    vk.streamingAPI.connect(({connection: stream}) => {
         
-        console.log(changes.changedRules, changes.deletedRules, changes.addedRules);
+        stream.initRules({
+          key1: 'кошка',
+          key2: 'собака -кот'
+        }).then(({log: changes}) => {
+          
+          console.log(changes.changedRules, changes.deletedRules, changes.addedRules);
 
-        stream.on("post", (postEvent) => {
-          console.log("Post info: ", postEvent);
+          stream.on("post", (postEvent) => {
+            console.log("Post info: ", postEvent);
+          });
+          
+          //.on(...)
+          //.on("share")
+          //.on("comment") etc...
+
         });
-        
-        //.on(...)
-        //.on("share")
-        //.on("comment") etc...
 
-      });
-
-  });
+    });
+  })
 
 ```
 
 ### Callback API
 
-Создавайте чат-ботов с помощью Callback API, имея собственный сервер с открытым доступом в интернете.
+Создавайте чат-ботов (и не только) с помощью Callback API, имея собственный сервер с открытым доступом в интернете.
 
 ```javascript
 
