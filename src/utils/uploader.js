@@ -32,13 +32,11 @@ class EasyVKUploader {
       }
 
       if (!filePath || !staticMethods.isString(filePath)) {
-        if (!(filePath instanceof fs.ReadStream)) {
-          return reject(self._vk._error('is_not_string', {
-            parameter: 'filePath',
-            method: 'uploadFile',
-            format: path.join(__dirname, '..', 'example', 'path')
-          }))
-        }
+        return reject(self._vk._error('is_not_string', {
+          parameter: 'filePath',
+          method: 'uploadFile',
+          format: path.join(__dirname, '..', 'example', 'path')
+        }))
       }
 
       if (fieldName) {
@@ -57,7 +55,7 @@ class EasyVKUploader {
 
       let stream, data
 
-      stream = (filePath instanceof fs.ReadStream) ? filePath : fs.createReadStream(filePath)
+      stream = fs.createReadStream(filePath)
       data = {}
 
       Object.keys(paramsUpload)

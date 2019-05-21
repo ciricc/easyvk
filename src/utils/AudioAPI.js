@@ -2,7 +2,6 @@
 
 const staticMethods = require('./staticMethods.js')
 const VKResponse = require('./VKResponse.js')
-const encoding = require('encoding')
 
 const querystring = require('querystring')
 
@@ -69,8 +68,7 @@ class AudioAPI {
       AUDIO_ITEM_LONG_PERFORMER_BIT: 32,
       AUDIO_ITEM_UMA_BIT: 128,
       AUDIO_ITEM_REPLACEABLE: 512,
-      AUDIO_ITEM_EXPLICIT_BIT: 1024,
-      AUDIO_ITEM_INDEX_RESTRICTION: 21
+      AUDIO_ITEM_EXPLICIT_BIT: 1024
     }
 
     self.AudioMobileObject = {
@@ -155,22 +153,13 @@ class AudioAPI {
         offset: offset,
         owner_id: params.owner_id,
         playlist_id: playlistId,
-        type: 'playlist',
-        track_type: 'default'
+        type: 'playlist'
       }).then(res => {
-        res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString()
-
         let json
 
         json = self._parseJSON(res.body, reject)
 
-        if (!params.count) {
-          params.count = 200
-        }
-
         let audios = json.list
-
-        audios = audios.slice(0, params.count)
 
         return self._getNormalAudiosWithURL(audios).then(audios => {
           if (!params.needAll) {
@@ -389,7 +378,7 @@ class AudioAPI {
       for (let i = 0; i < audios.length; i++) {
         let audio = audios[i]
 
-        if (!audio[self.AudioObject.AUDIO_ITEM_INDEX_URL] && !audio[self.AudioObject.AUDIO_ITEM_INDEX_RESTRICTION]) {
+        if (!audio[self.AudioObject.AUDIO_ITEM_INDEX_URL]) {
           withoutURL.push(i)
         } else {
           audios_[i] = self._getAudioAsObject(audio)
@@ -412,7 +401,7 @@ class AudioAPI {
           }
 
           if (withoutURL.length) {
-            setTimeout(nextAudios, 500)
+            setTimeout(nextAudios, 300)
           } else {
             let endAudios = []
 
@@ -473,8 +462,6 @@ class AudioAPI {
           _ajax: 1,
           offset: params.offset
         }).then(res => {
-          res.body = encoding.convert(res.body, 'cp-1251', 'windows-1251').toString()
-
           let json = res.body
 
           if (!json) return reject(new Error('Not founded audios'))
@@ -559,7 +546,7 @@ class AudioAPI {
       })
     }
 
-    if ((!source || source.length === 0) && !audio[self.AudioObject.AUDIO_ITEM_INDEX_RESTRICTION]) {
+    if (!source || source.length === 0) {
       // need get reloaded audio
       return getAudioWithURL()
     }
@@ -576,8 +563,6 @@ class AudioAPI {
       performer: audio[self.AudioObject.AUDIO_ITEM_INDEX_PERFORMER],
       duration: audio[self.AudioObject.AUDIO_ITEM_INDEX_DURATION],
       covers: c,
-      is_restriction: !!audio[self.AudioObject.AUDIO_ITEM_INDEX_RESTRICTION],
-      extra: audio[self.AudioObject.AUDIO_ITEM_INDEX_EXTRA],
       coverUrl_s: cl[0] || '',
       coverUrl_p: cl[1] || '',
       flags: audio[self.AudioObject.AUDIO_ITEM_INDEX_FLAGS],
@@ -680,16 +665,9 @@ class AudioAPI {
 
     function r (e) {
       if (!o() && ~e.indexOf('audio_api_unavailable')) {
-        let t
-        let alter
-        if (e.split('?extra=')[1] !== undefined) {
-          t = e.split('?extra=')[1].split('#')
-          alter = t[1]
-        } else {
-          t = e.split('?extra')[0]
-          alter = t[0]
-        }
-        var n = alter === '' ? '' : a(alter)
+        var t = e.split('?extra=')[1].split('#')
+
+        var n = t[1] === '' ? '' : a(t[1])
         t = a(t[0])
         if (typeof n !== 'string' || !t) return e
         n = n ? n.split(String.fromCharCode(9)) : []
@@ -975,8 +953,6 @@ class AudioAPI {
         offset: params.offset || 0,
         owner_id: params.owner_id || self._vk.session.user_id
       }).then((res) => {
-        res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString()
-
         let json = self._parseJSON(res.body, reject)
 
         let playlists = json

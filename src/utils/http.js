@@ -10,13 +10,13 @@
 'use strict'
 
 const configuration = require('./configuration.js')
+const encoding = require('encoding')
 
 const fs = require('fs')
 const request = require('request')
 const FileCookieStore = require('tough-cookie-file-store')
 
 const AudioAPI = require('./AudioAPI.js')
-const Debugger = require('./debugger.class.js')
 
 class HTTPEasyVKClient {
   constructor ({ _jar, vk, httpVk, config, parser }) {
@@ -51,26 +51,12 @@ class HTTPEasyVKClient {
       // else try get sttories from user
       if (!self._authjar) return reject(new Error(self.LOGIN_ERROR))
 
-      let url = `${configuration.PROTOCOL}://m.${configuration.BASE_DOMAIN}/fv?to=/id${vkId}?_fm=profile&_fm2=1`
-
-      self._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
-        url,
-        query: `to=/id${vkId}?_fm=profile&_fm2=1`,
-        method: 'GET',
-        section: 'httpClient'
-      })
-
       request.get({
-        url: url,
+        url: `${configuration.PROTOCOL}://m.${configuration.BASE_DOMAIN}/fv?to=/id${vkId}?_fm=profile&_fm2=1`,
         jar: self._authjar,
         headers: self.headersRequest,
         agent: self._vk.agent
       }, (err, res, vkr) => {
-        self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
-          body: res.body,
-          section: 'httpClient'
-        })
-
         if (err) return reject(new Error(err))
 
         let stories = self.__getStories(res.body, 'profile')
@@ -109,13 +95,8 @@ class HTTPEasyVKClient {
 
     let storiesMatch, superStories
 
-    if (type === 'feed') {
-      storiesMatch = /cur\['stories_list_feed'\]=\[(.*?)\];/
-      superStories = /cur\['stories_list_feed'\]=/
-    } else {
-      storiesMatch = /cur\['stories_list_profile'\]=\[(.*?)\];/
-      superStories = /cur\['stories_list_profile'\]=/
-    }
+    storiesMatch = /cur\['stories_list_profile'\]=\[(.*?)\];/
+    superStories = /cur\['stories_list_profile'\]=/
 
     let stories = response.match(storiesMatch)
 
@@ -137,36 +118,19 @@ class HTTPEasyVKClient {
   __readStory (read_hash = '', stories = '', source = 'feed', cb) {
     let self = this
 
-    let url = 'https://vk.com/al_stories.php'
-    let form = {
-      'act': 'read_stories',
-      'al': '1',
-      'hash': read_hash,
-      'source': source,
-      'stories': stories
-    }
-
-    self._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
-      url,
-      query: form,
-      method: 'POST',
-      section: 'httpClient'
-    })
-
     request.post({
-      url,
-      form: form,
+      url: 'https://vk.com/al_stories.php',
+      form: {
+        'act': 'read_stories',
+        'al': '1',
+        'hash': read_hash,
+        'source': source,
+        'stories': stories
+      },
       jar: self._authjar,
       headers: self.headersRequest,
       agent: self._vk.agent
-    }, (e, res, be) => {
-      self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
-        body: res.body,
-        section: 'httpClient'
-      })
-
-      return (cb) ? cb(e, res, be) : true
-    })
+    }, cb)
   }
 
   async readFeedStories () {
@@ -176,38 +140,23 @@ class HTTPEasyVKClient {
       // else try get sttories from user
       if (!self._authjar) return reject(new Error(self.LOGIN_ERROR))
 
-      let url = `${configuration.PROTOCOL}://m.${configuration.BASE_DOMAIN}/fv?to=%2Ffeed%3F_fm%3Dfeed%26_fm2%3D1`
-
-      self._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
-        url,
-        query: `to=%2Ffeed%3F_fm%3Dfeed%26_fm2%3D1`,
-        method: 'GET',
-        section: 'httpClient'
-      })
-
       request.get({
-        url,
+        url: `${configuration.PROTOCOL}://m.${configuration.BASE_DOMAIN}/fv?to=%2Ffeed%3F_fm%3Dfeed%26_fm2%3D1`,
         jar: self._authjar,
         headers: self.headersRequest,
         agent: self._vk.agent
       }, (err, res, vkr) => {
-        self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
-          body: res.body,
-          section: 'httpClient'
-        })
-
         if (err) return reject(new Error(err))
 
         // parse stories
 
         let stories = self.__getStories(res.body, 'feed')
-
         let i = 0
 
         stories.forEach((story) => {
           if (Array.isArray(story.items)) {
             story.items.forEach(item => {
-              self.__readStory(story.read_hash, item.raw_id, 'feed', () => {})
+              self.__readStory(story.read_hash, item.raw_id, 'feed')
               i++
             })
           }
@@ -269,7 +218,6 @@ class HTTPEasyVKClient {
       if (isMobile && method === 'post') {
         headers['x-requested-with'] = 'XMLHttpRequest'
       }
-
       let requestParams = {
         jar: self._authjar,
         url: `${configuration.PROTOCOL}://${mobile}${configuration.BASE_DOMAIN}/` + file,
@@ -279,27 +227,16 @@ class HTTPEasyVKClient {
         agent: self._vk.agent
       }
 
-      self._vk._debugger.push('request', requestParams)
-
-      self._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
-        url: requestParams.url,
-        query: form,
-        section: 'httpClient',
-        method: method
-      })
+      self._vk.debugger.push('request', requestParams)
 
       request[method](requestParams, (err, res, vkr) => {
-        self._vk._debugger.push('response', res.body)
-
-        self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
-          url: requestParams.url,
-          query: form,
-          section: 'httpClient'
-        })
+        self._vk.debugger.push('response', res.body)
 
         if (err) {
           return reject(err)
         }
+
+        res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString()
 
         if (!res.body.length) {
           return reject(self._vk._error('audio_api', {}, 'not_have_access'))
@@ -311,7 +248,7 @@ class HTTPEasyVKClient {
           if (typeof json[indexJson] === 'object') json[5] = json[indexJson]
 
           if (typeof json[5] === 'string' && !ignoreStringError) {
-            return reject(new Error(json[5].slice(0, 250) || 'Empty error responded'))
+            return reject(new Error(json[5].slice(0, 250)))
           }
 
           if (!json[5] && !ignoreStringError) {
@@ -496,31 +433,17 @@ class HTTPEasyVK {
           return goLogin()
 
           function goLogin () {
-            let url = 'https://m.vk.com/'
-
-            self._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
-              url,
-              query: ``,
-              method: 'GET',
-              section: 'httpClient'
-            })
-
             request.get({
               headers: self.headersRequest,
-              url,
+              url: 'https://m.vk.com/',
               jar: self._authjar,
               agent: self._vk.agent
             }, (err, res, vkr) => {
-              self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
-                body: res.body,
-                section: 'httpClient'
-              })
-
               if (err) return reject(new Error(err))
 
               let body = res.body
 
-              self._vk._debugger.push('response', res.body)
+              self._vk.debugger.push('response', res.body)
 
               let matches = body.match(/action="(.*?)"/)
 
@@ -540,37 +463,22 @@ class HTTPEasyVK {
 
           async function actCheckLogin () {
             return new Promise((resolve, reject) => {
-              let url = 'https://vk.com/al_im.php'
-              let form = {
-                act: 'a_dialogs_preload',
-                al: 1,
-                gid: 0,
-                im_v: 2,
-                rs: ''
-              }
-
-              self._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
-                url,
-                query: form,
-                method: 'POST',
-                section: 'httpClient'
-              })
-
               request.post({
-                url,
+                url: 'https://vk.com/al_im.php',
                 jar: self._authjar,
                 followAllRedirects: true,
-                form,
+                form: {
+                  act: 'a_dialogs_preload',
+                  al: 1,
+                  gid: 0,
+                  im_v: 2,
+                  rs: ''
+                },
                 agent: self._vk.agent
               }, (err, res) => {
-                self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
-                  body: res.body,
-                  section: 'httpClient'
-                })
-
                 if (err) return reject(err)
 
-                self._vk._debugger.push('response', res.body)
+                self._vk.debugger.push('response', res.body)
 
                 res = res.body.split('<!>')
                 res = self._parseResponse(res[5])
@@ -590,31 +498,17 @@ class HTTPEasyVK {
           }
           async function actLogin (loginURL) {
             return new Promise((resolve, reject) => {
-              let form = {
-                'email': login,
-                'pass': pass
-              }
-
-              self._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
-                url: loginURL,
-                query: form,
-                method: 'POST',
-                section: 'httpClient'
-              })
-
               request.post({
                 url: loginURL,
                 jar: self._authjar,
                 followAllRedirects: true,
-                form: form,
+                form: {
+                  'email': login,
+                  'pass': pass
+                },
                 agent: self._vk.agent
               }, (err, res, vkr) => {
-                self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
-                  body: res.body,
-                  section: 'httpClient'
-                })
-
-                self._vk._debugger.push('response', res.body)
+                self._vk.debugger.push('response', res.body)
 
                 if (err) return reject(new Error(err))
 

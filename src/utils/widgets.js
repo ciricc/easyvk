@@ -15,8 +15,6 @@ const staticMethods = require('./staticMethods.js')
 const request = require('request')
 const encoding = require('encoding')
 
-const Debugger = require('./debugger.class.js')
-
 class Widgets {
   // For call to methods an others, standard procedure
   constructor (vk) {
@@ -67,13 +65,6 @@ class Widgets {
         agent: self._vk.agent
       }
 
-      self._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
-        url: alVideoUrl,
-        query: form,
-        method: 'POST',
-        section: 'widgets'
-      })
-
       request.post(queryParams, (err, res, vkr) => {
         res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString()
 
@@ -81,18 +72,13 @@ class Widgets {
           return reject(new Error(err))
         }
 
-        if (self._vk._debugger) {
+        if (self._vk.debugger) {
           try {
-            self._vk._debugger.push('response', res.body)
+            self._vk.debugger.push('response', res.body)
           } catch (e) {
             // ignore
           }
         }
-
-        self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
-          body: res.body,
-          section: 'widgets'
-        })
 
         // Parsing hash from response body {"action_hash" : "hash"}
         let matCH = res.body.match(/("|')action_hash("|')(\s)?:(\s)?('|")(.*?)('|")/i)
@@ -115,7 +101,7 @@ class Widgets {
               return reject(new Error(err))
             }
 
-            self._vk._debugger.push('response', res.body)
+            self._vk.debugger.push('response', res.body)
 
             let videoInfo = encoding.convert(res.body, 'utf-8', 'windows-1251').toString()
 
