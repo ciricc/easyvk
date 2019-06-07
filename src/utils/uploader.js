@@ -181,8 +181,6 @@ class EasyVKUploader {
         paramsUpload = {}
       }
 
-      console.log('Uploading...')
-
       let stream, data
 
       stream = (filePath instanceof fs.ReadStream) ? filePath : fs.createReadStream(filePath)

@@ -355,6 +355,10 @@ class HTTPEasyVKClient {
     return this.request('fv?to=/mail?_fm=mail&_fm2=1', {}, true, 6, false, true)
   }
 
+  async goMobile () {
+    return this.request('mail?act=show&peer=0&_ff=1', {}, true, 6, false, true)
+  }
+
   async requestMobile (...args) {
     return this.request(...args, true)
   }
