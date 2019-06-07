@@ -7,10 +7,44 @@
 -  Добавлены новые методы Audio API:
 
 *  `Audio.toggleAudioStatus()` - переключение статуса аудио (кнопка "транслировать в статус")
+```javascript
+client.audio.toggleAudioStatus({
+  raw_audio_id: '-2001233579_9233579',
+  enable: true // вкл/выкл
+}).then(({vkr}) => {
+  console.log('Audio toggled!', vkr)
+}).catch(console.error)
+```
 *  `Audio.changeAudioStatus()` - переключение прослушиваемого трека в статусе
+```javascript
+client.audio.changeAudioStatus({
+  raw_audio_id: '-2001233579_9233579'
+}).then(({vkr}) => {
+  console.log(vkr)
+}).catch(console.error)
+```
 *  `Audio.getRecommendations()` - получить рекомендации для пользователя
-*  `Audio.getFriendsUpdates()` - получить обновления друзей
+```javascript
+client.audio.getRecommendations({
+  owner_id: vk.session.user_id
+}).then(({vkr}) => {console.log(vkr)}).catch(console.error)
+```
+*  `Audio.getFriendsUpdates()` - получить обновления (треки) друзей
+```javascript
+client.audio.getFriendsUpdates({
+  owner_id: vk.session.user_id
+}).then(({vkr}) => {
+  console.log(vkr.length)
+}).catch(console.error)
+```
 *  `Audio.getNewReleases()` - получить новинки и чарты + рекомендации (разделы с главной страницы)
+```javascript
+client.audio.getNewReleases().then(({vkr}) => {
+  console.log('Charts:', vkr.charts)
+  console.log('Recommendations:', vkr.recoms)
+  console.log('New tracks:', vkr.new)
+}).catch(console.error)
+```
 -  Добавлены методы `client.goDesktop()` и `client.goMobile()` для переключения между мобильной и десктопной версией (для больших возможностей)
 -  Добавлен метод `uploader.uploadFetchedFile()` для загрузки файлов с других источников (например, из гугл-картинок)
 ```javascript
@@ -21,13 +55,23 @@ easyvk({...}).then(vk => {
 
       console.log(file) // Загруженный файл, далее docs.save -> messages.send
 
-    })
-  })
+    }).catch(console.error)
+
+    vk.uploader.uploadFetchedFile(url, {
+      url: 'https://vk.com/images/community_100.png',
+      name: 'camera.png' // Для файлов, в URL которых нет четкого обозначения расширения
+    }).then(({vkr}) => {
+      let { file } = vkr;
+
+      console.log(file) // Загруженный файл, далее docs.save -> messages.send
+
+    }).catch(console.error)
+  }).catch(console.error)
 })
 ```
 - Параметр `fieldName` для загрузки файла теперь по умолчанию обозначен как `file`
 - Кодировка в HTTP клиенте теперь настраивает произвольно, а также в нем появились новые возможности для метода `client.request()` (для расширения возможностей Easy VK, не документируется)
- 
+
 ### Исправления
 - Исправлена работа метод `Audio.reorder()`
 
