@@ -20,7 +20,133 @@ class EasyVKUploader {
     self._vk = vk
   }
 
-  async uploadFile (url, filePath, fieldName = '', paramsUpload = {}) {
+  /*
+   *
+   *  Function for upload file from other server only by fileUrl
+   *
+   */
+  async uploadFetchedFile (url, fileUrl, fieldName = 'file', paramsUpload = {}) {
+    return new Promise((resolve, reject) => {
+      if (!url || !staticMethods.isString(url)) {
+        return reject(this._vk._error('is_not_string', {
+          parameter: 'url',
+          method: 'uploadFetchedFile',
+          format: 'http(s)://www.domain.example.com/path?request=get'
+        }))
+      }
+
+      if (!fileUrl || (!staticMethods.isString(fileUrl) && !staticMethods.isObject(fileUrl))) {
+        return reject(this._vk._error('is_not_string', {
+          parameter: 'fileUrl',
+          method: 'uploadFetchedFile',
+          format: 'https://vk.com/images/community_100.png'
+        }))
+      }
+
+      if (fieldName) {
+        if (!staticMethods.isString(fieldName)) {
+          return reject(this._vk._error('is_not_string', {
+            parameter: 'fieldName',
+            method: 'uploadFetchedFile',
+            required: false
+          }))
+        }
+      }
+
+      if (!staticMethods.isObject(paramsUpload)) {
+        paramsUpload = {}
+      }
+
+      if (staticMethods.isString(fileUrl)) {
+        fileUrl = {
+          url: fileUrl
+        }
+      }
+
+      let fetchingFileUrl = fileUrl.url
+      let filename = fileUrl.name || fetchingFileUrl.split('/').pop().split('#')[0].split('?')[0]
+      let form = {}
+
+      form = Object.assign(form, paramsUpload)
+
+      if (!filename) {
+        return reject(this._vk._error('is_not_string', {
+          parameter: 'fileUrl.name',
+          method: 'uploadFile',
+          format: 'example.jpeg or example.rar'
+        }))
+      }
+
+      request.get({
+        url: fetchingFileUrl,
+        followAllRedirects: true,
+        agent: this._agent
+      }, (err, res) => {
+        if (err) {
+          return reject(this._vk._error('server_error', {
+            error: err
+          }))
+        }
+
+        form[fieldName] = {
+          value: request(fetchingFileUrl),
+          options: {
+            filename,
+            contentType: res.headers['content-type']
+          }
+        }
+
+        request.post({
+          url: url,
+          formData: form,
+          agent: this._agent
+        }, (err, response) => {
+          if (err) {
+            return reject(this._vk._error('server_error', {
+              error: err
+            }))
+          }
+
+          if (!response) response = {}
+
+          let vkr = response.body
+
+          if (vkr) {
+            if (form.custom) {
+              return resolve({
+                vkr: vkr,
+                vk: this._vk
+              })
+            } else {
+              let json = staticMethods.checkJSONErrors(vkr, reject)
+
+              if (json) {
+                return resolve({
+                  vkr: json,
+                  vk: this._vk
+                })
+              } else {
+                return reject(this._vk._error('invalid_response', {
+                  response: response
+                }))
+              }
+            }
+          } else {
+            return reject(this._vk._error('empty_response', {
+              response: response
+            }))
+          }
+        })
+      })
+    })
+  }
+
+  /*
+   *
+   *  Function for upload file from local machine
+   *
+   */
+  async uploadFile (url, filePath, fieldName = 'file', paramsUpload = {}) {
     let self = this
     return new Promise((resolve, reject) => {
       if (!url || !staticMethods.isString(url)) {
@@ -54,6 +180,8 @@ class EasyVKUploader {
       if (!staticMethods.isObject(paramsUpload)) {
         paramsUpload = {}
       }
+
+      console.log('Uploading...')
 
       let stream, data
 
