@@ -255,7 +255,6 @@ class EasyVK {
       }
 
       function completeSession (err, res, object = {}) {
-        console.log('Complete session')
         return new Promise((resolve, reject) => {
           let vkr = prepareResponse(err, res)
           let json = generateSessionFromResponse(vkr, reject)
