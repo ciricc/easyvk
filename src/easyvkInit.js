@@ -20,6 +20,8 @@ const EasyVK = require('./easyvk.js')
 
 let debuggerRun = new EasyVKRequestsDebugger(Boolean(false))
 
+const authTypes = EasyVK.authTypes
+
 module.exports = Auth
 module.exports.static = staticMethods
 module.exports.debuggerRun = debuggerRun
@@ -29,6 +31,10 @@ module.exports.streamingAPI = EasyVK.streamingAPI
 module.exports.classes = EasyVK.class
 module.exports.is = EasyVK.is
 module.exports.Debugger = Debugger
+module.exports.authTypes = authTypes
+module.exports.USER_AUTH_TYPE = authTypes[0]
+module.exports.GROUP_AUTH_TYPE = authTypes[1]
+module.exports.APPLICATION_AUTH_TYPE = authTypes[2]
 
 /**
  *
@@ -185,6 +191,12 @@ async function checkInitParams (params = {}) {
 
     if (!params.mode.name) {
       params.mode.name = 'default'
+    }
+
+    if (params.authType && authTypes.indexOf(params.authType) === -1) {
+      return reject(new Error('Auth type must be contents in ' + JSON.stringify(authTypes)))
+    } else if (params.authType && !params.access_token) {
+      params.authType = null
     }
 
     if (params.debug && !(params.debug instanceof Debugger)) return reject(new Error('Debug parameter must instances only from Debugger class'))

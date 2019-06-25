@@ -22,6 +22,7 @@ const DebuggerClass = require('./utils/debugger.class.js')
 const ProxyAgent = require('proxy-agent')
 
 const https = require('https')
+const authTypes = ['user', 'group', 'app']
 
 /**
  *  EasyVK module. In this module creates session by your params
@@ -168,7 +169,20 @@ class EasyVK {
       if (!session.access_token) { // If session file contents access_token, try auth with it
         if (params.access_token) {
           session.access_token = params.access_token
-          initToken()
+          if (self.params.authType) {
+            let { authType } = self.params
+            if (authType === authTypes[0]) {
+              initToken()
+            } else if (authType === authTypes[1]) {
+              groupToken()
+            } else if (authType === authTypes[2]) {
+              appToken()
+            } else {
+              initToken()
+            }
+          } else {
+            initToken()
+          }
         } else if (params.username) {
           // Try get access_token with auth
           let getData = {
@@ -241,6 +255,7 @@ class EasyVK {
       }
 
       function completeSession (err, res, object = {}) {
+        console.log('Complete session')
         return new Promise((resolve, reject) => {
           let vkr = prepareResponse(err, res)
           let json = generateSessionFromResponse(vkr, reject)
@@ -349,7 +364,11 @@ class EasyVK {
                       access_token: session.access_token
                     }
 
-                    appToken()
+                    if (self.params.authType && self.params.authType === authTypes[0]) {
+                      return reject(new Error('Is not a user token! Or this token is not valid (expired)'))
+                    } else {
+                      appToken()
+                    }
                   } else {
                     session = {
                       access_token: session.access_token
@@ -441,8 +460,12 @@ class EasyVK {
             let json
 
             json = StaticMethods.checkJSONErrors(vkr, (e) => {
-              if (e.error_code === 5) {
-                groupToken()
+              if (e.error_code === 5 || e.error_code === 27) {
+                if (self.params.authType && self.params.authType === authTypes[2]) {
+                  return reject(new Error('Is not an application token! Or this token is not valid (expired)'))
+                } else {
+                  groupToken()
+                }
               } else {
                 reject(e)
               }
@@ -452,7 +475,11 @@ class EasyVK {
               json = json.items[0]
 
               if (Array.isArray(json) && json.length === 0) {
-                groupToken()
+                if (self.params.authType && self.params.authType === authTypes[2]) {
+                  return reject(new Error('Is not an application token! Or this token is not valid (expired)'))
+                } else {
+                  groupToken()
+                }
               } else {
                 session.app_id = json.id
                 session.app_title = json.title
@@ -534,11 +561,17 @@ class EasyVK {
           self.debug(DebuggerClass.EVENT_RESPONSE_TYPE, { body: vkr })
 
           if (vkr) {
-            let json = StaticMethods.checkJSONErrors(vkr, reject)
+            let json = StaticMethods.checkJSONErrors(vkr, (e) => {
+              if (e.error_code === 100 && self.params.authType && self.params.authType === authTypes[1]) {
+                return reject(new Error('Is not a group token! Or this token is not valid (expired)'))
+              } else {
+                return reject(e)
+              }
+            })
 
             if (json) {
               if (Array.isArray(json) && json.length === 0) {
-                reject(self._error('access_token_not_valid'))
+                return reject(self._error('access_token_not_valid'))
               } else {
                 session = {
                   access_token: session.access_token
@@ -792,6 +825,7 @@ module.exports.class = {
   AudioItem: 'AudioItem'
 }
 
-module.exports.version = '2.5.0'
+module.exports.version = '2.5.1'
 module.exports.callbackAPI = new EasyVKCallbackAPI({})
 module.exports.streamingAPI = new EasyVKStreamingAPI({})
+module.exports.authTypes = authTypes

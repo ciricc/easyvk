@@ -1,8 +1,41 @@
 # Изменения
 
 Все доступные изменения, начиная с <b>2.1.1</b> версии
+## \[2.5.1\] - 2019-06-26
+### Hotfix
+-  Исправлена работа авторизации группы по токену, ошибка `Group authorization failed: method is unavailable with group auth`
 
-## \[2.5.0\] - не издана
+### Добавления и изменения
+Всвязи с хотфиксом, в библиотеку добавлен новый параметр для настройки - `authType`.
+Данный параметр отвечает за строгое указание по какому методу вести авторизацию через `access_token`, чтобы избежать неожиданных багов подобно тому, что появился сегодня.
+
+```javascript
+const easyvk = require('easyvk')
+
+easyvk({
+  access_token: 'token',
+  authType: easyvk.GROUP_AUTH_TYPE
+}).then(vk => {
+  console.log(vk.session)
+})
+```
+
+Его доступные значения: 
+```javascript
+[
+  easyvk.USER_AUTH_TYPE, // Авторизация пользователя по токену
+  easyvk.GROUP_AUTH_TYPE, // Авторизация группы по токену
+  easyvk.APPLICATION_AUTH_TYPE // Авторизация приложения по сервисному токену
+]
+```
+
+Значение обязательно должно находится из доступных в Easy VK
+```javascript
+console.log(easyvk.authTypes.indexOf('group') !== -1) // true
+console.log(easyvk.authTypes.indexOf('my_very_good_token_type') !== -1) // false
+```
+
+## \[2.5.0\] - 2019-06-08
 ### Добавления и изменения
 -  Добавлены новые методы Audio API:
 
