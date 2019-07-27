@@ -105,9 +105,12 @@ class EasyVK {
         defaultDataParams.captcha_sid = params.captcha_sid
         defaultDataParams.captcha_key = params.captcha_key
       }
+      
+      if (params["2fa_supported"]) {
+        defaultDataParams['2fa_supported'] = 1
+      }
 
       if (params.code && params.code.toString().length !== 0) {
-        defaultDataParams['2fa_supported'] = 1
         defaultDataParams.code = params.code
       }
 
