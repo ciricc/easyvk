@@ -16,5 +16,7 @@ export interface IVKOptions {
         methodPath:string
         /** Default oauth subdomain ({oauth}.vk.com) */
         oauthSubdomain:string
-    }
+    },
+    /** Proxy address for all library requests */
+    proxy?: string
 }

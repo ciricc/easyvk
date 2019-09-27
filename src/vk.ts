@@ -26,6 +26,8 @@ class VK {
 
   /** Queue of installing plugins */
   public pluginsQueue = [];
+  /** Queue of installating plugins names */
+  public pluginsQueueNames = [];
   public plugins = [];
   /** Promises which already used in installation or not really */
   public queuePromises = [];
@@ -76,7 +78,7 @@ class VK {
    * @param pluginOptions Object options for this plugin
    * @param addInQueue If you want install plugin with others in one query, use it
    */
-  public async addPlugin(plugin: typeof Plugin, pluginOptions: { [key: string]: any }, addInQueue: boolean = false) {
+  public async extend(plugin: typeof Plugin, pluginOptions: { [key: string]: any } = {}, addInQueue: boolean = true) {
     let plugIn = new plugin(this, pluginOptions);
 
     if (!plugIn.name || plugIn.name === "defaultPlugin") throw new Error("Plugin must have unique name");
@@ -84,12 +86,14 @@ class VK {
 
     const newPlugin = {
       plugin: plugIn,
-      options: pluginOptions
+      options: pluginOptions,
+      name: plugIn.name
     }
 
     if (plugIn.requirements) {
       for (let requiredPluginName of plugIn.requirements) {
         if (this.hasPlugin(requiredPluginName)) continue;
+        if (this.pluginsQueueNames.indexOf(requiredPluginName) !== -1) continue;
         throw new Error(`Plugin requires a ${requiredPluginName} plugin. You should install this plugin!`);
       }
     }
@@ -98,15 +102,18 @@ class VK {
       let setupAfterIndex = this.pluginsQueue.indexOf(plugIn.setupAfter);
       if (setupAfterIndex !== -1) {
         this.pluginsQueue.splice(setupAfterIndex, 0, newPlugin);
+        this.pluginsQueueNames.splice(setupAfterIndex, 0, newPlugin);
       }
     }
 
     if (!plugIn.setupAfter && addInQueue) {
       this.pluginsQueue.push(newPlugin);
+      this.pluginsQueueNames.push(newPlugin.name);
     }
 
-    if (!this.pluginInQueue(plugIn) && addInQueue) {
+    if (!this.pluginInQueue(newPlugin.plugin) && addInQueue) {
       this.pluginsQueue.push(newPlugin);
+      this.pluginsQueueNames.push(newPlugin.name);
     } else if (!addInQueue) {
       this.plugins.push(plugIn.name)
       const enable = plugIn.onEnable(pluginOptions);
@@ -120,7 +127,7 @@ class VK {
    * @param plugin Plugin object
    */
   public pluginInQueue(plugin: Plugin): boolean {
-    return this.pluginsQueue.indexOf(plugin) !== -1;
+    return this.pluginsQueueNames.indexOf(plugin.name) !== -1;
   }
 
   /**
@@ -157,7 +164,7 @@ class VK {
    */
   public link(propName: string, value: any): VK {
 
-    if (this.hasOwnProperty(propName)) throw new Error('This property already exists!');
+    if (this.hasOwnProperty(propName)) throw new Error(`This property already exists! (${propName}, ${this[propName]})`);
 
     Object.defineProperty(this, propName, {
       configurable: false,
