@@ -5,7 +5,7 @@ export const USER_AUTH_TYPE = "user";
 export const APP_AUTH_TYPE = "app";
 
 /** Type of supported platforms for authenticate user */
-const Platforms = {
+export const Platforms = {
     Android: {
         client: {
             id: 2274003,
@@ -66,33 +66,39 @@ class Auth extends Plugin {
      * This makes authentication with access token
      */
     initTokenType ():Promise<any> {
-        let authMethod = this.vk.options.auth.usersMethod;
-        let defaults = {...this.vk.defaultsOptions};
-        
+        const {groupsMethod, usersMethod, appsMethod} = this.vk.options.auth;
+        let authMethod = usersMethod;
+
         // Setting new default access_token
         this.vk.defaults({
             access_token: this.options.token
         });
-
+        console.log(this.options)
         if (this.options.type) {
             switch (this.options.type) {
                 case GROUP_AUTH_TYPE:
-                    authMethod = this.vk.options.auth.groupsMethod;
+                    authMethod = groupsMethod;
                     break;
                 case USER_AUTH_TYPE:
-                    authMethod = this.vk.options.auth.usersMethod;
+                    authMethod = usersMethod;
                     break;
                 case APP_AUTH_TYPE:
-                    authMethod = this.vk.options.auth.appsMethod;
+                    authMethod = appsMethod;
                     break;
                 default:
                     throw new Error(`Auth type is not supported (user, group, app) your type is ${this.options.type}`);
             }
+            
+            return this.vk.api.call(authMethod).then((res) => {
+                if (res.length) return true;
+                else throw new Error(`This token not valid for this authentication type (${this.options.type})`)
+            });
+
         } else {
             return new Promise(async (resolve) => {
-                let methods = [this.vk.options.auth.groupsMethod, this.vk.options.auth.usersMethod, this.vk.options.auth.appsMethod];
+                let methods = [groupsMethod, usersMethod, appsMethod];
                 for (let method of methods) {
-                    let res = await this.vk.api.call(method).then();
+                    let res = await this.vk.api.call(method);
                     if (res.length) {
                         break;
                     }
