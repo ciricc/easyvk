@@ -29,8 +29,6 @@ interface IQueryOptions {
  * If you want use some methods, for example it can be a messages.send, you can use this object
  * 
  */
-
-
 class API extends APIProxy {
   public vk;
 
@@ -39,6 +37,11 @@ class API extends APIProxy {
     this.vk = vk;
   }
 
+  /**
+   * This is end step of creating response, only url and only data
+   * @param url 
+   * @param params 
+   */
   public makeAPIQuery(url, params) {
     return axios.get(url, {
       params,
@@ -52,12 +55,22 @@ class API extends APIProxy {
     });
   }
 
+  /**
+   * Returns a response of request or throwing exception
+   * @param response response object (not body)
+   * @param request request object (full)
+   */
   private async createResponse(response, request) {
     return this.checkOnErrors(response, request).then(() => {
       return response.data;
     });
   }
 
+  /**
+   * Checks response on having errors
+   * @param response 
+   * @param request 
+   */
   private async checkOnErrors(response, request) {
     let res = response.data;
 
