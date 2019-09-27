@@ -50,26 +50,31 @@ class VK {
         if (!plugIn.name || plugIn.name === "defaultPlugin") throw new Error('Plugin must have unique name');
         if (this.hasPlugin(plugIn.name)) throw new Error('This plugin already installed');
 
+        const newPlugin = {
+            plugin: plugIn,
+            options: pluginOptions
+        }
+
         if (plugIn.requirements) {
             for (let requiredPluginName of plugIn.requirements) {
                 if (this.hasPlugin(requiredPluginName)) continue;
-                let requiredPluginIndexOfQueue = this.pluginsQueue.indexOf(requiredPluginName);
-                if (requiredPluginIndexOfQueue !== -1 && addInQueue) {
-                    this.pluginsQueue.splice(requiredPluginIndexOfQueue, 0, {
-                        plugin: plugIn,
-                        options: pluginOptions
-                    });
-                } else if (!addInQueue && requiredPluginIndexOfQueue === -1) {
-                    throw new Error(`Plugin requires a ${requiredPluginName} plugin. You should install this plugin!`);
-                }
+                throw new Error(`Plugin requires a ${requiredPluginName} plugin. You should install this plugin!`);
             }
         }
 
+        if (plugIn.setupAfter && addInQueue) {
+            let setupAfterIndex = this.pluginsQueue.indexOf(plugIn.setupAfter);
+            if (setupAfterIndex !== -1) {
+                this.pluginsQueue.splice(setupAfterIndex, 0, newPlugin);
+            }
+        }
+
+        if (!plugIn.setupAfter && addInQueue) {
+            this.pluginsQueue.push(newPlugin);
+        }
+
         if (!this.pluginInQueue(plugIn) && addInQueue) {
-            this.pluginsQueue.push({
-                plugin: plugIn,
-                options: pluginOptions
-            });
+            this.pluginsQueue.push(newPlugin);
         } else if (!addInQueue) {
             this.plugins.push(plugIn.name)
             const enable = plugIn.onEnable(pluginOptions);
