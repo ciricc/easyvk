@@ -1,8 +1,8 @@
 interface IRequestParseExceptionData {
-    /** Query which sended when occured this error */
-    request?: {[key:string]:any}
-    /** Response whuch got when occured this error */
-    response?: any
+  /** Query which sended when occured this error */
+  request?: {[key:string]:any}
+  /** Response whuch got when occured this error */
+  response?: any
 }
 
 /** 
@@ -10,20 +10,20 @@ interface IRequestParseExceptionData {
  * 
  */
 class RequestParseException extends Error {
-    public code;
-    public message;
-    public request;
-    public response;
+  public code;
+  public message;
+  public request;
+  public response;
 
-    constructor (message, {request, response}:IRequestParseExceptionData) {
-        super(message);
-        
-        this.request = request;
-        this.response = response;
-        this.code = "RequestParseException";
+  constructor (message, {request, response}:IRequestParseExceptionData) {
+    super(message);
+    
+    this.request = request;
+    this.response = response;
+    this.code = "RequestParseException";
 
-        Error.captureStackTrace(this, RequestParseException);
-    }
+    Error.captureStackTrace(this, RequestParseException);
+  }
 }
 
 export default RequestParseException;
