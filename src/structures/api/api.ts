@@ -1,4 +1,7 @@
 import APIProxy from "./proxy";
+import RequestParseException from "../../errors/RequestParseException";
+import APIException from "../../errors/APIException";
+import CaptchaException from "../../errors/CaptchaException";
 
 const axios = require('axios');
 
@@ -42,9 +45,71 @@ class API extends APIProxy {
             params,
             responseType: 'json'
         }).then((res) => {
-            return res.data.response ? res.data.response : res.data;
-        }).catch(({response}) => {
-            return response.data.response || {};
+            return [res, res.request];
+        }).catch(({response, request}) => {
+            return [response, request];
+        }).then(([response, request]) => {
+            return this.createResponse(response, request);
+        });
+    }
+
+    private async createResponse (response, request) {
+        return this.checkOnErrors(response, request).then(() => {
+            return response.data;
+        });
+    }
+
+    private async checkOnErrors (response, request) {
+        let res = response.data;
+        
+        if (typeof res === "string") {
+            throw new RequestParseException('Server responded with bad data (not a json)', {
+                request,
+                response
+            });
+        }
+        
+        if (res.error) {
+            if (res.error === this.vk.options.errors.captchaError || res.error.error_code === this.vk.options.errors.captchaErrorCode) {
+                // Captcha exception
+                throw new CaptchaException(res.error.error_msg, {
+                    code: res.error.error_code,
+                    request,
+                    response,
+                    captchaSid: res.error.captcha_sid,
+                    captchaImg: res.error.captcha_img
+                });
+                
+            } else if (res.error === this.vk.options.errors.validationError) {
+                if (res.ban_info) {
+                    // User have banned
+                } else {
+                    // User need validate account
+                }
+            } else if (res.error.error_code === this.vk.options.redirectErrorCode) {
+                // Need redirect user
+            }
+        }
+
+        let errorCode, errorMessage;
+
+        if (res.error.message) {
+            errorCode = res.error.error_code;
+            errorMessage = res.error.message;
+        } else if (res.error.error_msg) {
+            errorCode = res.error.error_code;
+            errorMessage = res.error.error_msg;
+        } else if (res.error_description) {
+            errorCode = res.error_code;
+            errorMessage = res.error_description;
+        } else {
+            return false;
+        }
+
+        throw new APIException(errorMessage, {
+            code: errorCode,
+            request,
+            response 
         });
     }
 

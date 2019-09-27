@@ -31,6 +31,16 @@ export interface IVKOptions {
         /** Device id string */
         deviceId:string
     }
+    errors: {
+        /** Name of captcha error */
+        captchaError:string
+        /** Code for captcha error (number) */
+        captchaErrorCode:number
+        /** Name of validation error */
+        validationError:string
+        /** Code for redirect error */
+        redirectErrorCode:number
+    }
     /** Proxy address for all library requests */
     proxy?: string
 }

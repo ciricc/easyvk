@@ -26,6 +26,12 @@ class VK {
       appsMethod: 'apps.get',
       passwordGrantType: 'password',
       deviceId: ''
+    },
+    errors: {
+      captchaError: 'need_captcha',
+      captchaErrorCode: 14,
+      validationError: 'need_validation',
+      redirectErrorCode: 17
     }
   };
 

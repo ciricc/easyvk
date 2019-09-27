@@ -49,51 +49,64 @@ class Auth extends Plugin {
     public options:IAuthOptions = {}
 
     async onEnable (options: IAuthOptions) {
-        this.options = {...options}
+        this.options = { ...options }
+        return this.checkAuthType().then(() => this.linkIt());
+    }
 
-        if (this.options.token) {
-            return this.initTokenType().then(() => this.linkIt());
-        } else if (this.options.username || this.options.password) {
-            if (!this.options.username || !this.options.password) {
-                throw new Error('Some of this fields not passed: password, username')
-            }
-            
-            if (!this.options.clientId || !this.options.clientSecret) {
-                this.options = {
-                    ...this.options,
-                    clientId: Platforms.Android.client.id,
-                    clientSecret: Platforms.Android.client.secret
-                }    
-            }
+    /**
+     * Checks authentication type on options
+     */
+    checkAuthType ():Promise<any> {
+      if (this.options.token) {
+          return this.initTokenType().then(() => this.linkIt());
+      } else if (this.options.username || this.options.password) {
+          return this.initUserCredentials().then(() => this.linkIt());
+      } else if (this.options.clientId || this.options.clientSecret) {
 
-            return this.vk.api.extendedQuery({
-                subdomain: this.vk.options.api.oauthSubdomain,
-                methodPath: 'token'
-            }, '', {
-                ...this.vk.defaultsOptions,
-                username: this.options.username,
-                password: this.options.password,
-                grant_type: this.vk.options.auth.passwordGrantType,
-                device_id: this.vk.options.auth.deviceId,
-                libverify_support: true,
-                client_id: this.options.clientId,
-                client_secret: this.options.clientSecret
-            }).then(res => {
-                
-                if (res.access_token) {
-                    this.vk.defaults({
-                        access_token: res.access_token
-                    });
-                    return true;
-                }
+      } else {
+          throw new Error('Authentication data is empty');
+      }
+    }
 
-                throw new Error('User data responsed like an empty data');
-            });
-        } else if (this.options.clientId || this.options.clientSecret) {
-
-        } else {
-            throw new Error('Authentication data is empty');
+    /**
+     * Making authentication user by username and password
+     */
+    initUserCredentials ():Promise<any> {
+        if (!this.options.username || !this.options.password) {
+            throw new Error('Some of this fields not passed: password, username')
         }
+        
+        if (!this.options.clientId || !this.options.clientSecret) {
+            this.options = {
+                ...this.options,
+                clientId: Platforms.Android.client.id,
+                clientSecret: Platforms.Android.client.secret
+            }    
+        }
+        
+        const extendedQuery = {
+          subdomain: this.vk.options.api.oauthSubdomain,
+          methodPath: 'token'
+        }
+
+        const authParams = {
+            ...this.vk.defaultsOptions,
+            username: this.options.username,
+            password: this.options.password,
+            grant_type: this.vk.options.auth.passwordGrantType,
+            device_id: this.vk.options.auth.deviceId,
+            libverify_support: true,
+            client_id: this.options.clientId,
+            client_secret: this.options.clientSecret
+        }
+
+        return this.vk.api.extendedQuery(extendedQuery, '', authParams).then(res => {
+            if (res.access_token) {
+                this.vk.defaults({access_token: res.access_token});
+                return true;
+            }
+            throw new Error('User data responsed like an empty data');
+        });
     }
 
     /**
@@ -146,11 +159,7 @@ class Auth extends Plugin {
      * Links auth to main library class
      */
     linkIt ():Auth {
-        
-        if (!this.vk.linked(this.name)) {
-            this.vk.link(this.name, this);
-        }
-
+        if (!this.vk.linked(this.name)) this.vk.link(this.name, this);
         return this;
     }
 }
