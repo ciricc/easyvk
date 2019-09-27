@@ -147,8 +147,8 @@ class Auth extends Plugin {
             return new Promise(async (resolve, reject) => {
                 let methods = [groupsMethod, usersMethod, appsMethod];
                 for (let method of methods) {
-                    let res = await this.vk.api.call(method).catch(reject);
-                    if (res.length) break;
+                    let res = await this.vk.api.call(method).catch((e) => {});
+                    if (res && res.length) break;
                 }
                 return resolve(true);
             });

@@ -40,7 +40,6 @@ class API extends APIProxy {
     }
 
     public makeAPIQuery (url, params) {
-        console.log(url, params)
         return axios.get(url, {
             params,
             responseType: 'json'
@@ -79,7 +78,7 @@ class API extends APIProxy {
                     captchaSid: res.error.captcha_sid,
                     captchaImg: res.error.captcha_img
                 });
-                
+
             } else if (res.error === this.vk.options.errors.validationError) {
                 if (res.ban_info) {
                     // User have banned
@@ -92,11 +91,10 @@ class API extends APIProxy {
         }
 
         let errorCode, errorMessage;
-
-        if (res.error.message) {
+        if (res.error && res.error.message) {
             errorCode = res.error.error_code;
             errorMessage = res.error.message;
-        } else if (res.error.error_msg) {
+        } else if (res.error && res.error.error_msg) {
             errorCode = res.error.error_code;
             errorMessage = res.error.error_msg;
         } else if (res.error_description) {
@@ -105,7 +103,7 @@ class API extends APIProxy {
         } else {
             return false;
         }
-
+        
         throw new APIException(errorMessage, {
             code: errorCode,
             request,

@@ -57,3 +57,70 @@ vk.setup({
     }).then(console.log);
 });
 ```
+
+### Разработка плагинов
+
+Знаю, что пока еще много чего нужно. Но то, что уже есть
+
+```javascript
+const {VK, Plugin} = require('easyvk');
+
+class MyVersionManagerPlugin extends Plugin {
+    constructor (vk, options) {
+        super(vk, options);
+        
+        this.options = {
+            ...this.options,
+            v: '5.105',
+            ...options
+        }
+
+        this.name = 'versionManager';
+
+        this.setupAfter = "auth";
+        this.requirements = ["auth"];
+    }
+
+    onEnable (options) {
+        this.options = {
+            ...this.options,
+            ...options
+        }
+        
+        // Выставляем значения по умолчанию
+        this.changeVersion(this.options.v);
+
+        // Подключаем сам плагин для быстрого доступа
+        this.vk.link(this.name, this);
+
+        return true;
+    }
+
+    changeVersion (v) {
+        this.vk.defaults({v});
+    }
+}
+
+let vk = new VK();
+
+// Тут мы только добавляем плагин
+vk.extend(MyVersionManagerPlugin).then(() => {
+    // Тут устанавливаем ВСЕ плагины
+    vk.setup({
+        versionManager: {
+            v: '5.101'
+        },
+        auth: {
+            token: 'ТОКЕН'
+        }
+    }).then(() => {
+        // Тут уже после установки
+        vk.api.group.getById().then(console.log);
+
+        // Тут мы меняем версию
+        vk.versionManager.changeVersion('5.1');
+        vk.api.groups.getById().then(console.log);
+    });
+});
+
+```
