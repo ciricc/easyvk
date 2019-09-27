@@ -1,0 +1,27 @@
+{
+  "name": "easyvk",
+  "version": "3.0.0",
+  "description": "Lalal",
+  "main": "lib/index.js",
+  "author": "ciricc",
+  "license": "MIT",
+  "devDependencies": {
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-typescript2": "^0.24.1",
+    "typescript": "^3.6.3"
+  },
+  "scripts": {
+    "build": "yarn run rollup:build",
+    "watch": "yarn run rollup:watch",
+    "rollup:build": "rollup -c rollup.config.js",
+    "rollup:watch": "rollup -c rollup.config.js -w"
+  },
+  "dependencies": {
+    "@babel/core": "^7.6.2",
+    "@babel/plugin-proposal-class-properties": "^7.5.5",
+    "axios": "^0.19.0",
+    "rollup": "^1.21.4",
+    "rollup-plugin-babel": "^4.3.3"
+  }
+}

@@ -1,0 +1,11 @@
+{
+	"compilerOptions": {
+		"target": "es6",
+		"module": "es6",
+		"lib": ["es2015"],
+		"moduleResolution": "node",
+		"noEmit": true,
+		"declaration": true,
+		"forceConsistentCasingInFileNames": true
+	}
+}
