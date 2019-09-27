@@ -26,6 +26,10 @@ export interface IVKOptions {
         usersMethod:string
         /** Method for auth with app token */
         appsMethod:string
+        /** grant_type for password and username */
+        passwordGrantType:string
+        /** Device id string */
+        deviceId:string
     }
     /** Proxy address for all library requests */
     proxy?: string

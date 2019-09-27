@@ -54,7 +54,41 @@ class Auth extends Plugin {
         if (this.options.token) {
             return this.initTokenType().then(() => this.linkIt());
         } else if (this.options.username || this.options.password) {
+            if (!this.options.username || !this.options.password) {
+                throw new Error('Some of this fields not passed: password, username')
+            }
+            
+            if (!this.options.clientId || !this.options.clientSecret) {
+                this.options = {
+                    ...this.options,
+                    clientId: Platforms.Android.client.id,
+                    clientSecret: Platforms.Android.client.secret
+                }    
+            }
 
+            return this.vk.api.extendedQuery({
+                subdomain: this.vk.options.api.oauthSubdomain,
+                methodPath: 'token'
+            }, '', {
+                ...this.vk.defaultsOptions,
+                username: this.options.username,
+                password: this.options.password,
+                grant_type: this.vk.options.auth.passwordGrantType,
+                device_id: this.vk.options.auth.deviceId,
+                libverify_support: true,
+                client_id: this.options.clientId,
+                client_secret: this.options.clientSecret
+            }).then(res => {
+                
+                if (res.access_token) {
+                    this.vk.defaults({
+                        access_token: res.access_token
+                    });
+                    return true;
+                }
+
+                throw new Error('User data responsed like an empty data');
+            });
         } else if (this.options.clientId || this.options.clientSecret) {
 
         } else {
@@ -73,7 +107,8 @@ class Auth extends Plugin {
         this.vk.defaults({
             access_token: this.options.token
         });
-        console.log(this.options)
+
+        // Checking authentication type if user wants this type
         if (this.options.type) {
             switch (this.options.type) {
                 case GROUP_AUTH_TYPE:
@@ -95,13 +130,12 @@ class Auth extends Plugin {
             });
 
         } else {
-            return new Promise(async (resolve) => {
+            // Automatically checking all types
+            return new Promise(async (resolve, reject) => {
                 let methods = [groupsMethod, usersMethod, appsMethod];
                 for (let method of methods) {
-                    let res = await this.vk.api.call(method);
-                    if (res.length) {
-                        break;
-                    }
+                    let res = await this.vk.api.call(method).catch(reject);
+                    if (res.length) break;
                 }
                 return resolve(true);
             });

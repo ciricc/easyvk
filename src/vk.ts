@@ -21,9 +21,11 @@ class VK {
       methodPath: 'method/'
     },
     auth: {
-      groupsMethod: "groups.getById",
-      usersMethod: "users.get",
-      appsMethod: "apps.get"
+      groupsMethod: 'groups.getById',
+      usersMethod: 'users.get',
+      appsMethod: 'apps.get',
+      passwordGrantType: 'password',
+      deviceId: ''
     }
   };
 
@@ -88,8 +90,8 @@ class VK {
   public async extend(plugin: typeof Plugin, pluginOptions: { [key: string]: any } = {}, addInQueue: boolean = true) {
     let plugIn = new plugin(this, pluginOptions);
 
-    if (!plugIn.name || plugIn.name === "defaultPlugin") throw new Error("Plugin must have unique name");
-    if (this.hasPlugin(plugIn.name)) throw new Error("This plugin already installed");
+    if (!plugIn.name || plugIn.name === 'defaultPlugin') throw new Error('Plugin must have unique name');
+    if (this.hasPlugin(plugIn.name)) throw new Error('This plugin already installed');
 
     const newPlugin = {
       plugin: plugIn,
