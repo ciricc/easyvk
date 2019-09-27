@@ -51,7 +51,7 @@ vk.setup({
         token: 'ТОКЕН_ГРУППЫ'
     }
 }).then(() => {
-    vk.messages.send({
+    vk.api.messages.send({
         peer_id: 1,
         message: "Привет!"
     }).then(console.log);
