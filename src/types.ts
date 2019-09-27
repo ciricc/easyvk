@@ -5,6 +5,7 @@ export interface IVKOptions {
     defaults: {
         [key:string]:any
     },
+    /** Default options for API requests */
     api: {
         /** Default protocol for APi request */
         protocol:string
@@ -17,6 +18,15 @@ export interface IVKOptions {
         /** Default oauth subdomain ({oauth}.vk.com) */
         oauthSubdomain:string
     },
+    /** Options for auth-support plugins */
+    auth: {
+        /** Method for auth with group token */
+        groupsMethod:string
+        /** Method for auth with user token */
+        usersMethod:string
+        /** Method for auth with app token */
+        appsMethod:string
+    }
     /** Proxy address for all library requests */
     proxy?: string
 }

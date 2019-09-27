@@ -1,6 +1,7 @@
 import { IVKOptions } from './types';
 import API from './structures/api/api';
 import Plugin from './structures/plugin/plugin';
+import Auth from './plugins/auth';
 
 
 class VK {
@@ -18,6 +19,11 @@ class VK {
       apiSubdomain: 'api',
       oauthSubdomain: 'oauth',
       methodPath: 'method/'
+    },
+    auth: {
+      groupsMethod: "groups.getById",
+      usersMethod: "users.get",
+      appsMethod: "apps.get"
     }
   };
 
@@ -39,6 +45,7 @@ class VK {
   constructor(options: IVKOptions) {
     this.setOptions(options);
     this.defaults(this.options.defaults);
+    this.extend(Auth);
   }
 
   /**
@@ -164,7 +171,7 @@ class VK {
    */
   public link(propName: string, value: any): VK {
 
-    if (this.hasOwnProperty(propName)) throw new Error(`This property already exists! (${propName}, ${this[propName]})`);
+    if (this.linked(propName)) throw new Error(`This property already exists! (${propName}, ${this[propName]})`);
 
     Object.defineProperty(this, propName, {
       configurable: false,
@@ -172,6 +179,14 @@ class VK {
     });
 
     return this;
+  }
+
+  /**
+   * Checks that this property already linked
+   * @param propName Property name which you want check on link
+   */
+  public linked (propName: string):boolean {
+    return this.hasOwnProperty(propName);
   }
 }
 

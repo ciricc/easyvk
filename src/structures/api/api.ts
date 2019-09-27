@@ -44,7 +44,7 @@ class API extends APIProxy {
             },
             responseType: 'json'
         }).then(res => {
-            return res.data;
+            return res.data.response;
         });
     }
 
