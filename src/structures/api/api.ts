@@ -3,9 +3,7 @@ import RequestParseException from "../../errors/RequestParseException";
 import APIException from "../../errors/APIException";
 import CaptchaException from "../../errors/CaptchaException";
 
-const axios = require('axios');
-
-
+import axios from 'axios';
 
 /** Method types query, i.e if you use wall .post method you should use a post method type */
 type MethodType = "post" | "get";
