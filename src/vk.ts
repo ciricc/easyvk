@@ -11,6 +11,13 @@ class VK {
     defaults: {
       v: '5.101',
       lang: 'ru'
+    },
+    api: {
+      domain: 'vk.com',
+      protocol: 'https',
+      apiSubdomain: 'api',
+      oauthSubdomain: 'oauth',
+      methodPath: 'method/'
     }
   };
 
@@ -127,14 +134,17 @@ class VK {
   /**
    * Setting up all plugins and intializes them
    */
-  public async setup(): Promise<VK> {
+  public async setup(globalPluginOptions: {[key: string]: any}): Promise<VK> {
     if (!this.pluginsQueue.length) return this;
 
     let initers = [...this.pluginsQueue];
 
     initers.forEach(({ plugin, options }, i) => {
       this.plugins.push(plugin.name);
-      initers[i] = plugin.onEnable(options);
+      initers[i] = plugin.onEnable({
+        ...options,
+        ...(globalPluginOptions[plugin.name] || {})
+      });
     });
 
     return Promise.all([...initers, ...this.queuePromises]).then(() => this);

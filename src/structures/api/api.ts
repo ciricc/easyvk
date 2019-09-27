@@ -35,7 +35,8 @@ class API extends APIProxy {
      * @param methodType method type that willbe used (i.e "post", "get", if you use wall.post you should use "post" etc)
      */
     public call (methodName: string, params?: IMethodOptions, methodType?: MethodType):any {
-        let requestURL = `https://api.vk.com/method/${methodName}`;
+        const api = this.vk.options.api;
+        let requestURL = `${api.protocol}://${api.apiSubdomain}.${api.domain}/${api.methodPath}${methodName}`;
         return axios.get(requestURL, {
             params: {
                 ...(this.vk.defaultsOptions),
