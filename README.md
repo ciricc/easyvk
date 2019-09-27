@@ -3,7 +3,7 @@
 Находится в разработке. Документация временно не доступна и будет появляться по мере готовности проекта
 
 ```javascript
-const VK = require('easyvk');
+const {VK} = require('easyvk');
 
 
 let vk = new VK({
@@ -44,7 +44,7 @@ easyvk({
 
 ### 3.0
 ```javascript
-const VK = require('easyvk');
+const {VK} = require('easyvk');
 let vk = new VK();
 vk.setup({
     auth: {
