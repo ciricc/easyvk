@@ -138,13 +138,15 @@ vk.handleException(CaptchaException, (error:CaptchaException) => {
         captcha_key: captchaKey
     }
 
-    // Сдалете вот так - return vk.api.withRequestConfig(); - не допускаете случаев, огда будет бесконечная рекурсия с обратным долгим выходом
+    // Сдлаете вот так - return vk.api.withRequestConfig(); - 
+    // не допускаете случаев, когда будет бесконечная рекурсия с обратным долгим выходом
 
     // Повторяем запрос (тут тоже возможна рекурсия, но не блокирующая)
     vk.api.withRequestConfig(requestConfig);
 });
 
-console.log(this.exceptionhandlers(CaptchaException)) // [Function: ExceptionHandler]
+// Получаем список хендлеров
+console.log(this.exceptionHandlers(CaptchaException)) // [Function: ExceptionHandler]
 
 vk.setup({
     auth: {
