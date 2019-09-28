@@ -118,6 +118,31 @@ vk.setup().then(() => {
 });
 ```
 
+### Лолвля ошибок
+
+И вот тут начинается непойми что. Но вот так ловятся ошибки
+
+```javascript
+import {CaptchaException, VK} from 'easyvk';
+
+let vk = new VK();
+
+// Ловим ошибку капчи
+vk.handleException(CaptchaException, (error:CaptchaException) => {
+    console.log(error.captchaSid, error.captchaImg, error.request, error.response);
+});
+
+console.log(this.exceptionhandlers(CaptchaException)) // [Function: ExceptionHandler]
+
+vk.setup({
+    auth: {
+        username: '',
+        password: ''
+    }
+});
+
+```
+
 ### Разработка плагинов
 
 Знаю, что пока еще много чего нужно. Но то, что уже есть
