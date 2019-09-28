@@ -3,11 +3,11 @@ import RequestParseException from "../../errors/RequestParseException";
 import APIException from "../../errors/APIException";
 import CaptchaException from "../../errors/CaptchaException";
 
-import axios, { AxiosRequestConfig, AxiosPromise, AxiosBasicCredentials } from 'axios';
+import axios, { AxiosRequestConfig, AxiosPromise, AxiosBasicCredentials, AxiosResponse } from 'axios';
 import VK from "../../vk";
 
 /** Method types query, i.e if you use wall .post method you should use a post method type */
-type MethodType = "post" | "get";
+type methodType = "post" | "get";
 
 /** Options that you should use in each API query */
 interface IMethodOptions {
@@ -57,8 +57,10 @@ class API extends APIProxy implements Record<string, any> {
    * @param url 
    * @param params 
    */
-  public async makeAPIQuery(url:string, params:Record<string,any>):Promise<Record<string, any>> {
-    return this.resolveApiRequest(axios.get(url, {
+  public async makeAPIQuery(url:string, params:Record<string,any>, requestMethod:methodType):Promise<Record<string, any>> {
+    return this.resolveApiRequest(axios.request({
+      url,
+      method: requestMethod,
       params,
       responseType: 'json'
     }));
@@ -69,7 +71,7 @@ class API extends APIProxy implements Record<string, any> {
    * @param response response object (not body)
    * @param request request object (full)
    */
-  private async createResponse(response, request) {
+  private async createResponse(response:AxiosResponse, request:any) {
     return this.checkOnErrors(response, request).then(() => {
       return response.data.response ? response.data.response : response.data;
     });
@@ -80,7 +82,7 @@ class API extends APIProxy implements Record<string, any> {
    * @param response 
    * @param request 
    */
-  private async checkOnErrors(response, request):Promise<void> {
+  private async checkOnErrors(response:AxiosResponse, request:any):Promise<void> {
     let res = response.data;
 
     if (typeof res === "string") {
@@ -140,8 +142,8 @@ class API extends APIProxy implements Record<string, any> {
    * @param params object options that you want to send (i.e {"peer_id": 1})
    * @param methodType method type that willbe used (i.e "post", "get", if you use wall.post you should use "post" etc)
    */
-  public call(methodName: string, params?: IMethodOptions, methodType?: MethodType):Promise<Record<string, any>> {
-    return this.extendedQuery({}, methodName, params, methodType);
+  public call(methodName: string, params?: IMethodOptions, requestMethod?: methodType):Promise<Record<string, any>> {
+    return this.extendedQuery({}, methodName, params, requestMethod);
   }
 
 
@@ -161,7 +163,7 @@ class API extends APIProxy implements Record<string, any> {
    * @param params Query data which will send
    * @param methodType Method query (post, get)
    */
-  public extendedQuery(options: IQueryOptions = {}, postfixPath: string = "", params?: IMethodOptions, methodType?: MethodType):Promise<Record<string, any>> {
+  public extendedQuery(options: IQueryOptions = {}, postfixPath: string = "", params?: IMethodOptions, requestMethod?: methodType):Promise<Record<string, any>> {
     let api = {
       ...this.vk.options.api,
       subdomain: this.vk.options.api.apiSubdomain,
@@ -171,7 +173,7 @@ class API extends APIProxy implements Record<string, any> {
     return this.makeAPIQuery(requestURL, {
       ...(this.vk.defaultsOptions),
       ...params
-    });
+    }, requestMethod);
   }
 }
 
