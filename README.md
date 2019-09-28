@@ -118,7 +118,7 @@ vk.setup().then(() => {
 });
 ```
 
-### Лолвля ошибок
+### Ловля ошибок
 
 И вот тут начинается непойми что. Но вот так ловятся ошибки
 
@@ -132,7 +132,7 @@ vk.handleException(CaptchaException, (error:CaptchaException) => {
     let captchaKey = await getCaptchaKey(error.captchaImg); // Допустим, где-то мы получили код ошибки
     let requestConfig = error.response.config; // Берем конфигурацию из запроса Axios
     
-    requestCnfig.params = {
+    requestConfig.params = {
         ...requestConfig.params,
         captcha_sid: error.captchaSid,
         captcha_key: captchaKey
