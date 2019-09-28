@@ -1,7 +1,12 @@
 import Plugin from "../../structures/plugin/plugin";
+import { FileStorage } from "../storage";
+import * as path from 'path';
 
+/** Group authentication way */
 export const GROUP_AUTH_TYPE = "group";
+/** User authentication way */
 export const USER_AUTH_TYPE = "user";
+/** Application authentication way */
 export const APP_AUTH_TYPE = "app";
 
 /** Type of supported platforms for authenticate user */
@@ -29,11 +34,13 @@ export const Platforms = {
   }
 }
 
+type authType = "group" | "user" | "app";
+
 interface IAuthOptions {
   /** Accesss token for requests (group, user, app) */
   token?:string
   /** Auth type which will be used for get data for session */
-  type?: "group" | "user" | "app"
+  type?: authType
   /** Username on vk.com */
   username?:string|number
   /** Password */
@@ -42,16 +49,80 @@ interface IAuthOptions {
   clientId?:string|number
   /** Application secret which will be used for authenticate user */
   clientSecret?:string
+  /** Need get storage data from session or use new auth data (only for username and password) */
+  reauth?:boolean
+  /** A session storage destinetion path to file */
+  sessionFile?:string
+  /** Fields which will got from API auth request */
+  fields?:string[]
+}
+
+interface ISesssion {
+  access_token:string
+  expires:number
+  fields?:Record<string, any>
+}
+
+interface IUserSession extends ISesssion {
+  user_id:number
+  first_name:string
+  last_name:string
+  photo_200:string
+  username?:string
+}
+
+interface IGroupSession extends ISesssion {
+  group_id:number
+  group_name:string
+  photo_200:string
+  group_screen_name?:string
+}
+
+interface IApplicationSession extends ISesssion {
+  app_id: number
+  app_title:string
+  app_type:string
+  app_icons?:string[]
+  author?: {
+    user_id:number
+  }
+  app_members_count?:number
 }
 
 class Auth extends Plugin {
   public name = 'auth';
   public options:IAuthOptions = {}
+  public requirements = ["storage"];
+  public session:FileStorage;
+
+  set (key:string, value:any) {
+    
+    if (key === "session") {
+      // console.log(this.vk.storage)
+      console.log('updting sessiom to', value)
+      return this.vk.storaget.get('auth.session').update(value);
+    }
+
+    return this[key] = value;
+  }
+
 
   async onEnable (options: IAuthOptions) {
-    this.options = { ...options }
+    this.options = { 
+      sessionFile: path.join(__dirname, '.vksession'),
+      reauth: false,
+      fields: [],
+      ...options 
+    }
+    this.initSessionStorage();
     return this.checkAuthType().then(() => this.linkIt());
   }
+
+  private initSessionStorage () {
+    this.vk.storage.createStorage('auth.session', {}, this.options.sessionFile);
+    this.session = this.vk.storage.get('auth.session');
+  }
+
 
   /**
    * Checks authentication type on options
@@ -71,11 +142,16 @@ class Auth extends Plugin {
   /**
    * Making authentication user by username and password
    */
-  initUserCredentials ():Promise<any> {
+  async initUserCredentials ():Promise<any> {
     if (!this.options.username || !this.options.password) {
       throw new Error('Some of this fields not passed: password, username')
     }
-    
+
+    if (!this.options.reauth && this.options.username === this.session.get('username')) {
+      this.vk.defaults({access_token: this.session.get('access_token')});
+      return true;
+    }
+
     if (!this.options.clientId || !this.options.clientSecret) {
       this.options = {
         ...this.options,
@@ -97,12 +173,19 @@ class Auth extends Plugin {
       device_id: this.vk.options.auth.deviceId,
       libverify_support: true,
       client_id: this.options.clientId,
-      client_secret: this.options.clientSecret
+      client_secret: this.options.clientSecret,
+      fields: ['first_name', 'last_name', 'photo_200', ...this.options.fields]
     }
 
     return this.vk.api.extendedQuery(extendedQuery, '', authParams).then(res => {
       if (res.access_token) {
         this.vk.defaults({access_token: res.access_token});
+        console.log(res);
+        this.createSession(USER_AUTH_TYPE as authType, {
+          access_token: res.access_token,
+          username: this.options.username,
+          user_id: res.user_id
+        });
         return true;
       }
       throw new Error('User data responsed like an empty data');
@@ -112,9 +195,20 @@ class Auth extends Plugin {
   /**
    * This makes authentication with access token
    */
-  initTokenType ():Promise<any> {
+  async initTokenType ():Promise<any> {
     const {groupsMethod, usersMethod, appsMethod} = this.vk.options.auth;
     let authMethod = usersMethod;
+    
+    let methodsAuthTypes = {
+      [groupsMethod]: GROUP_AUTH_TYPE as authType,
+      [usersMethod]: USER_AUTH_TYPE as authType,
+      [appsMethod]: APP_AUTH_TYPE as authType
+    }
+
+    const session = {
+      access_token: this.options.token,
+      expires: 0,
+    }
 
     // Setting new default access_token
     this.vk.defaults({
@@ -138,7 +232,12 @@ class Auth extends Plugin {
       }
       
       return this.vk.api.call(authMethod).then((res) => {
-        if (res.length) return true;
+        if (res.length) {
+          return this.createSession(methodsAuthTypes[authMethod], {
+            ...session,
+            ...res[0]
+          });
+        }
         else throw new Error(`This token not valid for this authentication type (${this.options.type})`)
       });
 
@@ -148,11 +247,64 @@ class Auth extends Plugin {
         let methods = [groupsMethod, usersMethod, appsMethod];
         for (let method of methods) {
           let res = await this.vk.api.call(method).catch((e) => {});
-          if (res && res.length) break;
+          if (res && res.length) {
+            this.createSession(methodsAuthTypes[method], {
+              ...session,
+              ...res[0]
+            });
+            break;
+          } else if (method === methods[methods.length-1]) {
+            console.log(this.options);
+            throw new Error('This token not valid');
+          }
         }
         return resolve(true);
       });
     }
+  }
+
+  private createSession (sessionType:authType, data:Record<string,any>):FileStorage {
+    switch (sessionType) {
+      case USER_AUTH_TYPE:
+          this.session.update({
+            first_name: data.first_name,
+            last_name: data.last_name,
+            photo_200: data.photo_200,
+            user_id: data.user_id || data.id,
+            username: data.username || '',
+            access_token: data.access_token,
+            expires: data.expires
+          } as IUserSession);
+          break;
+      case GROUP_AUTH_TYPE:
+          this.session.update({
+            access_token: data.access_token,
+            expires: data.expires,
+            group_id: data.group_id || data.id,
+            group_name: data.group_name || data.name,
+            group_screen_name: data.group_screen || data.screen,
+            photo_200: data.photo_200
+          } as IGroupSession);
+          break;
+      case APP_AUTH_TYPE:
+          this.session.update({
+            app_id: data.app_id || data.id,
+            app_title: data.app_title || data.title,
+            app_type: data.app_type || data.type,
+            app_icons: [data.icon_75, data.icon_150],
+            author: {
+              user_id: data.author_id
+            },
+            app_members_count: data.members_count || 0, 
+            access_token: data.access_token,
+            expires: data.expires
+          } as IApplicationSession);
+          break;
+      default:
+          throw new Error('Unknow session type wants to create!');
+    }
+
+    return this.session;
   }
 
   /**

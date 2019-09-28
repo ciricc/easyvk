@@ -2,9 +2,10 @@ import { IVKOptions } from './types';
 import API from './structures/api/api';
 import Plugin from './structures/plugin/plugin';
 import Auth from './plugins/auth';
-
+import Storage from './plugins/storage';
 
 class VK {
+  [x: string]: any;
 
   /** Default options */
   public options: IVKOptions = {
@@ -53,6 +54,11 @@ class VK {
   constructor(options: IVKOptions) {
     this.setOptions(options);
     this.defaults(this.options.defaults);
+    this.installDefaultsPlugins();
+  }
+
+  private installDefaultsPlugins () {
+    this.extend(Storage);
     this.extend(Auth);
   }
 

@@ -27,7 +27,7 @@ interface IQueryOptions {
  * If you want use some methods, for example it can be a messages.send, you can use this object
  * 
  */
-class API extends APIProxy {
+class API extends APIProxy implements Record<string, any> {
   public vk;
 
   constructor(vk) {
@@ -40,7 +40,7 @@ class API extends APIProxy {
    * @param url 
    * @param params 
    */
-  public makeAPIQuery(url, params) {
+  public makeAPIQuery(url, params):Promise<Record<string, any>> {
     return axios.get(url, {
       params,
       responseType: 'json'
@@ -60,7 +60,7 @@ class API extends APIProxy {
    */
   private async createResponse(response, request) {
     return this.checkOnErrors(response, request).then(() => {
-      return response.data;
+      return response.data.response ? response.data.response : response.data;
     });
   }
 
@@ -128,7 +128,7 @@ class API extends APIProxy {
    * @param params object options that you want to send (i.e {"peer_id": 1})
    * @param methodType method type that willbe used (i.e "post", "get", if you use wall.post you should use "post" etc)
    */
-  public call(methodName: string, params?: IMethodOptions, methodType?: MethodType): any {
+  public call(methodName: string, params?: IMethodOptions, methodType?: MethodType):Promise<Record<string, any>> {
     return this.extendedQuery({}, methodName, params, methodType);
   }
 
@@ -138,7 +138,7 @@ class API extends APIProxy {
    * @param methodName method name that you want to call (i.e messages.send)
    * @param params object options that you want to send (i.e {"peer_id": 1})
    */
-  public post(methodName: string, params?: IMethodOptions): any {
+  public post(methodName: string, params?: IMethodOptions):Promise<Record<string, any>> {
     return this.call(methodName, params, 'post');
   }
 
@@ -149,7 +149,7 @@ class API extends APIProxy {
    * @param params Query data which will send
    * @param methodType Method query (post, get)
    */
-  public extendedQuery(options: IQueryOptions = {}, postfixPath: string = "", params?: IMethodOptions, methodType?: MethodType) {
+  public extendedQuery(options: IQueryOptions = {}, postfixPath: string = "", params?: IMethodOptions, methodType?: MethodType):Promise<Record<string, any>> {
     let api = {
       ...this.vk.options.api,
       subdomain: this.vk.options.api.apiSubdomain,

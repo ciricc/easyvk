@@ -23,7 +23,7 @@ export default {
     typescript({
       rollupCommonJSResolveHack: true,
       useTsconfigDeclarationDir: false,
-      target: "es6",
+      target: 'es6',
       tsconfigOverride: {
         outDir: 'lib',
         rootDir: 'src',
@@ -36,6 +36,7 @@ export default {
   ],
   watch: {
     chokidar: false,
-    exclude: ["lib"]
-  }
+    exclude: ['lib']
+  },
+  external: ['axios']
 }
