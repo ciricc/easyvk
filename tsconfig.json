@@ -1,11 +1,12 @@
 {
 	"compilerOptions": {
-		"target": "es6",
-		"module": "es6",
-		"lib": ["es2015"],
+		"target": "esnext",
+		"module": "esnext",
+		"lib": ["esnext"],
 		"moduleResolution": "node",
 		"noEmit": true,
 		"declaration": true,
 		"forceConsistentCasingInFileNames": true
-	}
+	},
+	"exclude": ["dist"]
 }

@@ -3,7 +3,8 @@ import RequestParseException from "../../errors/RequestParseException";
 import APIException from "../../errors/APIException";
 import CaptchaException from "../../errors/CaptchaException";
 
-import axios from 'axios';
+import axios, { AxiosRequestConfig, AxiosPromise, AxiosBasicCredentials } from 'axios';
+import VK from "../../vk";
 
 /** Method types query, i.e if you use wall .post method you should use a post method type */
 type MethodType = "post" | "get";
@@ -28,23 +29,19 @@ interface IQueryOptions {
  * 
  */
 class API extends APIProxy implements Record<string, any> {
-  public vk;
+  public vk:VK;
 
-  constructor(vk) {
+  constructor(vk:VK) {
     super();
     this.vk = vk;
   }
 
-  /**
-   * This is end step of creating response, only url and only data
-   * @param url 
-   * @param params 
-   */
-  public async makeAPIQuery(url, params):Promise<Record<string, any>> {
-    return axios.get(url, {
-      params,
-      responseType: 'json'
-    }).then((res) => {
+  public async withRequestConfig (request:AxiosRequestConfig):Promise<Record<string, any>> {
+    return this.resolveApiRequest(axios.request(request));
+  }
+
+  private async resolveApiRequest(requestPromise:AxiosPromise):Promise<Record<string, any>> {
+    return Promise.resolve(requestPromise).then((res) => {
       return [res, res.request];
     }).catch(({ response, request }) => {
       return [response, request];
@@ -53,6 +50,18 @@ class API extends APIProxy implements Record<string, any> {
         return this.vk.processHandlers(error.constructor, error);
       });
     });
+  }
+
+  /**
+   * This is end step of creating response, only url and only data
+   * @param url 
+   * @param params 
+   */
+  public async makeAPIQuery(url:string, params:Record<string,any>):Promise<Record<string, any>> {
+    return this.resolveApiRequest(axios.get(url, {
+      params,
+      responseType: 'json'
+    }));
   }
 
   /**
@@ -99,7 +108,7 @@ class API extends APIProxy implements Record<string, any> {
           // User need validate action
 
         }
-      } else if (res.error.error_code === this.vk.options.redirectErrorCode) {
+      } else if (res.error.error_code === this.vk.options.errors.redirectErrorCode) {
         // Need redirect user
       }
     }

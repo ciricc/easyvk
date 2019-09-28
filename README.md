@@ -23,7 +23,7 @@ vk.setup({
 
 ```
 
-### Переезд с версии 2
+### Переезд со 2 версии
 
 Чтобы сделать мягкий переезд, вам нужно помолиться. Потому что 3 версия координально отличается от 2, придется менять очень многое
 
@@ -129,7 +129,19 @@ let vk = new VK();
 
 // Ловим ошибку капчи
 vk.handleException(CaptchaException, (error:CaptchaException) => {
-    console.log(error.captchaSid, error.captchaImg, error.request, error.response);
+    let captchaKey = await getCaptchaKey(error.captchaImg); // Допустим, где-то мы получили код ошибки
+    let requestConfig = error.response.config; // Берем конфигурацию из запроса Axios
+    
+    requestCnfig.params = {
+        ...requestConfig.params,
+        captcha_sid: error.captchaSid,
+        captcha_key: captchaKey
+    }
+
+    // Сдалете вот так - return vk.api.withRequestConfig(); - не допускаете случаев, огда будет бесконечная рекурсия с обратным долгим выходом
+
+    // Повторяем запрос (тут тоже возможна рекурсия, но не блокирующая)
+    vk.api.withRequestConfig(requestConfig);
 });
 
 console.log(this.exceptionhandlers(CaptchaException)) // [Function: ExceptionHandler]
