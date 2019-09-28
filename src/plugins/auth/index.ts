@@ -95,11 +95,10 @@ class Auth extends Plugin {
   public requirements = ["storage"];
   public session:FileStorage;
 
+  /** Set wrapper */
   set (key:string, value:any) {
     
     if (key === "session") {
-      // console.log(this.vk.storage)
-      console.log('updting sessiom to', value)
       return this.vk.storaget.get('auth.session').update(value);
     }
 
@@ -118,6 +117,9 @@ class Auth extends Plugin {
     return this.checkAuthType().then(() => this.linkIt());
   }
 
+  /**
+   * Enables session active
+   */
   private initSessionStorage () {
     this.vk.storage.createStorage('auth.session', {}, this.options.sessionFile);
     this.session = this.vk.storage.get('auth.session');
@@ -180,7 +182,6 @@ class Auth extends Plugin {
     return this.vk.api.extendedQuery(extendedQuery, '', authParams).then(res => {
       if (res.access_token) {
         this.vk.defaults({access_token: res.access_token});
-        console.log(res);
         this.createSession(USER_AUTH_TYPE as authType, {
           access_token: res.access_token,
           username: this.options.username,
@@ -254,7 +255,6 @@ class Auth extends Plugin {
             });
             break;
           } else if (method === methods[methods.length-1]) {
-            console.log(this.options);
             throw new Error('This token not valid');
           }
         }
@@ -263,6 +263,11 @@ class Auth extends Plugin {
     }
   }
 
+  /**
+   * Creates session of certain authentication type
+   * @param sessionType session type (user, app, group)
+   * @param data session data
+   */
   private createSession (sessionType:authType, data:Record<string,any>):FileStorage {
     switch (sessionType) {
       case USER_AUTH_TYPE:

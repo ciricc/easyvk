@@ -57,6 +57,32 @@ vk.setup({
   }).then(console.log);
 });
 ```
+### Работа с авторизацией и сессией
+
+Для работы с авторизацией внутри библиотеки уже встроен плагин `Auth`, который поможет разобраться в авторизации
+```
+import VK from 'easyvk';
+
+let vk = new VK({});
+
+vk.setup({
+    auth: {
+        username: '',
+        password: 'wdwd',
+        sessionFile: '.session',
+        reauth: false,
+        fields: ['city']
+    }
+}).then(() => {
+
+    let myToken = vk.auth.session.get('access_token);
+    let myUserId = vk.auth.session.get('user_id);
+    let myCity = vk.auth.session.get('fields').city;
+    
+    console.log(`Пользователь id${myUserId} живет в ${myCity} и владеет следующим токеном: ${myToken}`);
+});
+
+```
 
 ### Разработка плагинов
 
