@@ -1,4 +1,4 @@
-import { IVKOptions } from './types';
+import { IVKOptions, ExceptionHandler } from './types';
 import API from './structures/api/api';
 import Plugin from './structures/plugin/plugin';
 import Auth from './plugins/auth';
@@ -46,6 +46,8 @@ class VK {
   public plugins = [];
   /** Promises which already used in installation or not really */
   public queuePromises = [];
+  
+  public handlers = new WeakMap<any, ExceptionHandler[]>();
 
   /** API object for make API queries */
   public api = new API(this);
@@ -201,6 +203,47 @@ class VK {
    */
   public linked (propName: string):boolean {
     return this.hasOwnProperty(propName);
+  }
+
+  /**
+   * Makes handle this exception type by this handler
+   * @param exceptionType Exception constructor (class), for example: CaptchaException from ./errors
+   * @param handler handler function
+   */
+  public handleException (exceptionType:Error, handler:ExceptionHandler):void {
+    let exceptionHandlers = [...this.exceptionHandlers(exceptionType), handler];
+    this.handlers.set(exceptionType, exceptionHandlers);
+  }
+
+  /**
+   * Returns all handlers of this exception type
+   * @param exceptionType Exception constructor (class), for example: CaptchaException from ./errors
+   */
+  public exceptionHandlers (exceptionType:Error):ExceptionHandler[] {
+    return this.handlers.get(exceptionType) || [];
+  }
+  
+  /**
+   * This method processes error by error handlers. If handler returned this error then error will be throw
+   * else response will be ignored and handler will make something with this error
+   * @param exceptionType exception constructor (class) name
+   * @param error Error object which will be sent to handler
+   */
+  public async processHandlers (exceptionType:Error, error:Error):Promise<Error|boolean> {
+    return new Promise(async (resolve, reject) => {
+      let handlers = this.exceptionHandlers(exceptionType);
+      let handled = false;
+
+      for (let handler of handlers) {
+        let handlerReturned = await handler(error, exceptionType);
+        if (handlerReturned !== error) {
+          handled = true;
+          break;
+        }
+      }
+
+      if (!handled) reject(error);
+    })
   }
 }
 

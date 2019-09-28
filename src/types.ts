@@ -44,3 +44,6 @@ export interface IVKOptions {
   /** Proxy address for all library requests */
   proxy?: string
 }
+
+/** Exception handler which returns this exception */
+export type ExceptionHandler = (exceptionType:Error, error:any) => Promise<Error|void>;

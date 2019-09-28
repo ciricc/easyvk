@@ -40,7 +40,7 @@ class API extends APIProxy implements Record<string, any> {
    * @param url 
    * @param params 
    */
-  public makeAPIQuery(url, params):Promise<Record<string, any>> {
+  public async makeAPIQuery(url, params):Promise<Record<string, any>> {
     return axios.get(url, {
       params,
       responseType: 'json'
@@ -49,7 +49,9 @@ class API extends APIProxy implements Record<string, any> {
     }).catch(({ response, request }) => {
       return [response, request];
     }).then(([response, request]) => {
-      return this.createResponse(response, request);
+      return this.createResponse(response, request).catch(error => {
+        return this.vk.processHandlers(error.constructor, error);
+      });
     });
   }
 
@@ -69,7 +71,7 @@ class API extends APIProxy implements Record<string, any> {
    * @param response 
    * @param request 
    */
-  private async checkOnErrors(response, request) {
+  private async checkOnErrors(response, request):Promise<void> {
     let res = response.data;
 
     if (typeof res === "string") {
@@ -94,7 +96,8 @@ class API extends APIProxy implements Record<string, any> {
         if (res.ban_info) {
           // User have banned
         } else {
-          // User need validate account
+          // User need validate action
+
         }
       } else if (res.error.error_code === this.vk.options.redirectErrorCode) {
         // Need redirect user
@@ -112,7 +115,7 @@ class API extends APIProxy implements Record<string, any> {
       errorCode = res.error_code;
       errorMessage = res.error_description;
     } else {
-      return false;
+      return;
     }
 
     throw new APIException(errorMessage, {
