@@ -165,9 +165,9 @@ vk.setup({
 
 ```javascript
 const { 
-	TwoFactorException, 
-	VK, 
-	APIException 
+  TwoFactorException, 
+  VK, 
+  APIException 
 } = require('../easyvk');
 
 const readline = require('readline');
@@ -184,91 +184,91 @@ let vk = new VK();
    Возможно внутри библиотеки уже будут встроенны решения для подобных выкрутасов попроще
 */
 const  stopTwoFactorProcessing = (exceptionHandlerPosition) (
-	vk.removeExceptionHandler(exceptionHandlerPosition)
+  vk.removeExceptionHandler(exceptionHandlerPosition)
 )
 
 // Устанавливаем ловлю именно ошибки двухфакторной аутентификации
 vk.handleException(TwoFactorException, (error, errorType) => {
-	// Возвращаем промис, чтобы в итоге метод авторизации получил ответ. rl использует callback, мы - промисы
-	return new Promise((resolve, reject) => {
+  // Возвращаем промис, чтобы в итоге метод авторизации получил ответ. rl использует callback, мы - промисы
+  return new Promise((resolve, reject) => {
 
-		let twoFactorValidationWay = {
-			'2fa_app': 'приложения',
-			'2fa_sms': 'SMS'
-		}
-		
-		twoFactorValidationWay = twoFactorValidationWay[error.validationType];
-		
-		// Обновляем конфигурацию запроса на поддержку двухфакторной аутентификации
-		let requestConfig = {
-			...error.response.config,
-			params: {
-				...error.response.config.params,
-				'2fa_supported': true
-			}
-		}
+    let twoFactorValidationWay = {
+      '2fa_app': 'приложения',
+      '2fa_sms': 'SMS'
+    }
+    
+    twoFactorValidationWay = twoFactorValidationWay[error.validationType];
+    
+    // Обновляем конфигурацию запроса на поддержку двухфакторной аутентификации
+    let requestConfig = {
+      ...error.response.config,
+      params: {
+        ...error.response.config.params,
+        '2fa_supported': true
+      }
+    }
 
-		/** Функция для запуска "спрашивания" кода */
-		function answerTheCode () {
-			// СПрашиваем код
-			rl.question(`Введите код из ${twoFactorValidationWay}: `, (answer) => {
-				
-				// Обновляем параметры
-				requestConfig.params.code = answer.toString() //обязательно toString, мало ли что
+    /** Функция для запуска "спрашивания" кода */
+    function answerTheCode () {
+      // СПрашиваем код
+      rl.question(`Введите код из ${twoFactorValidationWay}: `, (answer) => {
+        
+        // Обновляем параметры
+        requestConfig.params.code = answer.toString() //обязательно toString, мало ли что
 
-				/**
-				  Так как может произойти такая ошибка, что код - не верный, мы тоже ставим обработчик
-				  на эту ошибку. позже мы его удалим, чтобы он больше не работал
-				  exceptionHandlerPosition сохраняет позицию хендлера в памяти, чтобы мы могли
-				  позже его удалить
-				*/
-				let exceptionHandlerPosition = vk.handleExceptionFirstly(APIException, (error) => {
-					// Если ошибка - неверный формат данных, то значит мы попали
-					if (error.errorType === 'otp_format_is_incorrect') {
-						console.log('Вы ввели неверный код!', answer);
-						// Останавливаем текущий хендер
-						stopTwoFactorProcessing(exceptionHandlerPosition);
-						// Занова спрашиваем, с новыми запросом
-						answerTheCode();
-						return;
-					} else {
-						// Иначе это какая-то другая ошибка, возвращаем процессингу эту ошибку
-						return error;
-					}
-				});
+        /**
+          Так как может произойти такая ошибка, что код - не верный, мы тоже ставим обработчик
+          на эту ошибку. позже мы его удалим, чтобы он больше не работал
+          exceptionHandlerPosition сохраняет позицию хендлера в памяти, чтобы мы могли
+          позже его удалить
+        */
+        let exceptionHandlerPosition = vk.handleExceptionFirstly(APIException, (error) => {
+          // Если ошибка - неверный формат данных, то значит мы попали
+          if (error.errorType === 'otp_format_is_incorrect') {
+            console.log('Вы ввели неверный код!', answer);
+            // Останавливаем текущий хендер
+            stopTwoFactorProcessing(exceptionHandlerPosition);
+            // Занова спрашиваем, с новыми запросом
+            answerTheCode();
+            return;
+          } else {
+            // Иначе это какая-то другая ошибка, возвращаем процессингу эту ошибку
+            return error;
+          }
+        });
 
-				// Делаем запрос снова, с новой конфигурацией
-				return vk.api.withRequestConfig(requestConfig).then((res) => {
-					// Если запрос успешно выполнен, то мы останавливаем чтение и возвращаем его ответ 
-					// методу авторизации плагина Auth
-					rl.close();
-					resolve(res);
-					return;
-				}, reject).catch((e) => {
-					// Тут может быть ошибка, останавливаем чтение строки из консоли
-					rl.close();
-					// Выкидываем исключение, чтобы ошибка продолжила переход
-					throw e;
-				});
-			});
-		}
+        // Делаем запрос снова, с новой конфигурацией
+        return vk.api.withRequestConfig(requestConfig).then((res) => {
+          // Если запрос успешно выполнен, то мы останавливаем чтение и возвращаем его ответ 
+          // методу авторизации плагина Auth
+          rl.close();
+          resolve(res);
+          return;
+        }, reject).catch((e) => {
+          // Тут может быть ошибка, останавливаем чтение строки из консоли
+          rl.close();
+          // Выкидываем исключение, чтобы ошибка продолжила переход
+          throw e;
+        });
+      });
+    }
 
-		// Запускаем функцию, которая будет спрашивать код двухфактрной авторизации
-		answerTheCode();
-	});
+    // Запускаем функцию, которая будет спрашивать код двухфактрной авторизации
+    answerTheCode();
+  });
 });
 
 // Запускаем установку плагинов, настраиваем плагин Auth
 vk.setup({
-	auth: {
-		username: 'ИМЯПОЛЬЗОВАТЕЛЯ',
-		password: 'ПАРОЛЬ'
-	}
+  auth: {
+    username: 'ИМЯПОЛЬЗОВАТЕЛЯ',
+    password: 'ПАРОЛЬ'
+  }
 }).then(() => {
-	const myToken = vk.auth.session.get('access_token');
-	console.log(`token: ${myToken}`);
-	// Получаем инфу о юзере
-	vk.api.users.get().then(console.log);
+  const myToken = vk.auth.session.get('access_token');
+  console.log(`token: ${myToken}`);
+  // Получаем инфу о юзере
+  vk.api.users.get().then(console.log);
 });
 ```
 
