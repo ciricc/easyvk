@@ -303,34 +303,27 @@ const {VK, Plugin} = require('easyvk');
 class MyVersionManagerPlugin extends Plugin {
   constructor (vk, options) {
     super(vk, options);
-    
-    this.options = {
-      ...this.options,
-      v: '5.105',
-      ...options
-    }
-
     this.name = 'versionManager';
-
     this.setupAfter = "auth";
     this.requirements = ["auth"];
   }
-
+  
+  /** Данный метод вызывается библиотекой при включении плагина из метода setup(), и не только. Но в него передаются именно опции из setup(), поскольку в EasyVK есть два способа подключить плагин, нужно учитывать этот фактор */
   onEnable (options) {
     this.options = {
-      ...this.options,
-      ...options
+      ...this.options, // из constructor'а
+      v: '5.105', // дефолтные опции
+      ...options // опции из setup()
     }
     
     // Выставляем значения по умолчанию
     this.changeVersion(this.options.v);
-
-    // Подключаем сам плагин для быстрого доступа
+    // Подключаем сам плагин для быстрого доступа из объекта VK
     this.vk.link(this.name, this);
-
     return true;
   }
 
+  /** Ваши какие-то методы плагина, абсолютно любые. У меня это changeVersion */
   changeVersion (v) {
     this.vk.defaults({v});
   }
@@ -352,8 +345,10 @@ vk.extend(MyVersionManagerPlugin).then(() => {
     // Тут уже после установки
     vk.api.group.getById().then(console.log);
 
-    // Тут мы меняем версию
+    // Тут мы меняем версию, работая только с плагином, которые умеет 
+    // работать с объектом VK
     vk.versionManager.changeVersion('5.1');
+    // этот запрос уже отправится с версией 5.1 по умолчанию
     vk.api.groups.getById().then(console.log);
   });
 });
