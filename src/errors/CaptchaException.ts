@@ -8,7 +8,7 @@ interface ICaptchaExceptionData extends IAPIExceptionData {
   captchaImg:string
 }
 
-class CaptchaException extends APIException {
+class CaptchaException extends APIException implements ICaptchaExceptionData {
   
   public captchaSid:number;
   public captchaImg:string;

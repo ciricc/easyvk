@@ -48,6 +48,7 @@ class VK {
   public queuePromises = [];
   
   public handlers = new WeakMap<any, ExceptionHandler[]>();
+  public handlersExceptions = new Set<any>();
 
   /** API object for make API queries */
   public api = new API(this);
@@ -207,10 +208,12 @@ class VK {
 
   /**
    * Makes handle this exception type by this handler
+   * For example: APIException == HaveBanException == Error. So, if you want to handle all errors or just certain, you can do it
    * @param exceptionType Exception constructor (class), for example: CaptchaException from ./errors
    * @param handler handler function
    */
   public handleException (exceptionType:Error, handler:ExceptionHandler):void {
+    this.handlersExceptions.add(exceptionType);
     let exceptionHandlers = [...this.exceptionHandlers(exceptionType), handler];
     this.handlers.set(exceptionType, exceptionHandlers);
   }
@@ -226,23 +229,28 @@ class VK {
   /**
    * This method processes error by error handlers. If handler returned this error then error will be throw
    * else response will be ignored and handler will make something with this error
+   * For example: APIException == HaveBanException == Error. So, if you want to handle all errors or just certain, you can do it
    * @param exceptionType exception constructor (class) name
    * @param error Error object which will be sent to handler
    */
-  public async processHandlers (exceptionType:Error, error:Error):Promise<Error|boolean> {
+  public async processHandlers (exceptionType:any, error:Error):Promise<Error|boolean> {
     return new Promise(async (resolve, reject) => {
-      let handlers = this.exceptionHandlers(exceptionType);
-      let handled = false;
+      for (let exceptionTypeHandled of this.handlersExceptions) {
+        if (exceptionTypeHandled.isPrototypeOf(exceptionType) || exceptionTypeHandled === exceptionType) {
+          let handlers = this.exceptionHandlers(exceptionTypeHandled);
+          let handled = false;
 
-      for (let handler of handlers) {
-        let handlerReturned = await handler(error, exceptionType);
-        if (handlerReturned !== error) {
-          handled = true;
-          break;
+          for (let handler of handlers) {
+            let handlerReturned = await handler(error, exceptionType);
+            if (handlerReturned !== error) {
+              handled = true;
+              break;
+            }
+          }
+
+          if (!handled) reject(error);
         }
       }
-
-      if (!handled) reject(error);
     })
   }
 }

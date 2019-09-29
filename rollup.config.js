@@ -20,6 +20,7 @@ export default {
   plugins: [
     json(),
     resolve(),
+    commonjs(),
     typescript({
       rollupCommonJSResolveHack: true,
       useTsconfigDeclarationDir: false,
@@ -32,11 +33,10 @@ export default {
         strict: true
       }
     }),
-    commonjs(),
   ],
   watch: {
     chokidar: false,
     exclude: ['lib']
   },
-  external: ['axios']
+  external: ['axios', 'fs', 'path']
 }

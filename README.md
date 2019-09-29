@@ -157,6 +157,27 @@ vk.setup({
 
 ```
 
+#### Ловля одинаковых ошибок
+
+Если вам нужно ловить не определенную ошибку, а все сразу, то вы можете указать в качестве `Exception` искючение `APIEception`
+
+```javascript
+import {APIException, HaveBanException, VK} from 'easyvk';
+
+let vk = new VK();
+
+vk.handleException(HaveBanException, (error) => {
+  console.log('Handled ban error!');
+});
+
+vk.handleException(APIException, (error) => {
+  console.log('Handled API error');
+})
+
+```
+
+Таким образом, в данном примере, если аккаунт заблокирован, будет вызвана всего лишь одна ошибка, но она вызовет сразу несколько Handler'ов, потому что ошибка блокировки - это ошибка API. То есть они равнозначны.
+
 ### Разработка плагинов
 
 Знаю, что пока еще много чего нужно. Но то, что уже есть

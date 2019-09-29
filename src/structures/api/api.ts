@@ -1,10 +1,16 @@
 import APIProxy from "./proxy";
 import RequestParseException from "../../errors/RequestParseException";
-import APIException from "../../errors/APIException";
+import APIException, { IAPIExceptionData } from "../../errors/APIException";
 import CaptchaException from "../../errors/CaptchaException";
 
 import axios, { AxiosRequestConfig, AxiosPromise, AxiosBasicCredentials, AxiosResponse } from 'axios';
 import VK from "../../vk";
+import { RedirectURIException } from "../../errors";
+import NeedValidationException, { INeedValidationExceptionData } from "../../errors/NeedValidationException";
+import TwoFactorException, { ITwoFactorExceptionData } from "../../errors/TwoFactorException";
+import { IRedirectURIExceptionData } from "../../errors/RedirectURIException";
+import UnknowErrorException from "../../errors/UnknowErrorException";
+import HaveBanException, { IHaveBanExceptionData } from "../../errors/HaveBanException";
 
 /** Method types query, i.e if you use wall .post method you should use a post method type */
 type methodType = "post" | "get";
@@ -93,12 +99,35 @@ class API extends APIProxy implements Record<string, any> {
     }
 
     if (res.error) {
+      let errorCode, errorMessage;
+      if (res.error && res.error.message) {
+        errorCode = res.error.error_code;
+        errorMessage = res.error.message;
+      } else if (res.error && res.error.error_msg) {
+        errorCode = res.error.error_code;
+        errorMessage = res.error.error_msg;
+      } else if (res.error_description) {
+        errorCode = res.error_code;
+        errorMessage = res.error_description;
+      } else {
+        return;
+      }
+
+      if (res.error && res.error_description) {
+        errorCode = res.error;
+        errorMessage = res.error_description;
+      }
+
+      let errorData = {
+        code: errorCode,
+        request,
+        response
+      } as IAPIExceptionData;
+
       if (res.error === this.vk.options.errors.captchaError || res.error.error_code === this.vk.options.errors.captchaErrorCode) {
         // Captcha exception
-        throw new CaptchaException(res.error.error_msg, {
-          code: res.error.error_code,
-          request,
-          response,
+        throw new CaptchaException(errorMessage, {
+          ...errorData,
           captchaSid: res.error.captcha_sid,
           captchaImg: res.error.captcha_img
         });
@@ -106,34 +135,31 @@ class API extends APIProxy implements Record<string, any> {
       } else if (res.error === this.vk.options.errors.validationError) {
         if (res.ban_info) {
           // User have banned
+          throw new HaveBanException (errorMessage, {
+            ...errorData,
+            banInfo: res.ban_info,
+            redirectUri: res.redirect_uri || null
+          } as IHaveBanExceptionData);
         } else {
           // User need validate action
-
+          if (res.validation_type) {
+            throw new TwoFactorException(errorMessage, errorData as ITwoFactorExceptionData);
+          } else {
+            throw new NeedValidationException(errorMessage, errorData as INeedValidationExceptionData);
+          }
         }
       } else if (res.error.error_code === this.vk.options.errors.redirectErrorCode) {
         // Need redirect user
+        throw new RedirectURIException(errorMessage, {
+          ...errorData,
+          redirectUri: res.redirect_uri
+        } as IRedirectURIExceptionData);
       }
-    }
 
-    let errorCode, errorMessage;
-    if (res.error && res.error.message) {
-      errorCode = res.error.error_code;
-      errorMessage = res.error.message;
-    } else if (res.error && res.error.error_msg) {
-      errorCode = res.error.error_code;
-      errorMessage = res.error.error_msg;
-    } else if (res.error_description) {
-      errorCode = res.error_code;
-      errorMessage = res.error_description;
+      throw new APIException(errorMessage, errorData);
     } else {
-      return;
+      throw new UnknowErrorException();
     }
-
-    throw new APIException(errorMessage, {
-      code: errorCode,
-      request,
-      response
-    });
   }
 
   /**
