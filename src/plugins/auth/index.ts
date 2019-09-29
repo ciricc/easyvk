@@ -176,7 +176,7 @@ class Auth extends Plugin {
       libverify_support: true,
       client_id: this.options.clientId,
       client_secret: this.options.clientSecret,
-      fields: ['first_name', 'last_name', 'photo_200', ...this.options.fields]
+      fields: ['first_name', 'last_name', 'photo_200', ...this.options.fields].join(',')
     }
 
     return this.vk.api.extendedQuery(extendedQuery, '', authParams).then(res => {

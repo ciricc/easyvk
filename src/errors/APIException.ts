@@ -1,6 +1,8 @@
 export interface IAPIExceptionData {
   /** Error code */
   code: number|string
+  /** error_type field which uses in error identification */
+  errorType?:string
   /** request which sended when occured this error */
   request?: {[key:string]:any}
   /** Response whuch got when occured this error */
@@ -18,13 +20,15 @@ class APIException extends Error {
   public message;
   public request;
   public response;
+  public errorType;
 
-  constructor (message, {request, response, code}:IAPIExceptionData) {
+  constructor (message, {request, response, code, errorType}:IAPIExceptionData) {
     super(message);
     
     this.request = request;
     this.response = response;
     this.code = code;
+    this.errorType = errorType;
 
     Error.captureStackTrace(this, APIException);
   }

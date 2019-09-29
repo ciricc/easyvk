@@ -212,10 +212,34 @@ class VK {
    * @param exceptionType Exception constructor (class), for example: CaptchaException from ./errors
    * @param handler handler function
    */
-  public handleException (exceptionType:Error, handler:ExceptionHandler):void {
+  public handleException (exceptionType:Error, handler:ExceptionHandler):[Error, number] {
     this.handlersExceptions.add(exceptionType);
     let exceptionHandlers = [...this.exceptionHandlers(exceptionType), handler];
     this.handlers.set(exceptionType, exceptionHandlers);
+    return [exceptionType, exceptionHandlers.length - 1];
+  }
+  
+  /**
+   * Makes handle this exception type by this handler and push this handler to begin of handlers queue
+   * For example: APIException == HaveBanException == Error. So, if you want to handle all errors or just certain, you can do it
+   * @param exceptionType Exception constructor (class), for example: CaptchaException from ./errors
+   * @param handler handler function
+   */
+  public handleExceptionFirstly (exceptionType:Error, handler:ExceptionHandler):[Error, number] {
+    this.handlersExceptions.add(exceptionType);
+    let exceptionHandlers = [handler, ...this.exceptionHandlers(exceptionType)];
+    this.handlers.set(exceptionType, exceptionHandlers);
+    return [exceptionType, 0];
+  }
+
+  /**
+   * Removes exception handler by its position
+   * @param exceptionPosition Is array which you got wfrom methods like handleException()
+   */
+  public removeExceptionHandler(exceptionPosition:[Error, number]):void {
+    let exceptions = this.exceptionHandlers(exceptionPosition[0]);
+    exceptions = exceptions.filter((_, i) => i !== exceptionPosition[1]);
+    this.handlers.set(exceptionPosition[0], exceptions);
   }
 
   /**
@@ -235,22 +259,22 @@ class VK {
    */
   public async processHandlers (exceptionType:any, error:Error):Promise<Error|boolean> {
     return new Promise(async (resolve, reject) => {
+      let handled = false;
       for (let exceptionTypeHandled of this.handlersExceptions) {
         if (exceptionTypeHandled.isPrototypeOf(exceptionType) || exceptionTypeHandled === exceptionType) {
           let handlers = this.exceptionHandlers(exceptionTypeHandled);
-          let handled = false;
 
           for (let handler of handlers) {
             let handlerReturned = await handler(error, exceptionType);
             if (handlerReturned !== error) {
               handled = true;
+              if (handlerReturned) resolve(handlerReturned);
               break;
             }
           }
-
-          if (!handled) reject(error);
         }
       }
+      if (!handled) reject(error);
     })
   }
 }

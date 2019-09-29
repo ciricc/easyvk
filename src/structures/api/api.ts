@@ -9,7 +9,6 @@ import { RedirectURIException } from "../../errors";
 import NeedValidationException, { INeedValidationExceptionData } from "../../errors/NeedValidationException";
 import TwoFactorException, { ITwoFactorExceptionData } from "../../errors/TwoFactorException";
 import { IRedirectURIExceptionData } from "../../errors/RedirectURIException";
-import UnknowErrorException from "../../errors/UnknowErrorException";
 import HaveBanException, { IHaveBanExceptionData } from "../../errors/HaveBanException";
 
 /** Method types query, i.e if you use wall .post method you should use a post method type */
@@ -99,27 +98,31 @@ class API extends APIProxy implements Record<string, any> {
     }
 
     if (res.error) {
-      let errorCode, errorMessage;
+      let errorCode, errorMessage, errorType;
+
       if (res.error && res.error.message) {
         errorCode = res.error.error_code;
         errorMessage = res.error.message;
+        errorType = res.error.error_type || '';
       } else if (res.error && res.error.error_msg) {
         errorCode = res.error.error_code;
         errorMessage = res.error.error_msg;
+        errorType = res.error.error_type || '';
       } else if (res.error_description) {
         errorCode = res.error_code;
         errorMessage = res.error_description;
-      } else {
-        return;
+        errorType = res.error_type || '';
       }
 
       if (res.error && res.error_description) {
         errorCode = res.error;
         errorMessage = res.error_description;
+        errorType = res.error_type || '';
       }
 
       let errorData = {
         code: errorCode,
+        errorType,
         request,
         response
       } as IAPIExceptionData;
@@ -143,7 +146,13 @@ class API extends APIProxy implements Record<string, any> {
         } else {
           // User need validate action
           if (res.validation_type) {
-            throw new TwoFactorException(errorMessage, errorData as ITwoFactorExceptionData);
+            throw new TwoFactorException(errorMessage, {
+              ...errorData,
+              validationType: res.validation_type,
+              phoneMask: res.phone_mask || '',
+              redirectUri: res.redirect_uri || '',
+              validationSid: res.validation_sid || ''
+            } as ITwoFactorExceptionData);
           } else {
             throw new NeedValidationException(errorMessage, errorData as INeedValidationExceptionData);
           }
@@ -157,9 +166,9 @@ class API extends APIProxy implements Record<string, any> {
       }
 
       throw new APIException(errorMessage, errorData);
-    } else {
-      throw new UnknowErrorException();
     }
+
+    return;
   }
 
   /**
