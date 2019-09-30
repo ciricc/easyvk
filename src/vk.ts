@@ -72,7 +72,7 @@ class VK {
    * Makes separate new VK options with old VK options
    * @param options New VK options
    */
-  public setOptions(options: IVKOptions): VK {
+  public setOptions(options: IVKOptions):this {
     this.options = {
       ...this.options,
       ...options
@@ -85,7 +85,7 @@ class VK {
    * Makes separete new options with old default options
    * @param options New default options for API queries
    */
-  public defaults(options: { [key: string]: any }): VK {
+  public defaults(options: { [key: string]: any }):this {
 
     this.defaultsOptions = {
       ...this.defaultsOptions,
@@ -168,7 +168,7 @@ class VK {
   /**
    * Setting up all plugins and intializes them
    */
-  public async setup(globalPluginOptions: {[key: string]: any}): Promise<VK> {
+  public async setup(globalPluginOptions: {[key: string]: any}): Promise<this> {
     if (!this.pluginsQueue.length) return this;
 
     let initers = [...this.pluginsQueue];
@@ -189,16 +189,14 @@ class VK {
    * @param propName property value which you want to update
    * @param value value which you want to set
    */
-  public link(propName: string, value: any): VK {
+  public link(propName: string, value: any):this {
 
     if (this.linked(propName)) throw new Error(`This property already exists! (${propName}, ${this[propName]})`);
 
-    Object.defineProperty(this, propName, {
+    return this.redefine(propName, {
       configurable: false,
       value
     });
-
-    return this;
   }
 
   /**
@@ -207,6 +205,16 @@ class VK {
    */
   public linked (propName: string):boolean {
     return this.hasOwnProperty(propName);
+  }
+
+  /**
+   * Allow redefine VK main class properties and methods
+   * @param propName property name (or method name)
+   * @param props descriptor config
+   */
+  public redefine (propName: string, props:PropertyDescriptor):this {
+    Object.defineProperty(this, propName, props);
+    return this;
   }
 
   /**
@@ -333,7 +341,7 @@ class VK {
     } else {
       this.addComposer(composerName, [middleware]);
     }
-
+    
     return this;
   }
 
@@ -347,7 +355,7 @@ class VK {
     if (!this.hasComposer(composerName)) {
       throw new Error('You trying run composer which not created!');
     }
-    
+
     return this.getComposer(composerName).compose()(context, noopNext);
   }
 }
