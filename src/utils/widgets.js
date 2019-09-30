@@ -139,7 +139,7 @@ class Widgets {
             }
           })
         } else {
-          reject(self._vk._error('widgets', {
+          return reject(self._vk._error('widgets', {
             video: video
           }, 'live_not_streaming'))
         }
