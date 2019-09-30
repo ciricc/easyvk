@@ -397,17 +397,21 @@ vk.use('request.prepare', (context, next) => {
 // Создаем кастомный компановщик middleware'ов
 vk.addComposer('auth.prepareToken', []);
 
-let tokenConfig = {
-  token: ['token1', 'token2']
-}
-
 async function main () {
   
+  async function processPluginWork () {
+    let tokenConfig = {
+      token: ['token1', 'token2']
+    }
+
+    return vk.compose('auth.prepareToken', tokenConfig).then(() => {
+      let token = tokenConfig.token[0];
+      console.log('My token is: ', token);
+    });
+  }
+
   // Обычное поведение плагинаб тут мы запускаем компановщика и одновременно процессинг middleware'ов
-  await vk.compose('auth.prepareToken', tokenConfig).then(() => {
-    let token = tokenConfig.token[0];
-    console.log('My token is: ', token);
-  });
+  await processPluginWork();
 
   // Пользовательское использование прослойки
   vk.use('auth.prepareToken', (context, next) => {
@@ -418,10 +422,7 @@ async function main () {
   });
 
   // Поведение плагина уже после настроек пользователя
-  await vk.compose('auth.prepareToken', tokenConfig).then(() => {
-    let token = tokenConfig.token[0];
-    console.log('My token is: ', token);
-  });
+  await processPluginWork();
 }
 
 main();
