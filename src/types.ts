@@ -47,3 +47,6 @@ export interface IVKOptions {
 
 /** Exception handler which returns this exception */
 export type ExceptionHandler = (exceptionType:Error, error:any) => Promise<Error|void>;
+
+/** Middlewares composer name type */
+export type ComposerName = string;

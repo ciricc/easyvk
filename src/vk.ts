@@ -1,8 +1,9 @@
-import { IVKOptions, ExceptionHandler } from './types';
+import { IVKOptions, ExceptionHandler, ComposerName } from './types';
 import API from './structures/api/api';
 import Plugin from './structures/plugin/plugin';
 import Auth from './plugins/auth';
 import Storage from './plugins/storage';
+import {Composer, Middleware, NextMiddleware, noopNext} from 'middleware-io';
 
 class VK {
   [x: string]: any;
@@ -53,6 +54,8 @@ class VK {
   /** API object for make API queries */
   public api = new API(this);
   
+  /** Map of composers by name */
+  public composersStack = new Map<ComposerName, Composer<any>>()
 
   constructor(options: IVKOptions) {
     this.setOptions(options);
@@ -276,6 +279,76 @@ class VK {
       }
       if (!handled) reject(error);
     })
+  }
+
+  /**
+   * Checks that this composer type already registered
+   * @param composerName Composer identifier (middleware type)
+   */
+  public hasComposer (composerName: ComposerName):boolean {
+    return this.getComposer(composerName) !== undefined;
+  }
+
+  /**
+   * Returns a composer of a middlewaretype
+   * @param composerName 
+   */
+  public getComposer(composerName: ComposerName):Composer {
+    return this.composersStack.get(composerName);
+  }
+
+  /**
+   * Adds new composer to composers
+   * @param composerName a type of middlewares
+   * @param stack array of functionshandlers (Middlewares)
+   */
+  public addComposer (composerName: ComposerName, stack:Middleware<any>[]):this {
+    let composer:Composer<any>;
+
+    // Adds only if not have
+    if (!this.hasComposer(composerName)) {
+      composer = new Composer<any>();
+      
+      for (let middleware of stack) {
+        composer.use(middleware);
+      }
+
+      this.composersStack.set(composerName, composer);
+    }
+
+    return this;
+  }
+
+  /**
+   * Adds new middleware to composer
+   * @param composerName middleware type
+   * @param middleware middleware handler
+   */
+  public use (composerName: ComposerName, middleware:Middleware<any>):this {
+
+    if (this.hasComposer(composerName)) {
+      let composer = this.getComposer(composerName);
+      composer.use(middleware);
+      this.composersStack.set(composerName, composer);
+    } else {
+      this.addComposer(composerName, [middleware]);
+    }
+
+    return this;
+  }
+
+  /**
+   * Runs a middleware
+   * @param composerName middleware type 
+   * @param context context object
+   */
+  public compose (composerName, context:any):Middleware<any> {
+    
+    if (!this.hasComposer(composerName)) {
+      throw new Error('You trying run composer which not created!');
+    }
+    
+    return this.getComposer(composerName).compose()(context, noopNext);
   }
 }
 

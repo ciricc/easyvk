@@ -30,7 +30,7 @@ export default {
         rootDir: 'src',
         include: ['src'],
         declaration: true,
-        strict: true
+        strict: false
       }
     }),
   ],

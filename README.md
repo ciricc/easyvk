@@ -295,7 +295,21 @@ vk.handleException(APIException, (error) => {
 
 ### Разработка плагинов
 
-Знаю, что пока еще много чего нужно. Но то, что уже есть
+Для создания плагинов в библиотеке есть встроенный класс `Plugin`. Рекомендую создавать классы именно на основе наследования от этого класса. Возможно в будущем будет работать подключение плагина через функцию-фраппер, вроде
+
+```javascript
+class MyPlugin extends Plugin {}
+
+const connectPlugin = (options) => {
+  return new MyPlugin(options);
+}
+
+vk.addPlugin(connectPlugin, {}).then(() => {
+  console.log('Плагин установлен!');
+});
+```
+
+Но вот пример простейшего плагина
 
 ```javascript
 const {VK, Plugin} = require('easyvk');
@@ -356,5 +370,58 @@ vk.extend(MyVersionManagerPlugin).then(() => {
     vk.api.groups.getById().then(console.log);
   });
 });
+
+```
+
+### Работа с Middleware'ами
+
+В разработке EasyVK для создания middleware'ов используется отличный и многофункциональный модуль `middleware-io`. Чтобы использовать большую часть его потенциала, я переписал только несколько методов для создания middleware'ов внутри библиотеки, так как это необходимо для расшираемости основного класса и не только.
+
+Вот простейший пример того, как может быть использован middleware
+```javascript
+let vk = new VK();
+
+vk.use('request.prepare', (context, next) => {
+  if (String(context.requestConfig.params.v) !== '5.101') {
+    context.requestConfig.params.v = '5.101';
+  }
+  next();
+});
+
+```
+
+При разработке плагинов вы можете создавать собственные middleware'ы, для кастомизации уже самих плагинов
+
+```javascript
+vk.addComposer('auth.prepareToken', []);
+
+let tokenConfig = {
+  token: ['token1', 'token2']
+}
+
+async function main () {
+	
+	// Обычное поведение плагина
+	await vk.compose('auth.prepareToken', tokenConfig).then(() => {
+	  let token = tokenConfig.token[0];
+	  console.log('My token is: ', token);
+	});
+
+	// Пользовательское использование прослойки
+	vk.use('auth.prepareToken', (context, next) => {
+	  if (Array.isArray(context.token)) {
+	    context.token = [context.token[context.token.length - 1], ...context.token];
+    }
+    next();
+	});
+
+	// Поведение плагина уже после настроек пользователя
+	await vk.compose('auth.prepareToken', tokenConfig).then(() => {
+	  let token = tokenConfig.token[0];
+	  console.log('My token is: ', token);
+	});
+}
+
+main();
 
 ```
