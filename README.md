@@ -402,26 +402,26 @@ let tokenConfig = {
 }
 
 async function main () {
-	
-	// Обычное поведение плагинаб тут мы запускаем компановщика и одновременно процессинг middleware'ов
-	await vk.compose('auth.prepareToken', tokenConfig).then(() => {
-	  let token = tokenConfig.token[0];
-	  console.log('My token is: ', token);
-	});
+  
+  // Обычное поведение плагинаб тут мы запускаем компановщика и одновременно процессинг middleware'ов
+  await vk.compose('auth.prepareToken', tokenConfig).then(() => {
+    let token = tokenConfig.token[0];
+    console.log('My token is: ', token);
+  });
 
-	// Пользовательское использование прослойки
-	vk.use('auth.prepareToken', (context, next) => {
-	  if (Array.isArray(context.token)) {
-	    context.token = [context.token[context.token.length - 1], ...context.token];
+  // Пользовательское использование прослойки
+  vk.use('auth.prepareToken', (context, next) => {
+    if (Array.isArray(context.token)) {
+      context.token = [context.token[context.token.length - 1], ...context.token];
     }
     next();
-	});
+  });
 
-	// Поведение плагина уже после настроек пользователя
-	await vk.compose('auth.prepareToken', tokenConfig).then(() => {
-	  let token = tokenConfig.token[0];
-	  console.log('My token is: ', token);
-	});
+  // Поведение плагина уже после настроек пользователя
+  await vk.compose('auth.prepareToken', tokenConfig).then(() => {
+    let token = tokenConfig.token[0];
+    console.log('My token is: ', token);
+  });
 }
 
 main();
