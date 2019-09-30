@@ -381,6 +381,7 @@ vk.extend(MyVersionManagerPlugin).then(() => {
 ```javascript
 let vk = new VK();
 
+// Добавляем прослойку для компановщика requst.prepare (подготовка запроса к отправке)
 vk.use('request.prepare', (context, next) => {
   if (String(context.requestConfig.params.v) !== '5.101') {
     context.requestConfig.params.v = '5.101';
@@ -393,6 +394,7 @@ vk.use('request.prepare', (context, next) => {
 При разработке плагинов вы можете создавать собственные middleware'ы, для кастомизации уже самих плагинов
 
 ```javascript
+// Создаем кастомный компановщик middleware'ов
 vk.addComposer('auth.prepareToken', []);
 
 let tokenConfig = {
@@ -401,7 +403,7 @@ let tokenConfig = {
 
 async function main () {
 	
-	// Обычное поведение плагина
+	// Обычное поведение плагинаб тут мы запускаем компановщика и одновременно процессинг middleware'ов
 	await vk.compose('auth.prepareToken', tokenConfig).then(() => {
 	  let token = tokenConfig.token[0];
 	  console.log('My token is: ', token);
