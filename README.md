@@ -76,7 +76,7 @@ vk.setup({
     }
 }).then(() => {
 
-    let myToken = vk.auth.session.get('access_token);
+    let myToken = vk.auth.session.get('access_token');
     let myUserId = vk.auth.session.get('user_id');
     let myCity = vk.auth.session.get('fields').city;
     
