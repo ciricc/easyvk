@@ -1,93 +1,7 @@
 import Plugin from "../../structures/plugin/plugin";
 import { FileStorage } from "../storage";
 import * as path from 'path';
-
-/** Group authentication way */
-export const GROUP_AUTH_TYPE = "group";
-/** User authentication way */
-export const USER_AUTH_TYPE = "user";
-/** Application authentication way */
-export const APP_AUTH_TYPE = "app";
-
-/** Type of supported platforms for authenticate user */
-export const Platforms = {
-  Android: {
-    client: {
-      id: 2274003,
-      secret: "hHbZxrka2uZ6jB1inYsH"  
-    },
-    name: "ANDROID"
-  },
-  IOS: {
-    client: {
-      id: 3140623,
-      secret: "VeWdmVclDCtn6ihuP1nt"
-    },
-    name: "IOS"
-  },
-  Windows: {
-    client: {
-      id: 3697615,
-      secret: "AlVXZFMUqyrnABp8ncuU"
-    },
-    name: "Windows Client"
-  }
-}
-
-type authType = "group" | "user" | "app";
-
-interface IAuthOptions {
-  /** Accesss token for requests (group, user, app) */
-  token?:string
-  /** Auth type which will be used for get data for session */
-  type?: authType
-  /** Username on vk.com */
-  username?:string|number
-  /** Password */
-  password?:string
-  /** Applications id which will be used for authenticate user */
-  clientId?:string|number
-  /** Application secret which will be used for authenticate user */
-  clientSecret?:string
-  /** Need get storage data from session or use new auth data (only for username and password) */
-  reauth?:boolean
-  /** A session storage destinetion path to file */
-  sessionFile?:string
-  /** Fields which will got from API auth request */
-  fields?:string[]
-}
-
-interface ISesssion {
-  access_token:string
-  expires:number
-  fields?:Record<string, any>
-}
-
-interface IUserSession extends ISesssion {
-  user_id:number
-  first_name:string
-  last_name:string
-  photo_200:string
-  username?:string
-}
-
-interface IGroupSession extends ISesssion {
-  group_id:number
-  group_name:string
-  photo_200:string
-  group_screen_name?:string
-}
-
-interface IApplicationSession extends ISesssion {
-  app_id: number
-  app_title:string
-  app_type:string
-  app_icons?:string[]
-  author?: {
-    user_id:number
-  }
-  app_members_count?:number
-}
+import { USER_AUTH_TYPE, GROUP_AUTH_TYPE, APP_AUTH_TYPE, IAuthOptions, Platforms, authType, IUserSession, IGroupSession, IApplicationSession } from "./types";
 
 class Auth extends Plugin {
   public name = 'auth';
@@ -129,7 +43,7 @@ class Auth extends Plugin {
   /**
    * Checks authentication type on options
    */
-  checkAuthType ():Promise<any> {
+  async checkAuthType ():Promise<any> {
     if (this.options.token) {
       return this.initTokenType().then(() => this.linkIt());
     } else if (this.options.username || this.options.password) {
@@ -315,7 +229,7 @@ class Auth extends Plugin {
   /**
    * Links auth to main library class
    */
-  linkIt ():Auth {
+  private linkIt ():Auth {
     if (!this.vk.linked(this.name)) this.vk.link(this.name, this);
     return this;
   }

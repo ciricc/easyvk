@@ -1,6 +1,6 @@
 import { IVKOptions, ExceptionHandler, ComposerName } from './types';
 import API from './structures/api/api';
-import Plugin from './structures/plugin/plugin';
+import Plugin, { PluginIniter } from './structures/plugin/plugin';
 import Auth from './plugins/auth';
 import Storage from './plugins/storage';
 import {Composer, Middleware, NextMiddleware, noopNext} from 'middleware-io';
@@ -105,8 +105,25 @@ class VK {
    * @param pluginOptions Object options for this plugin
    * @param addInQueue If you want install plugin with others in one query, use it
    */
-  public async extend(plugin: typeof Plugin, pluginOptions: { [key: string]: any } = {}, addInQueue: boolean = true) {
+  public async extend(plugin: typeof Plugin, pluginOptions: Record<string, any> = {}, addInQueue: boolean = true) {
     let plugIn = new plugin(this, pluginOptions);
+    this.completeExtends(plugin, plugIn, pluginOptions, addInQueue);
+  }
+
+  /**
+   * Installs new plugin in main VK class library
+   * Plugin must be constctured like a function PluginIniter(this, options={})
+   * 
+   * @param plugin Plugin function initer 
+   * @param pluginOptions Plugin options
+   * @param addInQueue If you want install plugin with others in one query, use it
+   */
+  public async extendConstructor (plugin: PluginIniter, pluginOptions: Record<string, any> = {}, addInQueue: boolean = true) {
+    let plugIn = plugin(this, pluginOptions);
+    this.completeExtends(plugin, plugIn, pluginOptions, addInQueue);
+  }
+
+  completeExtend (plugIn: Plugin, pluginConstructor: Plugin, pluginOptions: Record<string, any>, addInQueue: boolean = true) {
 
     if (!plugIn.name || plugIn.name === 'defaultPlugin') throw new Error('Plugin must have unique name');
     if (this.hasPlugin(plugIn.name)) throw new Error('This plugin already installed');
