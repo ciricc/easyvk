@@ -1,4 +1,5 @@
 import VK from "../../vk";
+import { ComposerName } from "../../types";
 
 class Plugin {
     public vk:VK;
@@ -14,6 +15,8 @@ class Plugin {
     public requirements = [];
     /** Plugin name which after this plugin will be installed */
     public setupAfter:string;
+    
+    public middlewares:ComposerName[];
 
     constructor (vk:VK, options:any) {
         this.vk = vk;

@@ -50,12 +50,11 @@ class VK {
   
   public handlers = new WeakMap<any, ExceptionHandler[]>();
   public handlersExceptions = new Set<any>();
-
-  /** API object for make API queries */
-  public api = new API(this);
   
   /** Map of composers by name */
   public composersStack = new Map<ComposerName, Composer<any>>()
+  public version:string = '3.0.0';
+
 
   constructor(options: IVKOptions) {
     this.setOptions(options);
@@ -64,8 +63,11 @@ class VK {
   }
 
   private installDefaultsPlugins () {
+    
     this.extend(Storage);
     this.extend(Auth);
+
+    this.api = new API(this);
   }
 
   /**
@@ -107,7 +109,7 @@ class VK {
    */
   public async extend(plugin: typeof Plugin, pluginOptions: Record<string, any> = {}, addInQueue: boolean = true) {
     let plugIn = new plugin(this, pluginOptions);
-    this.completeExtends(plugin, plugIn, pluginOptions, addInQueue);
+    this.completeExtend(plugIn, plugIn, pluginOptions, addInQueue);
   }
 
   /**
@@ -119,11 +121,11 @@ class VK {
    * @param addInQueue If you want install plugin with others in one query, use it
    */
   public async extendConstructor (plugin: PluginIniter, pluginOptions: Record<string, any> = {}, addInQueue: boolean = true) {
-    let plugIn = plugin(this, pluginOptions);
-    this.completeExtends(plugin, plugIn, pluginOptions, addInQueue);
+    let plugIn:Plugin = plugin(this, pluginOptions);
+    this.completeExtend(plugIn, plugIn, pluginOptions, addInQueue);
   }
 
-  completeExtend (plugIn: Plugin, pluginConstructor: Plugin, pluginOptions: Record<string, any>, addInQueue: boolean = true) {
+  private completeExtend (plugIn: Plugin, pluginConstructor: Plugin, pluginOptions: Record<string, any>, addInQueue: boolean = true) {
 
     if (!plugIn.name || plugIn.name === 'defaultPlugin') throw new Error('Plugin must have unique name');
     if (this.hasPlugin(plugIn.name)) throw new Error('This plugin already installed');
@@ -185,20 +187,26 @@ class VK {
   /**
    * Setting up all plugins and intializes them
    */
-  public async setup(globalPluginOptions: {[key: string]: any}): Promise<this> {
+  public async setup(globalPluginOptions: {[key: string]: any} = {}): Promise<this> {
     if (!this.pluginsQueue.length) return this;
 
     let initers = [...this.pluginsQueue];
 
     initers.forEach(({ plugin, options }, i) => {
       this.plugins.push(plugin.name);
-      initers[i] = plugin.onEnable({
+      initers[i] = 
+
+      [plugin, {
         ...options,
         ...(globalPluginOptions[plugin.name] || {})
-      });
+      }];
     });
 
-    return Promise.all([...initers, ...this.queuePromises]).then(() => this);
+    for (let initer of initers) {
+      await initer[0].onEnable(initer[1]);
+    }
+
+    return this;
   }
 
   /**
@@ -310,15 +318,15 @@ class VK {
    * Checks that this composer type already registered
    * @param composerName Composer identifier (middleware type)
    */
-  public hasComposer (composerName: ComposerName):boolean {
-    return this.getComposer(composerName) !== undefined;
+  public hasComposer<T> (composerName: ComposerName):boolean {
+    return this.getComposer<T>(composerName) !== undefined;
   }
 
   /**
    * Returns a composer of a middlewaretype
    * @param composerName 
    */
-  public getComposer(composerName: ComposerName):Composer {
+  public getComposer<T>(composerName: ComposerName):Composer<T> {
     return this.composersStack.get(composerName);
   }
 
@@ -327,12 +335,12 @@ class VK {
    * @param composerName a type of middlewares
    * @param stack array of functionshandlers (Middlewares)
    */
-  public addComposer (composerName: ComposerName, stack:Middleware<any>[]):this {
+  public addComposer<T> (composerName: ComposerName, stack:Middleware<T>[]):this {
     let composer:Composer<any>;
 
     // Adds only if not have
     if (!this.hasComposer(composerName)) {
-      composer = new Composer<any>();
+      composer = new Composer<T>();
       
       for (let middleware of stack) {
         composer.use(middleware);
@@ -349,7 +357,7 @@ class VK {
    * @param composerName middleware type
    * @param middleware middleware handler
    */
-  public use (composerName: ComposerName, middleware:Middleware<any>):this {
+  public use<T> (composerName: ComposerName, middleware:Middleware<T>):this {
 
     if (this.hasComposer(composerName)) {
       let composer = this.getComposer(composerName);
@@ -367,13 +375,13 @@ class VK {
    * @param composerName middleware type 
    * @param context context object
    */
-  public compose (composerName, context:any):Middleware<any> {
+  public async compose<T>(composerName, context:T) {
     
     if (!this.hasComposer(composerName)) {
       throw new Error('You trying run composer which not created!');
     }
 
-    return this.getComposer(composerName).compose()(context, noopNext);
+    return this.getComposer<T>(composerName).compose()(context, noopNext);
   }
 }
 

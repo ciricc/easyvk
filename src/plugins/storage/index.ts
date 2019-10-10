@@ -47,7 +47,7 @@ export class Storage extends Plugin {
   }
 
   onEnable () {
-    this.vk.link(this.name, this);
+    return this.vk.link(this.name, this);
   }
 
   /**

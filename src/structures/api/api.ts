@@ -3,30 +3,15 @@ import RequestParseException from "../../errors/RequestParseException";
 import APIException, { IAPIExceptionData } from "../../errors/APIException";
 import CaptchaException from "../../errors/CaptchaException";
 
-import axios, { AxiosRequestConfig, AxiosPromise, AxiosBasicCredentials, AxiosResponse } from 'axios';
+import axios, { AxiosRequestConfig, AxiosPromise, AxiosBasicCredentials, AxiosResponse, Method, ResponseType } from 'axios';
 import VK from "../../vk";
 import { RedirectURIException } from "../../errors";
 import NeedValidationException, { INeedValidationExceptionData } from "../../errors/NeedValidationException";
 import TwoFactorException, { ITwoFactorExceptionData } from "../../errors/TwoFactorException";
 import { IRedirectURIExceptionData } from "../../errors/RedirectURIException";
 import HaveBanException, { IHaveBanExceptionData } from "../../errors/HaveBanException";
-
-/** Method types query, i.e if you use wall .post method you should use a post method type */
-type methodType = "post" | "get";
-
-/** Options that you should use in each API query */
-interface IMethodOptions {
-  v?: string | number
-  lang?: string
-  [key: string]: any
-}
-
-interface IQueryOptions {
-  domain?: string,
-  protocol?: string,
-  subdomain?: string,
-  methodPath?: string
-}
+import { methodType, IMethodOptions, IQueryOptions, PREPARE_API_QUERY_CONFIG, RESOLVE_API_QUERY } from "./types";
+import { ComposerName } from "../../types";
 
 /** 
  * This class can help you make API requests to VK API server
@@ -35,11 +20,25 @@ interface IQueryOptions {
  */
 class API extends APIProxy implements Record<string, any> {
   public vk:VK;
+  public middlewares:ComposerName[];
 
   constructor(vk:VK) {
     super();
     this.vk = vk;
+    this.middlewares = [
+      PREPARE_API_QUERY_CONFIG,
+      RESOLVE_API_QUERY
+    ];
+
+    // Запускаем создание композеров для миддлаваров
+    this.initComposers();
   }
+
+  private initComposers () {
+    /** Middleware for preapre axios config api query */
+    this.vk.addComposer<AxiosRequestConfig>(PREPARE_API_QUERY_CONFIG, []);
+  }
+  // public async
 
   public async withRequestConfig (request:AxiosRequestConfig):Promise<Record<string, any>> {
     return this.resolveApiRequest(axios.request(request));
@@ -51,9 +50,17 @@ class API extends APIProxy implements Record<string, any> {
     }).catch(({ response, request }) => {
       return [response, request];
     }).then(([response, request]) => {
-      return this.createResponse(response, request).catch(error => {
-        return this.vk.processHandlers(error.constructor, error);
-      });
+      
+      let resolveRequestContext = {
+        response,
+        request
+      }
+      
+      return this.vk.compose(RESOLVE_API_QUERY, resolveRequestContext).then(() => (
+        this.createResponse(response, request).catch(error => {
+          return this.vk.processHandlers(error.constructor, error);
+        })
+      ));
     });
   }
 
@@ -63,12 +70,17 @@ class API extends APIProxy implements Record<string, any> {
    * @param params 
    */
   public async makeAPIQuery(url:string, params:Record<string,any>, requestMethod:methodType):Promise<Record<string, any>> {
-    return this.resolveApiRequest(axios.request({
-      url,
-      method: requestMethod,
-      params,
-      responseType: 'json'
-    }));
+    
+    let queryParams = {
+      url: url as string,
+      method: requestMethod as Method,
+      params: params as any,
+      responseType: 'json' as ResponseType
+    } as AxiosRequestConfig;
+
+    await this.vk.compose<AxiosRequestConfig>(PREPARE_API_QUERY_CONFIG, queryParams);
+
+    return this.resolveApiRequest(axios.request(queryParams));
   }
 
   /**
