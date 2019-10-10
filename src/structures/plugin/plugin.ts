@@ -16,7 +16,7 @@ class Plugin {
     /** Plugin name which after this plugin will be installed */
     public setupAfter:string;
     
-    public middlewares:ComposerName[];
+    public middlewares:Record<ComposerName, any>;
 
     constructor (vk:VK, options:any) {
         this.vk = vk;

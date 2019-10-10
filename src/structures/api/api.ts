@@ -55,7 +55,7 @@ class API extends APIProxy implements Record<string, any> {
         response,
         request
       }
-      
+
       return this.vk.compose(RESOLVE_API_QUERY, resolveRequestContext).then(() => (
         this.createResponse(response, request).catch(error => {
           return this.vk.processHandlers(error.constructor, error);
@@ -88,7 +88,7 @@ class API extends APIProxy implements Record<string, any> {
    * @param response response object (not body)
    * @param request request object (full)
    */
-  private async createResponse(response:AxiosResponse, request:any) {
+  public async createResponse(response:AxiosResponse, request:any) {
     return this.checkOnErrors(response, request).then(() => {
       return response.data.response ? response.data.response : response.data;
     });
