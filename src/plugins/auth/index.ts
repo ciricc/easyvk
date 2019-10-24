@@ -7,7 +7,7 @@ class Auth extends Plugin {
   public name = 'auth';
   public options:IAuthOptions = {}
   public requirements = ["storage"];
-  public session:FileStorage;
+  public session:FileStorage<any>;
 
   /** Set wrapper */
   set (key:string, value:any) {
@@ -145,7 +145,7 @@ class Auth extends Plugin {
         default:
           throw new Error(`Auth type is not supported (user, group, app) your type is ${this.options.type}`);
       }
-      
+
       return this.vk.api.call(authMethod).then((res) => {
         if (res.length) {
           return this.createSession(methodsAuthTypes[authMethod], {
@@ -182,7 +182,7 @@ class Auth extends Plugin {
    * @param sessionType session type (user, app, group)
    * @param data session data
    */
-  private createSession (sessionType:authType, data:Record<string,any>):FileStorage {
+  private createSession (sessionType:authType, data:Record<string,any>):FileStorage<any> {
     switch (sessionType) {
       case USER_AUTH_TYPE:
           this.session.update({

@@ -1,3 +1,6 @@
+import { Middleware } from "middleware-io";
+import { AxiosRequestConfig, AxiosResponse } from "axios";
+
 /** Method types query, i.e if you use wall .post method you should use a post method type */
 export type methodType = "post" | "get";
 
@@ -19,3 +22,10 @@ export interface IQueryOptions {
   subdomain?: string,
   methodPath?: string
 }
+
+export interface IResolveApi {
+  request: any,
+  response: AxiosResponse
+}
+
+export type ResolveApiMiddleware = IResolveApi

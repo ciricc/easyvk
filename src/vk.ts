@@ -1,41 +1,44 @@
-import { IVKOptions, ExceptionHandler, ComposerName } from './types';
+import { IVKOptions, ExceptionHandler, ComposerName, VKMode } from './types';
 import API from './structures/api/api';
-import Plugin, { PluginIniter } from './structures/plugin/plugin';
+import Plugin from './structures/plugin/plugin';
+import {PluginIniter} from './structures/plugin/types';
 import Auth from './plugins/auth';
 import Storage from './plugins/storage';
 import {Composer, Middleware, NextMiddleware, noopNext} from 'middleware-io';
+
+const defaultVKOptions = {
+  mode: 'normal' as VKMode,
+  defaults: {
+    v: '5.101',
+    lang: 'ru'
+  },
+  api: {
+    domain: 'vk.com',
+    protocol: 'https',
+    apiSubdomain: 'api',
+    oauthSubdomain: 'oauth',
+    methodPath: 'method/'
+  },
+  auth: {
+    groupsMethod: 'groups.getById',
+    usersMethod: 'users.get',
+    appsMethod: 'apps.get',
+    passwordGrantType: 'password',
+    deviceId: ''
+  },
+  errors: {
+    captchaError: 'need_captcha',
+    captchaErrorCode: 14,
+    validationError: 'need_validation',
+    redirectErrorCode: 17
+  },
+}
 
 class VK {
   [x: string]: any;
 
   /** Default options */
-  public options: IVKOptions = {
-    mode: 'default',
-    defaults: {
-      v: '5.101',
-      lang: 'ru'
-    },
-    api: {
-      domain: 'vk.com',
-      protocol: 'https',
-      apiSubdomain: 'api',
-      oauthSubdomain: 'oauth',
-      methodPath: 'method/'
-    },
-    auth: {
-      groupsMethod: 'groups.getById',
-      usersMethod: 'users.get',
-      appsMethod: 'apps.get',
-      passwordGrantType: 'password',
-      deviceId: ''
-    },
-    errors: {
-      captchaError: 'need_captcha',
-      captchaErrorCode: 14,
-      validationError: 'need_validation',
-      redirectErrorCode: 17
-    }
-  };
+  public options: IVKOptions = {...defaultVKOptions};
 
   /** Default options which will be used in each API qeury */
   public defaultsOptions = this.options.defaults;
@@ -56,7 +59,7 @@ class VK {
   public version:string = '3.0.0';
 
 
-  constructor(options: IVKOptions) {
+  constructor(options:IVKOptions={...defaultVKOptions}) {
     this.setOptions(options);
     this.defaults(this.options.defaults);
     this.installDefaultsPlugins();

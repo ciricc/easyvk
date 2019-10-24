@@ -1,6 +1,8 @@
+export type VKMode = "highload" | "normal";
+
 export interface IVKOptions {
   /** Run mode */
-  mode: "highload" | "default"
+  mode: VKMode
   /** Default request parameters */
   defaults: {
     [key:string]:any

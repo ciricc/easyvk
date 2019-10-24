@@ -10,7 +10,7 @@ import NeedValidationException, { INeedValidationExceptionData } from "../../err
 import TwoFactorException, { ITwoFactorExceptionData } from "../../errors/TwoFactorException";
 import { IRedirectURIExceptionData } from "../../errors/RedirectURIException";
 import HaveBanException, { IHaveBanExceptionData } from "../../errors/HaveBanException";
-import { methodType, IMethodOptions, IQueryOptions, PREPARE_API_QUERY_CONFIG, RESOLVE_API_QUERY } from "./types";
+import { methodType, IMethodOptions, IQueryOptions, PREPARE_API_QUERY_CONFIG, RESOLVE_API_QUERY, ResolveApiMiddleware, IResolveApi } from "./types";
 import { ComposerName } from "../../types";
 
 /** 
@@ -37,6 +37,7 @@ class API extends APIProxy implements Record<string, any> {
   private initComposers ():this {
     /** Middleware for preapre axios config api query */
     this.vk.addComposer<AxiosRequestConfig>(PREPARE_API_QUERY_CONFIG, []);
+    this.vk.addComposer<ResolveApiMiddleware>(RESOLVE_API_QUERY, []);
     return this;
   }
   // public async
@@ -53,11 +54,11 @@ class API extends APIProxy implements Record<string, any> {
     }).then(async ([response, request]) => {
       
       let resolveRequestContext = {
-        response,
-        request
-      }
+        response: response,
+        request: request
+      }  as ResolveApiMiddleware;
 
-      return this.vk.compose(RESOLVE_API_QUERY, resolveRequestContext).then(() => (
+      return this.vk.compose<ResolveApiMiddleware>(RESOLVE_API_QUERY, resolveRequestContext).then(() => (
         this.createResponse(response, request).catch(error => {
           return this.vk.processHandlers(error.constructor, error);
         })
