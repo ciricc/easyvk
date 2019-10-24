@@ -14,7 +14,7 @@ export * from './types';
  */
 export class Storage extends Plugin {
   public name = "storage";
-  public storages = new Map<string,FileStorage| MemoryStorage>();
+  public storages = new Map<string, FileStorage<any>|MemoryStorage>();
 
   /**
    * Creates new storage and returns created storage
@@ -22,14 +22,14 @@ export class Storage extends Plugin {
    * @param storageValue Default storage data 
    * @param destinition File path which will be used to storage storage data
    */
-  createStorage (storageKey:string, storageValue:Record<string, any>, destinition:string):FileStorage| MemoryStorage {
+  createStorage<T> (storageKey:string, storageValue:Record<string, any>, destinition:string):FileStorage<T>| MemoryStorage {
     if (this.has(storageKey)) throw new Error('This storage key already have!');
     
-    let storage:FileStorage| MemoryStorage;
+    let storage:FileStorage<T>|MemoryStorage;
 
     if (destinition) {
       // Is a file storage, need create read stream and write stream
-      storage = new FileStorage(storageKey, storageValue, destinition);
+      storage = new FileStorage<T>(storageKey, storageValue, destinition);
     } else {
       storage = new  MemoryStorage(storageKey, storageValue);
     }
@@ -54,7 +54,7 @@ export class Storage extends Plugin {
    * Returns storage by name
    * @param storageKey Storage name
    */
-  get (storageKey:string):FileStorage| MemoryStorage{
+  get <T>(storageKey:string):FileStorage<T>|MemoryStorage{
     return this.storages.get(storageKey);
   }
 }

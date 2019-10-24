@@ -1,6 +1,6 @@
 import { IStorage } from "./types";
 
-export default class  MemoryStorage implements IStorage {
+export default class  MemoryStorage implements IStorage<any> {
   public storageData:Record<string, any>;
   public storageName:string;
 

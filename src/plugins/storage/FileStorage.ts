@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync, openSync, closeSync} from "fs";
 import { IFileStorage } from "./types";
 import MemoryStorage from "./MemoryStorage";
 
-export default class FileStorage extends  MemoryStorage implements IFileStorage {
+export default class FileStorage<T> extends  MemoryStorage implements IFileStorage<T> {
   public fileDestinition:string;
   
   /**
