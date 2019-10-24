@@ -34,9 +34,10 @@ class API extends APIProxy implements Record<string, any> {
     this.initComposers();
   }
 
-  private initComposers () {
+  private initComposers ():this {
     /** Middleware for preapre axios config api query */
     this.vk.addComposer<AxiosRequestConfig>(PREPARE_API_QUERY_CONFIG, []);
+    return this;
   }
   // public async
 
@@ -49,7 +50,7 @@ class API extends APIProxy implements Record<string, any> {
       return [res, res.request];
     }).catch(({ response, request }) => {
       return [response, request];
-    }).then(([response, request]) => {
+    }).then(async ([response, request]) => {
       
       let resolveRequestContext = {
         response,
@@ -110,7 +111,7 @@ class API extends APIProxy implements Record<string, any> {
     }
 
     if (res.error) {
-      let errorCode, errorMessage, errorType;
+      let errorCode:number|string, errorMessage:string, errorType:number|string;
 
       if (res.error && res.error.message) {
         errorCode = res.error.error_code;
@@ -189,7 +190,7 @@ class API extends APIProxy implements Record<string, any> {
    * @param params object options that you want to send (i.e {"peer_id": 1})
    * @param methodType method type that willbe used (i.e "post", "get", if you use wall.post you should use "post" etc)
    */
-  public call(methodName: string, params?: IMethodOptions, requestMethod?: methodType):Promise<Record<string, any>> {
+  public async call(methodName: string, params?: IMethodOptions, requestMethod?: methodType):Promise<Record<string, any>> {
     return this.extendedQuery({}, methodName, params, requestMethod);
   }
 
@@ -199,7 +200,7 @@ class API extends APIProxy implements Record<string, any> {
    * @param methodName method name that you want to call (i.e messages.send)
    * @param params object options that you want to send (i.e {"peer_id": 1})
    */
-  public post(methodName: string, params?: IMethodOptions):Promise<Record<string, any>> {
+  public async post(methodName: string, params?: IMethodOptions):Promise<Record<string, any>> {
     return this.call(methodName, params, 'post');
   }
 
@@ -210,7 +211,7 @@ class API extends APIProxy implements Record<string, any> {
    * @param params Query data which will send
    * @param methodType Method query (post, get)
    */
-  public extendedQuery(options: IQueryOptions = {}, postfixPath: string = "", params?: IMethodOptions, requestMethod?: methodType):Promise<Record<string, any>> {
+  public async extendedQuery(options: IQueryOptions = {}, postfixPath: string = "", params?: IMethodOptions, requestMethod?: methodType):Promise<Record<string, any>> {
     let api = {
       ...this.vk.options.api,
       subdomain: this.vk.options.api.apiSubdomain,

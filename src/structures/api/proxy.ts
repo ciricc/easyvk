@@ -13,30 +13,30 @@ class APIProxy extends Function {
     return new Proxy(this, Object.keys(optional).length ? optional : this);
   }
 
-  get (_, section) {
+  get (_, section:any) {
     if (typeof section !== "string") return API_OBJECT_NAME;
     if (this[section.toString()]) return this[section.toString()];
 
     return new APIProxy({
-      get: ({}, action) => {
+      get: ({}, action:any) => {
         if (typeof action !== "string") return API_OBJECT_NAME;
 
         let method = `${section.toString()}.${action.toString()}`;
         return new APIProxy({
-          apply: (_, __, args) => {
+          apply: (_:any, __:any, args:any) => {
             return this.call(method, ...args);
           }
         });
       },
-      apply: (_, __, args) => {
+      apply: (_:any, __:any, args:any) => {
         if (section.toString() !== "execute") throw new Error("You can no use this section as a method");
         return this.call(section.toString(), ...args);
       }
     });  
   }
   
-  public call(...args):any {return;}
-  public post (...args):any {return;}
+  public call(...args:any):any {return;}
+  public post (...args:any):any {return;}
 }
 
 
