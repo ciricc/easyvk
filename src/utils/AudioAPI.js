@@ -213,7 +213,8 @@ class AudioAPI {
       self._request({
         act: 'reload_audio',
         al: 1,
-        ids: params.ids
+        ids: params.ids,
+        utf8: true
       }).then((res) => {
         let audios = self._parseJSON(res.body, reject)
 
@@ -350,6 +351,12 @@ class AudioAPI {
 
   _request (...args) {
     return this._http.request('al_audio.php', ...args)
+  }
+
+  _requestGet (...args) {
+    return this._http.request('al_audio.php',
+      args[0],
+      args[1], args[2], false, ...(args.slice(3)))
   }
 
   _requestMobile (file = 'audio', form, post) {
@@ -872,7 +879,7 @@ class AudioAPI {
     let self = this
 
     return new Promise((resolve, reject) => {
-      self._request({}).then(res => {
+      self._request({}, true).then(res => {
         let reorderHash = res.body.match(/"audiosReorderHash":"(.*?)"/g)
 
         if (!reorderHash) reorderHash = ['']
@@ -1126,6 +1133,185 @@ class AudioAPI {
           }),
           json: res.body,
           vk: self._vk
+        })
+      })
+    })
+  }
+
+  /*
+   *
+   *  Function for change status active/inactive
+   *
+   */
+
+  toggleAudioStatus (params = {}) {
+    let uid = this._vk.session.user_id
+
+    if (params.owner_id) {
+      params.owner_id = Number(params.owner_id)
+    } else if (uid) { params.owner_id = uid }
+
+    return this._requestGet({
+      retOnlyBody: true
+    }, true).then(res => {
+      let matches = res.body.split('statusExportHash: ')[1]
+      let statusExportHash = matches.split(',')[0].replace("'", '').replace("'", '')
+      let enable = (params.enable !== false) ? 1 : 0
+      return this._request({
+        act: 'toggle_status',
+        al: 1,
+        exp: enable,
+        hash: statusExportHash,
+        id: params.raw_audio_id,
+        oid: params.owner_id,
+        top: 0,
+        XML: true,
+        utf8: true,
+        autoParse: true
+      }, true)
+    })
+  }
+
+  changeAudioStatus (params = {}) {
+    return this._request({
+      retOnlyBody: true
+    }).then(res => {
+      let matches = res.body.split('statusExportHash: ')[1]
+      let statusExportHash = matches.split(',')[0].replace("'", '').replace("'", '')
+      return this._request({
+        act: 'audio_status',
+        al: 1,
+        hash: statusExportHash,
+        full_id: params.raw_audio_id,
+        top: 0,
+        XML: true,
+        utf8: true,
+        autoParse: true
+      }, true)
+    })
+  }
+
+  getRecommendations (params = {}) {
+    let uid = this._vk.session.user_id
+    if (params.owner_id) {
+      params.owner_id = Number(params.owner_id)
+    } else if (uid) { params.owner_id = uid }
+
+    return new Promise((resolve, reject) => {
+      return this._request({
+        act: 'section',
+        al: 1,
+        owner_id: uid,
+        section: 'recoms'
+      }).then(res => {
+        let json = this._parseJSON(res.body, reject)
+        let id = json.playlists[0].id.replace('recoms', '')
+
+        return this._request({
+          act: 'load_section',
+          al: 1,
+          claim: 0,
+          offset: 0,
+          owner_id: uid,
+          playlist_id: `recoms${id}`,
+          type: 'recoms',
+          track_type: 'default',
+          utf8: true
+        }).then(res => {
+          let json = this._parseJSON(res.body, reject)
+          return this._getNormalAudiosWithURL(json.list).then(audios => {
+            return resolve({
+              vk: this._vk,
+              json: json,
+              vkr: VKResponse(staticMethods, {
+                response: audios
+              })
+            })
+          })
+        })
+      })
+    })
+  }
+
+  getFriendsUpdates (params = {}) {
+    let uid = this._vk.session.user_id
+
+    if (params.owner_id) {
+      params.owner_id = Number(params.owner_id)
+    } else if (uid) { params.owner_id = uid }
+
+    return new Promise((resolve, reject) => {
+      this._request({
+        act: 'section',
+        al: 1,
+        claim: 0,
+        is_layer: 0,
+        owner_id: uid,
+        section: 'updates',
+        utf8: true
+      }).then(res => {
+        let json = this._parseJSON(res.body, reject)
+        let audios = json.feedPlaylist.list
+        audios = audios.slice(0, params.count)
+        return this._getNormalAudiosWithURL(audios).then(audios => {
+          return resolve({
+            vk: this._vk,
+            json: json,
+            vkr: VKResponse(staticMethods, {
+              response: audios
+            })
+          })
+        })
+      })
+    })
+  }
+
+  getNewReleases (params = {}) {
+    let uid = this._vk.session.user_id
+
+    if (params.owner_id) {
+      params.owner_id = Number(params.owner_id)
+    } else if (uid) { params.owner_id = uid }
+
+    return new Promise((resolve, reject) => {
+      return this._request({
+        act: 'section',
+        al: 1,
+        claim: 0,
+        is_layer: 0,
+        owner_id: uid,
+        section: 'recoms',
+        utf8: true
+      }).then(res => {
+        let json = this._parseJSON(res.body, reject)
+
+        let recoms = json.playlists[0].list
+        let recomsId = json.playlists[0].id
+
+        let newReleases = json.playlists[1].list
+        let newReleasesId = json.playlists[1].id
+
+        let vkCharts = json.playlists[2].list
+        let vkChartsId = json.playlists[2].id
+
+        return this._getNormalAudiosWithURL(recoms).then(resolveRecoms => {
+          resolveRecoms = [...resolveRecoms, { recomsId }]
+          return this._getNormalAudiosWithURL(newReleases).then(resolveNewReleases => {
+            resolveNewReleases = [...resolveNewReleases, { newReleasesId }]
+            return this._getNormalAudiosWithURL(vkCharts).then(resolveVkCharts => {
+              resolveVkCharts = [...resolveVkCharts, { vkChartsId }]
+              return resolve({
+                vk: this._vk,
+                vkr: VKResponse(staticMethods, {
+                  response: {
+                    recoms: resolveRecoms,
+                    new: resolveNewReleases,
+                    charts: resolveVkCharts
+                  }
+                })
+              })
+            })
+          })
         })
       })
     })

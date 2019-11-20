@@ -15,8 +15,13 @@ const fs = require('fs')
 const request = require('request')
 const FileCookieStore = require('tough-cookie-file-store')
 
+const staticMethods = require('./staticMethods.js')
+const VKResponse = require('./VKResponse.js')
+
 const AudioAPI = require('./AudioAPI.js')
 const Debugger = require('./debugger.class.js')
+
+const encoding = require('encoding')
 
 class HTTPEasyVKClient {
   constructor ({ _jar, vk, httpVk, config, parser }) {
@@ -165,7 +170,7 @@ class HTTPEasyVKClient {
         section: 'httpClient'
       })
 
-      return cb(e, res, be)
+      return (cb) ? cb(e, res, be) : true
     })
   }
 
@@ -266,7 +271,7 @@ class HTTPEasyVKClient {
         'user_agent': self._config.user_agent
       }
 
-      if (isMobile && method === 'post') {
+      if ((isMobile && method === 'post') || form.XML === true) {
         headers['x-requested-with'] = 'XMLHttpRequest'
       }
 
@@ -277,6 +282,10 @@ class HTTPEasyVKClient {
         encoding: 'binary',
         headers: headers,
         agent: self._vk.agent
+      }
+
+      if (method === 'get') {
+        requestParams.form = undefined
       }
 
       self._vk._debugger.push('request', requestParams)
@@ -294,7 +303,8 @@ class HTTPEasyVKClient {
         self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
           url: requestParams.url,
           query: form,
-          section: 'httpClient'
+          section: 'httpClient',
+          body: res.body
         })
 
         if (err) {
@@ -304,6 +314,12 @@ class HTTPEasyVKClient {
         if (!res.body.length) {
           return reject(self._vk._error('audio_api', {}, 'not_have_access'))
         }
+
+        if (form.utf8) {
+          res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString()
+        }
+
+        if (form.retOnlyBody) return resolve(res)
 
         if (!isMobile) {
           let json = self._parseResponse(res.body.split('<!>'))
@@ -317,11 +333,30 @@ class HTTPEasyVKClient {
           if (!json[5] && !ignoreStringError) {
             return reject(self._vk._error('audio_api', {}, 'not_have_access'))
           }
+
+          if (form.autoParse) {
+            return resolve({
+              vkr: VKResponse(staticMethods, {
+                response: json[5]
+              }),
+              json: json,
+              body: res.body,
+              vk: self._vk
+            })
+          }
         }
 
         return resolve(res)
       })
     })
+  }
+
+  async goDesktop () {
+    return this.request('fv?to=/mail?_fm=mail&_fm2=1', {}, true, 6, false, true)
+  }
+
+  async goMobile () {
+    return this.request('mail?act=show&peer=0&_ff=1', {}, true, 6, false, true)
   }
 
   async requestMobile (...args) {
@@ -624,7 +659,7 @@ class HTTPEasyVK {
           }
         }, reject)
 
-        function createClient (r, vHttp) {
+        async function createClient (r, vHttp) {
           let HTTPClient = new HTTPEasyVKClient({
             _jar: self._authjar,
             vk: self._vk,
@@ -632,6 +667,8 @@ class HTTPEasyVK {
             config: self._config,
             parser: self._parseResponse
           })
+
+          await HTTPClient.goDesktop()
 
           return r({
             client: HTTPClient,

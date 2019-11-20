@@ -22,6 +22,7 @@ const DebuggerClass = require('./utils/debugger.class.js')
 const ProxyAgent = require('proxy-agent')
 
 const https = require('https')
+const authTypes = ['user', 'group', 'app']
 
 /**
  *  EasyVK module. In this module creates session by your params
@@ -78,6 +79,10 @@ class EasyVK {
 
         options = opts
 
+        if (options.username || options.password) {
+          options.auth = options.username + ':' + options.password
+        }
+
         options.keepAlive = true
         options.keepAliveMsecs = 30000
 
@@ -88,6 +93,35 @@ class EasyVK {
           keepAliveMsecs: 30000
         })
       }
+
+      let defaultDataParams = {
+        client_id: params.client_id || configuration.WINDOWS_CLIENT_ID,
+        client_secret: params.client_secret || configuration.WINDOWS_CLIENT_SECRET,
+        v: params.api_v,
+        lang: params.lang || 'ru',
+        '2fa_supported': 1
+      }
+
+      if (params.captcha_key) {
+        defaultDataParams.captcha_sid = params.captcha_sid
+        defaultDataParams.captcha_key = params.captcha_key
+      }
+
+      if (params.code && params.code.toString().length !== 0) {
+        defaultDataParams.code = params.code
+      }
+
+      if (!params.captchaHandler || !Object.prototype.toString.call(params.captchaHandler).match(/Function/)) {
+        params.captchaHandler = (thread) => {
+          throw self._error('captcha_error', {
+            captcha_key: thread.captcha_key,
+            captcha_sid: thread.captcha_sid,
+            captcha_img: thread.captcha_img
+          })
+        }
+      }
+
+      self.captchaHandler = params.captchaHandler
 
       /* if user wants to get data from file, need get data from file
          or generate this file automatically with new data */
@@ -103,7 +137,8 @@ class EasyVK {
 
         if (data) {
           try {
-            data = JSON.parse(data)
+            data = JSON.parse(data.toString())
+
             if (
               (data.access_token && data.access_token === params.access_token) || // If config token is session token
               (params.username && params.username === data.username) ||
@@ -111,7 +146,8 @@ class EasyVK {
             ) {
               if (data.access_token) {
                 session = new EasyVKSession(self, data)
-                return initToken()
+                self.session = session
+                return initResolve(self)
               } else {
                 if (!(params.username && params.password) && !params.access_token && !params.client_id && params.client_secret) {
                   return reject(self._error('empty_session'))
@@ -130,39 +166,23 @@ class EasyVK {
         }
       }
 
-      let defaultDataParams = {
-        client_id: params.client_id || configuration.WINDOWS_CLIENT_ID,
-        client_secret: params.client_secret || configuration.WINDOWS_CLIENT_SECRET,
-        v: params.api_v,
-        lang: params.lang || 'ru'
-      }
-
-      if (params.captcha_key) {
-        defaultDataParams.captcha_sid = params.captcha_sid
-        defaultDataParams.captcha_key = params.captcha_key
-      }
-
-      if (params.code && params.code.toString().length !== 0) {
-        defaultDataParams['2fa_supported'] = 1
-        defaultDataParams.code = params.code
-      }
-
-      if (!params.captchaHandler || !Object.prototype.toString.call(params.captchaHandler).match(/Function/)) {
-        params.captchaHandler = (thread) => {
-          throw self._error('captcha_error', {
-            captcha_key: thread.captcha_key,
-            captcha_sid: thread.captcha_sid,
-            captcha_img: thread.captcha_img
-          })
-        }
-      }
-
-      self.captchaHandler = params.captchaHandler
-
       if (!session.access_token) { // If session file contents access_token, try auth with it
         if (params.access_token) {
           session.access_token = params.access_token
-          initToken()
+          if (self.params.authType) {
+            let { authType } = self.params
+            if (authType === authTypes[0]) {
+              initToken()
+            } else if (authType === authTypes[1]) {
+              groupToken()
+            } else if (authType === authTypes[2]) {
+              appToken()
+            } else {
+              initToken()
+            }
+          } else {
+            initToken()
+          }
         } else if (params.username) {
           // Try get access_token with auth
           let getData = {
@@ -281,7 +301,7 @@ class EasyVK {
 
       function prepareResponse (err, res) {
         if (err) {
-          return reject(new Error(`Server was down or we don't know what happaned [responseCode ${res.statusCode}]`))
+          return reject(new Error(err))
         }
 
         let vkr = res.body
@@ -339,8 +359,20 @@ class EasyVK {
                 let json = StaticMethods.checkJSONErrors(vkr, reject)
                 if (json) {
                   if (Array.isArray(json) && json.length === 0) {
-                    appToken()
+                    session = {
+                      access_token: session.access_token
+                    }
+
+                    if (self.params.authType && self.params.authType === authTypes[0]) {
+                      return reject(new Error('Is not a user token! Or this token is not valid (expired)'))
+                    } else {
+                      appToken()
+                    }
                   } else {
+                    session = {
+                      access_token: session.access_token
+                    }
+
                     session.user_id = json[0].id
                     session.first_name = json[0].first_name
                     session.last_name = json[0].last_name
@@ -352,7 +384,8 @@ class EasyVK {
                       }
                     }
 
-                    self.session = session
+                    self.session = new EasyVKSession(self, session)
+
                     initResolve(self)
                   }
                 }
@@ -373,16 +406,19 @@ class EasyVK {
       function appToken () {
         let getData
 
-        getData = StaticMethods.urlencode({
+        let data = {
           access_token: params.access_token,
           v: params.api_v,
-          lang: params.lang,
           fields: params.fields.join(',')
-        })
+        }
+
+        if (params.lang !== undefined) data.lang = params.lang
+
+        getData = StaticMethods.urlencode(data)
 
         if (self.debuggerRun) {
           try {
-            self.debuggerRun.push('request', configuration.BASE_CALL_URL + 'groups.getById?' + getData)
+            self.debuggerRun.push('request', configuration.BASE_CALL_URL + 'apps.get?' + getData)
           } catch (e) {
             // Ignore
           }
@@ -423,8 +459,12 @@ class EasyVK {
             let json
 
             json = StaticMethods.checkJSONErrors(vkr, (e) => {
-              if (e.error_code === 5) {
-                groupToken()
+              if (e.error_code === 5 || e.error_code === 27) {
+                if (self.params.authType && self.params.authType === authTypes[2]) {
+                  return reject(new Error('Is not an application token! Or this token is not valid (expired)'))
+                } else {
+                  groupToken()
+                }
               } else {
                 reject(e)
               }
@@ -434,7 +474,11 @@ class EasyVK {
               json = json.items[0]
 
               if (Array.isArray(json) && json.length === 0) {
-                groupToken()
+                if (self.params.authType && self.params.authType === authTypes[2]) {
+                  return reject(new Error('Is not an application token! Or this token is not valid (expired)'))
+                } else {
+                  groupToken()
+                }
               } else {
                 session.app_id = json.id
                 session.app_title = json.title
@@ -452,7 +496,7 @@ class EasyVK {
                   }
                 }
 
-                self.session = session
+                self.session = new EasyVKSession(self, session)
 
                 initResolve(self)
               }
@@ -516,12 +560,22 @@ class EasyVK {
           self.debug(DebuggerClass.EVENT_RESPONSE_TYPE, { body: vkr })
 
           if (vkr) {
-            let json = StaticMethods.checkJSONErrors(vkr, reject)
+            let json = StaticMethods.checkJSONErrors(vkr, (e) => {
+              if (e.error_code === 100 && self.params.authType && self.params.authType === authTypes[1]) {
+                return reject(new Error('Is not a group token! Or this token is not valid (expired)'))
+              } else {
+                return reject(e)
+              }
+            })
 
             if (json) {
               if (Array.isArray(json) && json.length === 0) {
-                reject(self._error('access_token_not_valid'))
+                return reject(self._error('access_token_not_valid'))
               } else {
+                session = {
+                  access_token: session.access_token
+                }
+
                 session.group_id = json[0].id
                 session.group_name = json[0].name
                 session.group_screen = json[0].screen_name
@@ -532,7 +586,8 @@ class EasyVK {
                   }
                 }
 
-                self.session = session
+                self.session = new EasyVKSession(self, session)
+
                 initResolve(self)
               }
             }
@@ -696,6 +751,7 @@ class EasyVK {
           try {
             self._catchCaptcha({ err, reCall, _needSolve, _resolverReCall, _rejecterReCall, data, reject })
           } catch (e) {
+            err.fullError = e
             reject(err)
           }
         })
@@ -768,6 +824,7 @@ module.exports.class = {
   AudioItem: 'AudioItem'
 }
 
-module.exports.version = '2.4.0'
+module.exports.version = '2.5.11'
 module.exports.callbackAPI = new EasyVKCallbackAPI({})
 module.exports.streamingAPI = new EasyVKStreamingAPI({})
+module.exports.authTypes = authTypes

@@ -1,6 +1,132 @@
 # Изменения
 
 Все доступные изменения, начиная с <b>2.1.1</b> версии
+## \[2.5.1\] - 2019-06-26
+### Hotfix
+-  Исправлена работа авторизации группы по токену, ошибка `Group authorization failed: method is unavailable with group auth`
+
+### Добавления и изменения
+Всвязи с хотфиксом, в библиотеку добавлен новый параметр для настройки - `authType`.
+Данный параметр отвечает за строгое указание по какому методу вести авторизацию через `access_token`, чтобы избежать неожиданных багов подобно тому, что появился сегодня.
+
+```javascript
+const easyvk = require('easyvk')
+
+easyvk({
+  access_token: 'token',
+  authType: easyvk.GROUP_AUTH_TYPE
+}).then(vk => {
+  console.log(vk.session)
+})
+```
+
+Его доступные значения: 
+```javascript
+[
+  easyvk.USER_AUTH_TYPE, // Авторизация пользователя по токену
+  easyvk.GROUP_AUTH_TYPE, // Авторизация группы по токену
+  easyvk.APPLICATION_AUTH_TYPE // Авторизация приложения по сервисному токену
+]
+```
+
+Значение обязательно должно находится из доступных в Easy VK
+```javascript
+console.log(easyvk.authTypes.indexOf('group') !== -1) // true
+console.log(easyvk.authTypes.indexOf('my_very_good_token_type') !== -1) // false
+```
+
+## \[2.5.0\] - 2019-06-08
+### Добавления и изменения
+-  Добавлены новые методы Audio API:
+
+*  `Audio.toggleAudioStatus()` - переключение статуса аудио (кнопка "транслировать в статус")
+```javascript
+client.audio.toggleAudioStatus({
+  raw_audio_id: '-2001233579_9233579',
+  enable: true // вкл/выкл
+}).then(({vkr}) => {
+  console.log('Audio toggled!', vkr)
+}).catch(console.error)
+```
+*  `Audio.changeAudioStatus()` - переключение прослушиваемого трека в статусе
+```javascript
+client.audio.changeAudioStatus({
+  raw_audio_id: '-2001233579_9233579'
+}).then(({vkr}) => {
+  console.log(vkr)
+}).catch(console.error)
+```
+*  `Audio.getRecommendations()` - получить рекомендации для пользователя
+```javascript
+client.audio.getRecommendations({
+  owner_id: vk.session.user_id
+}).then(({vkr}) => {console.log(vkr)}).catch(console.error)
+```
+*  `Audio.getFriendsUpdates()` - получить обновления (треки) друзей
+```javascript
+client.audio.getFriendsUpdates({
+  owner_id: vk.session.user_id
+}).then(({vkr}) => {
+  console.log(vkr.length)
+}).catch(console.error)
+```
+*  `Audio.getNewReleases()` - получить новинки и чарты + рекомендации (разделы с главной страницы)
+```javascript
+client.audio.getNewReleases().then(({vkr}) => {
+  console.log('Charts:', vkr.charts)
+  console.log('Recommendations:', vkr.recoms)
+  console.log('New tracks:', vkr.new)
+}).catch(console.error)
+```
+-  Добавлены методы `client.goDesktop()` и `client.goMobile()` для переключения между мобильной и десктопной версией (для больших возможностей)
+-  Добавлен метод `uploader.uploadFetchedFile()` для загрузки файлов с других источников (например, из гугл-картинок)
+```javascript
+easyvk({...}).then(vk => {
+  vk.uploader.getUploadURL('docs.getUploadServer').then(({url}) => {
+    vk.uploader.uploadFetchedFile(url, 'https://vk.com/images/community_100.png').then(({vkr}) => {
+      let { file } = vkr;
+
+      console.log(file) // Загруженный файл, далее docs.save -> messages.send
+
+    }).catch(console.error)
+
+    vk.uploader.uploadFetchedFile(url, {
+      url: 'https://vk.com/images/community_100.png',
+      name: 'camera.png' // Для файлов, в URL которых нет четкого обозначения расширения
+    }).then(({vkr}) => {
+      let { file } = vkr;
+
+      console.log(file) // Загруженный файл, далее docs.save -> messages.send
+
+    }).catch(console.error)
+  }).catch(console.error)
+})
+```
+- Параметр `fieldName` для загрузки файла теперь по умолчанию обозначен как `file`
+- Кодировка в HTTP клиенте теперь настраивает произвольно, а также в нем появились новые возможности для метода `client.request()` (для расширения возможностей Easy VK, не документируется)
+
+### Исправления
+- Исправлена работа метод `Audio.reorder()`
+
+## \[2.4.13\] - 2019-05-20
+### Исправления
+-   Исправлена ошибка работы `http(s)` прокси при включенной авторизации по логину и паролю
+
+## \[2.4.12\] - 2019-04-28
+### Исправления
+-   Исправлена работа метода `HTTPClient.readStories()`
+-   Исправлена работа переавторизации
+-   Исправлена работа `highload` режима. Теперь будет видно полное описание ошибки
+-   Исправлена работа debugger'а в секции `vk.call` при включенном `highload`. Теперь все запросы точно будут доходить до него 
+
+## \[2.4.11\] - 2019-04-24
+### Исправления
+-   Исправлена кодировка GET запросов на `utf8`
+-   Исправлена авторизация по сохраненной сессии приложений
+
+## \[2.4.1\] - 2019-04-17
+### Исправления
+-   Исправлена работа с капчей при авторизации по сессии. Ранее капча могла не обрабатывалась через `captchaHandler` в кейсах, когда данные авторизации не менялись и не происходило `reauth: true`
 
 ## \[2.4.0\] - 2019-04-08
 ### Исправления
