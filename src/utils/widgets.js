@@ -29,7 +29,7 @@ class Widgets {
 
     return new Promise((resolve, reject) => {
       if (!videoSourceId || !staticMethods.isString(videoSourceId)) {
-        return reject(self._vk.error('videoSourceId', {
+        return reject(self._vk._error('videoSourceId', {
           parameter: 'videoSourceId',
           method: 'widgets.getLiveViews',
           format: 'need format like -2222_22222 (from url)'
@@ -128,18 +128,18 @@ class Widgets {
                 countViews = parseInt(countViews[1], 10)
                 return resolve(countViews)
               } else {
-                return reject(self._vk.error('live_error', {
+                return reject(self._vk._error('live_error', {
                   video: video
                 }))
               }
             } else {
-              return reject(self._vk.error('live_error', {
+              return reject(self._vk._error('live_error', {
                 video: video
               }))
             }
           })
         } else {
-          reject(self._vk.error('widgets', {
+          reject(self._vk._error('widgets', {
             video: video
           }, 'live_not_streaming'))
         }

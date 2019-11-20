@@ -98,7 +98,8 @@ class EasyVK {
         client_id: params.client_id || configuration.WINDOWS_CLIENT_ID,
         client_secret: params.client_secret || configuration.WINDOWS_CLIENT_SECRET,
         v: params.api_v,
-        lang: params.lang || 'ru'
+        lang: params.lang || 'ru',
+        '2fa_supported': 1
       }
 
       if (params.captcha_key) {
@@ -107,7 +108,6 @@ class EasyVK {
       }
 
       if (params.code && params.code.toString().length !== 0) {
-        defaultDataParams['2fa_supported'] = 1
         defaultDataParams.code = params.code
       }
 
@@ -824,7 +824,7 @@ module.exports.class = {
   AudioItem: 'AudioItem'
 }
 
-module.exports.version = '2.5.1'
+module.exports.version = '2.5.11'
 module.exports.callbackAPI = new EasyVKCallbackAPI({})
 module.exports.streamingAPI = new EasyVKStreamingAPI({})
 module.exports.authTypes = authTypes
