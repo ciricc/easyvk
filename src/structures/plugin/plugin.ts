@@ -15,7 +15,7 @@ class Plugin {
     public requirements = [];
     /** Plugin name which after this plugin will be installed */
     public setupAfter:string;
-    
+    /** Plugin middleware names */
     public middlewares:Record<ComposerName, any>;
 
     constructor (vk:VK, options:any) {
@@ -25,9 +25,10 @@ class Plugin {
 
     /**
      * Fires when plugin is enabled
+     * @param options Plugin options from setup settings
      */
-    onEnable (options:any) {
-
+    onEnable (options:any):any {
+        return true;
     }
 
     /** 
