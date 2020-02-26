@@ -49,7 +49,7 @@ var easyvk = require("easyvk")
 easyvk({
    username: 'your_login',
    password: 'your_password',
-   save_session: false
+   saveSession: false
 }).then(vk => {
   
    //Getting user id from authenticated session
@@ -59,7 +59,7 @@ easyvk({
    vk.call('messages.send', {
       message: 'Hi',
       user_id: me
-   }).then(({vkr}) => {})
+   }).then((vkr) => console.log(vkr))
    
 }).catch(console.error)
 
@@ -82,7 +82,6 @@ easyvk({
 *   Catch errors like Captcha error and others
 *   Configure all that you want or not (utils can bee disabled or enabled by you)
 *   Read stories from feed or other accounts with <b>Stories API</b>
-*   Getting audios and searching with not official <b>Audio API</b>
 
 ## EasyVK provide
 
@@ -107,12 +106,12 @@ You can read documentation <a href="https://ciricc.github.io/">here</a>
 ```javascript
 
 easyvk({
-  access_token: "{USER_TOKEN}",
+  token: "{USER_TOKEN}",
   reauth: true,
   mode: 'highload'
 }).then(async (vk) => {
   
-  let { connection } = await (vk.longpoll.connect());
+  let connection = await vk.longpoll.connect();
 
   connection.on("message", (msg) => {
 
@@ -148,7 +147,7 @@ easyvk({
 
 ```javascript
 easyvk({
-  access_token: "{GROUP_TOKEN}",
+  token: "{GROUP_TOKEN}",
   reauth: true,
   mode: 'highload' || {
     timeout: 10,
@@ -156,11 +155,11 @@ easyvk({
   }
 }).then(async (vk) => {
   
-  let { connection } = await vk.bots.longpoll.connect()
+  let connection = await vk.bots.longpoll.connect();
 
-  connection.on('message_new', console.log)
+  connection.on('message_new', console.log);
 
-})
+});
 ```
 
 ### Плагины
@@ -191,55 +190,13 @@ easyvk({
 
 ```
 
-### Audio API
-
-Вам нужны аудиозаписи для личного использования? Easy VK предлагает объект для работы с аудио.
-Очень мощное Audio API, которое появилось в версии 2.0.0, практически полностью дублирует все методы из официальной документации Audio API, которое, к слову, уже закрыто, но в Easy VK работает.
-
-```javascript
-  
-  vk.http.loginByForm({
-    cookies: __dirname + "/mycookies.json"
-  }).then(({client: Client}) => {
-      
-    //Получение аудиозаписей группы, например
-    Client.audio.get({
-      owner_id: -45703770,
-      offset: 0,
-      playlist_id: -1
-    }).then(({vkr}) => {
-      console.log(vkr);
-    });
-  
-    //Загрузка файлов
-    Client.audio.getUploadServer().then(({vkr}) => {
-    
-      let url = vkr.upload_url;
-
-      Client.audio.upload(url, __dirname + '/main.mp3').then(({vkr}) => {
-        
-        vkr.title = 'Новое название';
-        vkr.artist = 'Новый Артист';
-
-        return Client.audio.save(vkr);
-
-      }).then(({vkr}) => {
-        console.log(vkr, 'saved audio');
-      }).catch(console.error);
-
-    });
-
-  });
-
-```
-
 ### Client Credentials Flow и авторизация по приложению
 
 ```javascript
 
   easyvk({
-    client_id: '{APP_SECRET_CODE}',
-    client_secret: '{CLIENT_SECRET_CODE}',
+    clientId: '{APP_SECRET_CODE}',
+    clientSecret: '{CLIENT_SECRET_CODE}',
     utils: {
       streamingAPI: true
     }
@@ -247,16 +204,15 @@ easyvk({
 
     const StreamingAPI = vk.streamingAPI
 
-    return StreamingAPI.connect().then(({connection}) => {
+    return StreamingAPI.connect().then((connection) => {
 
-      connection.getRules().then(({vkr}) => {
+      connection.getRules().then((vkr) => {
         console.log(vkr.rules);
       });
-
-      connection.on("post", console.log)
+      
+      connection.on("post", console.log);
 
     });
-
   });
 
 ```
@@ -268,15 +224,15 @@ easyvk({
 
 ```javascript
   
-  vk.http.loginByForm().then(({client: Client}) => {
+  vk.http.loginByForm().then((Client) => {
     
-    const user_id = 1;
+    const userId = 1;
     
-    Client.readStories(user_id).then(({count, vk: EasyVK}) => {
-      console.log(count + ` [;user_id = ${user_id}, stories count]`);
+    Client.readStories(userId).then((count) => {
+      console.log(count + ` [;user_id = ${userId}, stories count]`);
     });
 
-    Client.readFeedStories().then(({count}) => {
+    Client.readFeedStories().then((count) => {
       console.log(count + ' [feed stories]');
     });
 
@@ -295,7 +251,7 @@ easyvk({
     forGetLongPollServer: {
       grop_id: vk.session.group_id
     }
-  }).then(({connection, vk: EasyVK}) => {
+  }).then((connection) => {
     
     connection.on("message_new", (msg) => {
       
@@ -310,7 +266,7 @@ easyvk({
   });
 
   //user longpoll
-  vk.longpoll.connect({}).then(({connection}) => {
+  vk.longpoll.connect({}).then((connection) => {
     connection.on("message", (event) => {
       console.log(event);
     });
@@ -331,30 +287,29 @@ easyvk({
 ```javascript
     
   easyvk({
-    client_id: '{APP_SECRET_CODE}',
-    client_secret: '{CLIENT_SECRET_CODE}',
+    clientId: '{APP_SECRET_CODE}',
+    clientSecret: '{CLIENT_SECRET_CODE}',
     utils: {
       streamingAPI: true
     }
   }).then(vk => {
-    vk.streamingAPI.connect(({connection: stream}) => {
+    vk.streamingAPI.connect((stream) => {
         
-        stream.initRules({
-          key1: 'кошка',
-          key2: 'собака -кот'
-        }).then(({log: changes}) => {
-          
-          console.log(changes.changedRules, changes.deletedRules, changes.addedRules);
+      stream.initRules({
+        key1: 'кошка',
+        key2: 'собака -кот'
+      }).then((changes) => {
+        
+        console.log(changes.changedRules, changes.deletedRules, changes.addedRules);
 
-          stream.on("post", (postEvent) => {
-            console.log("Post info: ", postEvent);
-          });
-          
-          //.on(...)
-          //.on("share")
-          //.on("comment") etc...
-
+        stream.on("post", (postEvent) => {
+          console.log("Post info: ", postEvent);
         });
+        
+        //.on(...)
+        //.on("share")
+        //.on("comment") etc...
+      });
 
     });
   })
@@ -379,7 +334,7 @@ easyvk({
         /*....*/
       }
     ]
-  }).then(({ connection }) => {
+  }).then((connection) => {
     
     connection.on('message_new', (msg) => {
         console.log(msg.group_id);
