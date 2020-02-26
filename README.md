@@ -43,7 +43,7 @@ Copy this code and paste it in the code area, don't forget to change username an
 
 ```javascript
 
-var easyvk = require("easyvk")
+const easyvk = require("easyvk")
 
 //Authenticating user
 easyvk({
@@ -53,7 +53,7 @@ easyvk({
 }).then(vk => {
   
    //Getting user id from authenticated session
-   var me = vk.session.user_id || 356607530 //Or your account id
+   let me = vk.session.user_id || 356607530 //Or your account id
    
    //Sending a message using messages.send method
    vk.call('messages.send', {
