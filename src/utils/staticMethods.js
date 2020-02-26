@@ -1,12 +1,13 @@
 'use strict'
 
 const https = require('https')
-const request = require('request')
 const querystring = require('querystring')
 const VKResponse = require('./VKResponse.js')
 const configuration = require('./configuration.js')
 const VKResponseError = require('./VKResponseError.js')
 const Debugger = require('./debugger.class.js')
+const qs = require('qs')
+const fetch = require('node-fetch')
 
 class StaticMethods {
   constructor (settings = {}, evkParams = {}) {
@@ -43,7 +44,7 @@ class StaticMethods {
     let self = this
 
     try {
-      vkr = JSON.parse(vkr)
+      vkr = Object.prototype.toString.call(vkr) === '[object Object]' ? vkr : JSON.parse(vkr)
 
       let err = self.checkErrors(vkr)
 
@@ -118,7 +119,7 @@ class StaticMethods {
         } else if (vkr.error.message) {
           return new VKResponseError(vkr.error.message, vkr.error.code, vkr.error.params)
         } else {
-          return new VKResponseError(vkr.error_description, vkr.error)
+          return new VKResponseError(vkr.error ? vkr.error : vkr.error_description, vkr.error_code ? vkr.error_code : vkr.error)
         }
       }
     } catch (e) {
@@ -130,7 +131,6 @@ class StaticMethods {
     let self = this
 
     return new Promise((resolve, reject) => {
-      let req
       let methodTypeLower = methodType.toString().toLocaleLowerCase()
 
       if (methodTypeLower !== 'post') {
@@ -159,7 +159,7 @@ class StaticMethods {
         // prepare post request
         callParams.agent = Agent
 
-        callParams.form = data
+        callParams.body = qs.stringify(data)
         callParams.headers = {
           'Content-Type': 'application/x-www-form-urlencoded',
           'User-agent': settings.userAgent
@@ -173,13 +173,6 @@ class StaticMethods {
             section: 'vk.call'
           })
         }
-
-        // Nice request recommendtion
-        for (let i in callParams.form) {
-          if (self.isObject(callParams.form[i])) { callParams.form[i] = JSON.stringify(callParams.form[i]) }
-        }
-
-        req = request.post
       }
 
       if (debuggerIS) {
@@ -226,10 +219,11 @@ class StaticMethods {
           }
         })
       } else {
-        req(callParams, (err, res) => {
-          if (err) { return reject(new Error(err)) }
-          return parseResponse(res.body)
-        })
+        callParams.method = 'POST'
+        fetch(callParams.url, callParams).then(async (res) => {
+          res = await res.json()
+          return parseResponse(res)
+        }).catch(e => reject(e))
       }
 
       async function parseResponse (vkr) {
@@ -292,7 +286,6 @@ class StaticMethods {
     }
 
     if (this.params.lang !== 'undefined') data.lang = this.params.lang
-
     StaticMethods.call('execute', data, 'post', null, Agent, settings).then((vkr) => {
       vkr.forEach((val, i) => {
         let req = stack[i]

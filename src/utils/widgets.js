@@ -12,7 +12,8 @@
 
 const configuration = require('./configuration.js')
 const staticMethods = require('./staticMethods.js')
-const request = require('request')
+const fetch = require('node-fetch')
+const qs = require('qs')
 const encoding = require('encoding')
 
 const Debugger = require('./debugger.class.js')
@@ -22,6 +23,7 @@ class Widgets {
   constructor (vk) {
     let self = this
     self._vk = vk
+    this.userAgent = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.84 Safari/537.36'
   }
 
   async getLiveViews (videoSourceId = '') {
@@ -41,8 +43,9 @@ class Widgets {
       headers = {
         'origin': 'https://vk.com',
         'referer': `https://vk.com/video?z=video${videoSourceId}`,
-        'user-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.84 Safari/537.36',
-        'x-requested-with': 'XMLHttpRequest'
+        'user-agent': self._vk.params.user_agent || this.userAgent,
+        'x-requested-with': 'XMLHttpRequest',
+        'content-type': 'application/x-www-form-urlencoded'
       }
 
       alVideoUrl = `${configuration.PROTOCOL}://${configuration.BASE_DOMAIN}/al_video.php`
@@ -60,11 +63,11 @@ class Widgets {
 
       // Get specify hash for get permissions to watch
       queryParams = {
-        url: alVideoUrl,
         headers: headers,
-        form: form,
+        body: qs.stringify(form),
         encoding: 'binary',
-        agent: self._vk.agent
+        agent: self._vk.agent,
+        method: 'POST'
       }
 
       self._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
@@ -74,76 +77,69 @@ class Widgets {
         section: 'widgets'
       })
 
-      request.post(queryParams, (err, res, vkr) => {
-        res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString()
-
-        if (err) {
-          return reject(new Error(err))
-        }
+      return fetch(alVideoUrl, queryParams).then(async (res) => {
+        res = await res.text()
+        res = encoding.convert(res, 'utf-8', 'windows-1251').toString()
 
         if (self._vk._debugger) {
           try {
-            self._vk._debugger.push('response', res.body)
+            self._vk._debugger.push('response', res)
           } catch (e) {
             // ignore
           }
         }
 
         self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
-          body: res.body,
+          body: res,
           section: 'widgets'
         })
 
         // Parsing hash from response body {"action_hash" : "hash"}
-        let matCH = res.body.match(/("|')action_hash("|')(\s)?:(\s)?('|")(.*?)('|")/i)
+        let matCH = String(res).match(/("|')action_hash("|')(\s)?:(\s)?('|")(.*?)('|")/i)
         if (matCH) {
           let hash, getVideoViewsQueryParams
 
           hash = matCH[0].replace(/([\s':"])/g, '').replace('action_hash', '')
 
+          let url = `${alVideoUrl}?act=live_heartbeat`
+
           getVideoViewsQueryParams = {
-            url: `${alVideoUrl}?act=live_heartbeat`,
             body: `al=1&hash=${hash}&oid=${oid}&user_id=0&vid=${vid}`,
             encoding: 'binary', // Special
             headers: headers,
-            agent: self._vk.agent
+            agent: self._vk.agent,
+            method: 'POST'
           }
 
           // Here is magic
-          request.post(getVideoViewsQueryParams, (err, res) => {
-            if (err) {
-              return reject(new Error(err))
-            }
+          return fetch(url, getVideoViewsQueryParams).then(async (res) => {
+            res = await res.text()
 
-            self._vk._debugger.push('response', res.body)
+            self._vk._debugger.push('response', res)
 
-            let videoInfo = encoding.convert(res.body, 'utf-8', 'windows-1251').toString()
-
-            videoInfo = videoInfo.toString()
-
-            if (videoInfo.match('<!int>')) {
-              let countViews = videoInfo.match('<!int>([0-9]+)<!>')
-
-              if (countViews) {
-                countViews = parseInt(countViews[1], 10)
+            try {
+              res = JSON.parse(res)
+              let countViews = res.payload[1][0]
+              if (countViews !== undefined) {
+                countViews = parseInt(countViews, 10)
                 return resolve(countViews)
               } else {
                 return reject(self._vk._error('live_error', {
                   video: video
                 }))
               }
-            } else {
+            } catch (e) {
               return reject(self._vk._error('live_error', {
                 video: video
               }))
             }
           })
         } else {
-          reject(self._vk._error('widgets', {
+          return reject(self._vk._error('widgets', {
             video: video
           }, 'live_not_streaming'))
         }
-      })
+      }).catch(e => reject(e))
     })
   }
 }

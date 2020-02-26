@@ -12,34 +12,43 @@
 const configuration = require('./configuration.js')
 
 const fs = require('fs')
-const request = require('request')
-const FileCookieStore = require('tough-cookie-file-store')
+
+const CookieStore = require('tough-cookie-file-store')
+const CookieJar = require('tough-cookie').CookieJar
+
+const nodeFetch = require('node-fetch')
+const fetchUse = require('fetch-cookie/node-fetch')
+const qs = require('qs')
 
 const staticMethods = require('./staticMethods.js')
 const VKResponse = require('./VKResponse.js')
 
-const AudioAPI = require('./AudioAPI.js')
 const Debugger = require('./debugger.class.js')
 
 const encoding = require('encoding')
 
+let fetch = null
+
 class HTTPEasyVKClient {
   constructor ({ _jar, vk, httpVk, config, parser }) {
-    let self = this
+    this._config = config
 
-    self._config = config
-
-    self.headersRequest = {
-      'User-Agent': self._config.user_agent,
+    this.headersRequest = {
+      'User-Agent': this._config.userAgent,
       'content-type': 'application/x-www-form-urlencoded'
     }
 
-    self.LOGIN_ERROR = 'Need login by form, use .loginByForm() method'
-    self._vk = vk
-    self._authjar = _jar
-    self._parser = parser
+    this.LOGIN_ERROR = 'Need login by form, use .loginByForm() method'
 
-    self.audio = new AudioAPI(self._vk, self)
+    this._vk = vk
+    this._authjar = _jar
+    this._parser = parser
+
+    Object.defineProperty(this, 'audio', {
+      get: () => {
+        console.warn('[Deprecated] Audio API is fully deprecated!')
+      }
+    })
   }
 
   async readStories (vkId = 0, storyId = 0) {
@@ -65,20 +74,19 @@ class HTTPEasyVKClient {
         section: 'httpClient'
       })
 
-      request.get({
-        url: url,
-        jar: self._authjar,
+      return fetch(url, {
+        method: 'GET',
         headers: self.headersRequest,
         agent: self._vk.agent
-      }, (err, res, vkr) => {
+      }).then(async (res) => {
+        res = await res.text()
+
         self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
-          body: res.body,
+          body: res,
           section: 'httpClient'
         })
 
-        if (err) return reject(new Error(err))
-
-        let stories = self.__getStories(res.body, 'profile')
+        let stories = self.__getStories(res, 'profile')
         let i = 0
 
         stories.forEach((story) => {
@@ -101,11 +109,8 @@ class HTTPEasyVKClient {
           }
         })
 
-        resolve({
-          vk: self._vk,
-          count: i
-        })
-      })
+        return resolve(i)
+      }).catch(err => reject(err))
     })
   }
 
@@ -139,16 +144,21 @@ class HTTPEasyVKClient {
     return stories
   }
 
-  __readStory (read_hash = '', stories = '', source = 'feed', cb) {
+  async __readStory (read_hash = '', stories = '', source = 'feed', cb) {
     let self = this
 
-    let url = 'https://vk.com/al_stories.php'
+    let url = 'al_stories.php'
+
     let form = {
-      'act': 'read_stories',
+      act: 'read_stories',
       'al': '1',
+      'all': 1,
+      'connection_type': 'wi-fi',
       'hash': read_hash,
       'source': source,
-      'stories': stories
+      'progress': 0,
+      'story_id': stories,
+      XML: true
     }
 
     self._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
@@ -158,19 +168,8 @@ class HTTPEasyVKClient {
       section: 'httpClient'
     })
 
-    request.post({
-      url,
-      form: form,
-      jar: self._authjar,
-      headers: self.headersRequest,
-      agent: self._vk.agent
-    }, (e, res, be) => {
-      self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
-        body: res.body,
-        section: 'httpClient'
-      })
-
-      return (cb) ? cb(e, res, be) : true
+    return this.post(url, form).then((res) => {
+      return (cb) ? cb(null, res, null) : true
     })
   }
 
@@ -190,70 +189,46 @@ class HTTPEasyVKClient {
         section: 'httpClient'
       })
 
-      request.get({
-        url,
-        jar: self._authjar,
+      return fetch(url, {
         headers: self.headersRequest,
         agent: self._vk.agent
-      }, (err, res, vkr) => {
+      }).then(async (res) => {
+        res = await res.text()
+
         self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
-          body: res.body,
+          body: res,
           section: 'httpClient'
         })
 
-        if (err) return reject(new Error(err))
-
         // parse stories
-
-        let stories = self.__getStories(res.body, 'feed')
+        let stories = self.__getStories(res, 'feed')
 
         let i = 0
 
         stories.forEach((story) => {
           if (Array.isArray(story.items)) {
             story.items.forEach(item => {
-              self.__readStory(story.read_hash, item.raw_id, 'feed', () => {})
+              console.log(story.read_hash, item.raw_id)
+              self.__readStory(story.read_hash, item.raw_id, 'feed')
               i++
             })
           }
         })
 
-        resolve({
-          vk: self._vk,
-          count: i
-        })
-      })
+        return resolve(i)
+      }).catch(err => reject(err))
     })
   }
 
-  async addBotToConf (params = {}) {
-    let self = this
-
-    return new Promise((resolve, reject) => {
-      self.request('al_groups.php', {
-        _ads_group_id: params.group_id || 0,
-        act: 'a_search_chats_box',
-        al: 1,
-        group_id: params.group_id || 0
-      }, false, 8).then(vkr => {
-        let json = self._parseResponse(vkr.body.split('<!>'))
-        json = json[8]
-
-        let addHash = json.add_hash
-
-        self.request('al_im.php', {
-          _ads_group_id: params.group_id || 0,
-          act: 'a_add_bots_to_chat',
-          add_hash: addHash,
-          al: 1,
-          bot_id: (-params.group_id || -1),
-          peer_ids: params.peer_ids
-        }, true).then(resolve, reject)
-      }).catch(reject)
-    })
+  async post (file, form, isMobile) {
+    return this.request(file, form, true, isMobile)
   }
 
-  async request (file, form = {}, ignoreStringError = false, indexJson = 6, post = true, isMobile = false) {
+  async get (file, form, isMobile) {
+    return this.request(file, form, false, isMobile)
+  }
+
+  async request (file, form = {}, post = true, isMobile = false) {
     let self = this
 
     return new Promise((resolve, reject) => {
@@ -268,95 +243,78 @@ class HTTPEasyVKClient {
       if (post !== true) method = 'get'
 
       let headers = {
-        'user_agent': self._config.user_agent
+        'user_agent': self._config.userAgent
       }
 
       if ((isMobile && method === 'post') || form.XML === true) {
         headers['x-requested-with'] = 'XMLHttpRequest'
       }
 
-      let requestParams = {
-        jar: self._authjar,
-        url: `${configuration.PROTOCOL}://${mobile}${configuration.BASE_DOMAIN}/` + file,
-        form: form,
-        encoding: 'binary',
-        headers: headers,
-        agent: self._vk.agent
-      }
+      headers['content-type'] = 'application/x-www-form-urlencoded'
 
-      if (method === 'get') {
-        requestParams.form = undefined
-      }
+      let url = `${configuration.PROTOCOL}://${mobile}${configuration.BASE_DOMAIN}/` + file
 
-      self._vk._debugger.push('request', requestParams)
+      self._vk._debugger.push('request', {
+        url,
+        method,
+        headers,
+        form
+      })
 
       self._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
-        url: requestParams.url,
+        url,
         query: form,
         section: 'httpClient',
         method: method
       })
 
-      request[method](requestParams, (err, res, vkr) => {
-        self._vk._debugger.push('response', res.body)
+      return fetch(url, {
+        agent: self._vk.agent,
+        headers,
+        method,
+        body: method === 'get' ? undefined : qs.stringify(form),
+        qs: method === 'get' ? form : undefined
+      }).then(async (res) => {
+        res = await res.text()
+
+        self._vk._debugger.push('response', res)
 
         self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
-          url: requestParams.url,
+          url: url,
           query: form,
           section: 'httpClient',
-          body: res.body
+          body: res
         })
 
-        if (err) {
-          return reject(err)
-        }
-
-        if (!res.body.length) {
-          return reject(self._vk._error('audio_api', {}, 'not_have_access'))
+        if (!res.length) {
+          return reject(self._vk._error('http_client', {}, 'not_have_access'))
         }
 
         if (form.utf8) {
-          res.body = encoding.convert(res.body, 'utf-8', 'windows-1251').toString()
+          res = encoding.convert(res, 'utf-8', 'windows-1251').toString()
         }
 
         if (form.retOnlyBody) return resolve(res)
 
-        if (!isMobile) {
-          let json = self._parseResponse(res.body.split('<!>'))
+        let json = self._parseResponse(res)
 
-          if (typeof json[indexJson] === 'object') json[5] = json[indexJson]
-
-          if (typeof json[5] === 'string' && !ignoreStringError) {
-            return reject(new Error(json[5].slice(0, 250) || 'Empty error responded'))
-          }
-
-          if (!json[5] && !ignoreStringError) {
-            return reject(self._vk._error('audio_api', {}, 'not_have_access'))
-          }
-
-          if (form.autoParse) {
-            return resolve({
-              vkr: VKResponse(staticMethods, {
-                response: json[5]
-              }),
-              json: json,
-              body: res.body,
-              vk: self._vk
-            })
-          }
+        if (form.autoParse) {
+          return resolve(VKResponse(staticMethods, {
+            response: json
+          }))
         }
 
-        return resolve(res)
-      })
+        return resolve(json)
+      }).catch(err => reject(err))
     })
   }
 
   async goDesktop () {
-    return this.request('fv?to=/mail?_fm=mail&_fm2=1', {}, true, 6, false, true)
+    return this.request('fv?to=/mail?_fm=mail&_fm2=1', {}, false, true)
   }
 
   async goMobile () {
-    return this.request('mail?act=show&peer=0&_ff=1', {}, true, 6, false, true)
+    return this.request('mail?act=show&peer=0&_ff=1', {}, false, true)
   }
 
   async requestMobile (...args) {
@@ -379,7 +337,7 @@ class HTTPEasyVKClient {
     }
 
     if (!json[5]) {
-      return reject(self._vk._error('audio_api', {}, 'not_have_access'))
+      return reject(self._vk._error('http_client', {}, 'not_have_access'))
     }
 
     json = json[5]
@@ -401,11 +359,11 @@ class HTTPEasyVK {
 
   async __checkHttpParams (params = {}) {
     return new Promise((resolve, reject) => {
-      if (!params.user_agent) {
-        params.user_agent = configuration['HTTP_CLIENT']['USER_AGENT']
+      if (!params.userAgent) {
+        params.userAgent = configuration['HTTP_CLIENT']['USER_AGENT']
       }
 
-      params.user_agent = String(params.user_agent)
+      params.userAgent = String(params.userAgent)
 
       if (!params.cookies) {
         params.cookies = configuration['HTTP_CLIENT']['COOKIE_PATH']
@@ -417,42 +375,17 @@ class HTTPEasyVK {
     })
   }
 
-  _parseResponse (e) {
-    for (var o = e.length - 1; o >= 0; --o) {
-      var n = e[o]
-      if (n.substr(0, 2) === '<!') {
-        var i = n.indexOf('>')
-
-        var r = n.substr(2, i - 2)
-        n = n.substr(i + 1)
-        switch (r) {
-          case 'json':
-
-            try {
-              e[o] = JSON.parse(n)
-            } catch (e) {
-              e[o] = {}
-            }
-
-            break
-          case 'int':
-            e[o] = parseInt(n, 10)
-            break
-          case 'float':
-            e[o] = parseFloat(n)
-            break
-          case 'bool':
-            e[o] = !!parseInt(n, 10)
-            break
-          case 'null':
-            e[o] = null
-            break
-          case 'debug':
-            console.log('debug')
+  _parseResponse (e, json = true) {
+    if (e) {
+      e = String(e).replace('<!--', '')
+      if (json) {
+        try {
+          e = JSON.parse(e)
+        } catch (_e) {
+          return e
         }
       }
     }
-
     return e
   }
 
@@ -460,8 +393,13 @@ class HTTPEasyVK {
     let self = this
 
     return new Promise((resolve, reject) => {
-      let pass = self._vk.params.password
-      let login = self._vk.params.username
+      let pass = params.password || self._vk.params.password
+      let login = params.username || self._vk.params.username
+
+      let captchaSid = params.captchaSid || self._vk.params.captcha_sid
+      let captchaKey = params.captchaKey || self._vk.params.captcha_key
+
+      const captchaHandler = params.captchaHandler || self._vk.params.captchaHandler
 
       if (!pass || !login) return reject(self._vk._error('http_client', {}, 'need_auth'))
 
@@ -470,13 +408,12 @@ class HTTPEasyVK {
 
         self._config = params
 
-        self.headersRequest['User-Agent'] = self._config.user_agent
+        self.headersRequest['User-Agent'] = self._config.userAgent
 
         let cookiepath = self._config.cookies
 
-        if (!self._vk.params.reauth) {
+        if (!self._vk.params.reauth && !params.reauth) {
           let data
-
           if (!fs.existsSync(cookiepath)) {
             fs.closeSync(fs.openSync(cookiepath, 'w'))
           }
@@ -490,174 +427,232 @@ class HTTPEasyVK {
           }
 
           if (data) {
-            let jar = request.jar(new FileCookieStore(cookiepath))
+            let jar = new CookieJar(new CookieStore(cookiepath))
 
             self._authjar = jar
-
+            fetch = fetchUse(nodeFetch, jar)
             return createClient(resolve)
           }
         }
 
-        let easyvk = require('../index.js')
+        let vHttp = self._vk
 
-        easyvk({
-          password: pass,
-          username: login,
-          save_session: false,
-          reauth: true,
-          proxy: self._vk.params.proxy
-        }).then((vkHtpp) => {
-          let vHttp = vkHtpp
+        let jar = new CookieJar(new CookieStore(cookiepath))
+        self._authjar = jar
+        fetch = fetchUse(nodeFetch, jar)
 
-          easyvk = null
-
-          // Make first request, for know url for POST request
-          // parse from m.vk.com page
-
-          fs.writeFileSync(cookiepath, '{}')
-
-          let jar = request.jar(new FileCookieStore(cookiepath))
-
-          self._authjar = jar
-
-          if (Object.keys(jar._jar.store.idx).length) {
-            return actCheckLogin().then(() => {
+        if (!self._vk.params.reauth && !params.reauth) {
+          if (Object.keys(jar).length) {
+            return actCheckLogin(jar).then(() => {
               return createClient(resolve, vHttp)
-            }, () => {
+            }, (r) => {
               return goLogin()
             })
           }
+        }
 
-          return goLogin()
+        fs.writeFileSync(cookiepath, '{}')
+        jar = new CookieJar(new CookieStore(cookiepath))
+        self._authjar = jar
+        fetch = fetchUse(nodeFetch, jar)
 
-          function goLogin () {
-            let url = 'https://m.vk.com/'
+        return goLogin()
 
-            self._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
-              url,
-              query: ``,
-              method: 'GET',
+        async function goLogin () {
+          let url = `${configuration.PROTOCOL}://${configuration.MOBILE_SUBDOMAIN}.${configuration.BASE_DOMAIN}/`
+
+          self._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
+            url,
+            query: ``,
+            method: 'GET',
+            section: 'httpClient'
+          })
+
+          fetch(url, {
+            method: 'GET',
+            headers: self.headersRequest,
+            agent: self._vk.agent
+          }).then(async (res) => {
+            res = await res.text()
+
+            self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
+              body: res,
               section: 'httpClient'
             })
 
-            request.get({
-              headers: self.headersRequest,
+            let body = res
+
+            self._vk._debugger.push('response', res)
+
+            let matches = body.match(/action="(.*?)"/)
+
+            if (!matches || !body.match(/password/)) { // Если пользовтаель уже авторизован по кукисам, чекаем сессию
+              return actCheckLogin().then(() => {
+                return createClient(resolve, vHttp)
+              }, reject)
+            }
+
+            let POSTLoginFormUrl = matches[1]
+
+            if (!POSTLoginFormUrl.match(/login\.vk\.com/)) return reject(self._vk._error('http_client', {}, 'not_supported'))
+
+            return actLogin(POSTLoginFormUrl).then(resolve, reject)
+          }).catch(err => reject(err))
+        }
+
+        async function actCheckLogin (jar) {
+          return new Promise((resolve, reject) => {
+            let url = `${configuration.PROTOCOL}://${configuration.BASE_DOMAIN}/al_im.php`
+
+            let form = {
+              act: 'a_dialogs_preload',
+              al: 1,
+              gid: 0,
+              im_v: 3,
+              rs: ''
+            }
+
+            self._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
               url,
-              jar: self._authjar,
-              agent: self._vk.agent
-            }, (err, res, vkr) => {
+              query: form,
+              method: 'POST',
+              section: 'httpClient'
+            })
+
+            return fetch(url, {
+              method: 'POST',
+              url,
+              body: qs.stringify(form),
+              agent: self._vk.agent,
+              headers: {
+                ...self.headersRequest,
+                'x-requested-with': 'XMLHttpRequest'
+              }
+            }).then(async (res) => {
+              res = await res.text()
+
               self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
-                body: res.body,
+                body: res,
                 section: 'httpClient'
               })
 
-              if (err) return reject(new Error(err))
-
-              let body = res.body
-
-              self._vk._debugger.push('response', res.body)
-
-              let matches = body.match(/action="(.*?)"/)
-
-              if (!matches || !body.match(/password/)) { // Если пользовтаель уже авторизован по кукисам, чекаем сессию
-                return actCheckLogin().then(() => {
-                  return createClient(resolve, vHttp)
-                }, reject)
-              }
-
-              let POSTLoginFormUrl = matches[1]
-
-              if (!POSTLoginFormUrl.match(/login\.vk\.com/)) return reject(self._vk._error('http_client', {}, 'not_supported'))
-
-              actLogin(POSTLoginFormUrl).then(resolve, reject)
-            })
-          }
-
-          async function actCheckLogin () {
-            return new Promise((resolve, reject) => {
-              let url = 'https://vk.com/al_im.php'
-              let form = {
-                act: 'a_dialogs_preload',
-                al: 1,
-                gid: 0,
-                im_v: 2,
-                rs: ''
-              }
-
-              self._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
-                url,
-                query: form,
-                method: 'POST',
-                section: 'httpClient'
-              })
-
-              request.post({
-                url,
-                jar: self._authjar,
-                followAllRedirects: true,
-                form,
-                agent: self._vk.agent
-              }, (err, res) => {
-                self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
-                  body: res.body,
-                  section: 'httpClient'
-                })
-
-                if (err) return reject(err)
-
-                self._vk._debugger.push('response', res.body)
-
-                res = res.body.split('<!>')
-                res = self._parseResponse(res[5])
-
-                if (res.match(/<!json>/)) {
-                  res = res.replace('<!json>', '')
-                  try {
-                    res = JSON.parse(res)
-                  } catch (e) {
-                    return reject(new Error('Need update session not valid json'))
-                  }
-                  return resolve(true)
-                }
+              self._vk._debugger.push('response', res)
+              res = self._parseResponse(res)
+              if (Number(res.payload[0]) === 0) {
+                return resolve(true)
+              } else {
                 return reject(new Error('Need update session'))
+              }
+            }).catch(err => reject(err))
+          })
+        }
+
+        function _catchCaptcha (params = {}) {
+          let { err, reCall, _needSolve, _rejecterReCall, data, reject } = params
+
+          let vkr = err
+
+          if (_needSolve) {
+            try {
+              _rejecterReCall({
+                error: false,
+                reCall: () => {
+                  return reCall()
+                }
               })
+            } catch (e) { reject(e) }
+
+            return
+          }
+
+          const captchaSid = vkr.captcha_sid
+          const captchaImg = vkr.captcha_img
+
+          let paramsForHandler = {
+            captcha_sid: captchaSid,
+            captcha_img: captchaImg,
+            params: data,
+            vk: self._vk
+          }
+
+          paramsForHandler.resolve = (captchaKey) => {
+            return new Promise((resolve, reject) => {
+              data.captcha_key = captchaKey
+              data.captcha_sid = captchaSid
+
+              try {
+                reCall('NEED SOLVE', resolve, reject, data)
+              } catch (errorRecall) { /* Need pass it */ }
             })
           }
-          async function actLogin (loginURL) {
-            return new Promise((resolve, reject) => {
-              let form = {
-                'email': login,
-                'pass': pass
-              }
 
-              self._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
-                url: loginURL,
-                query: form,
+          captchaHandler(paramsForHandler)
+        }
+
+        async function actLogin (loginURL) {
+          return new Promise((resolve, reject) => {
+            async function makeAuth (_needSolve, _resolverReCall, _rejecterReCall, getData) {
+              console.log(getData)
+              return fetch(loginURL, {
                 method: 'POST',
-                section: 'httpClient'
-              })
+                agent: self._vk.agent,
+                body: qs.stringify(getData),
+                headers: {
+                  ...self.headersRequest
+                }
+              }).then(async res => {
+                let body = await res.text()
+                if (body.match(/captcha/)) {
+                  console.log('have captcha!')
+                  let captchaUrl = body.match(/\/captcha.php([^"]+)/)
+                  if (captchaUrl) {
+                    captchaUrl = `${configuration.PROTOCOL}:://${configuration.BASE_DOMAIN}${captchaUrl[0]}`
+                    let captchaSid = captchaUrl.match(/sid=([0-9]+)/)
+                    if (captchaSid) {
+                      captchaSid = Number(captchaSid[1])
 
-              request.post({
-                url: loginURL,
-                jar: self._authjar,
-                followAllRedirects: true,
-                form: form,
-                agent: self._vk.agent
-              }, (err, res, vkr) => {
+                      let err = {
+                        captcha_sid: captchaSid,
+                        captcha_img: captchaUrl
+                      }
+
+                      return _catchCaptcha({
+                        err,
+                        reCall: () => {
+                          return makeAuth(0, 0, 0, getData)
+                        },
+                        _needSolve,
+                        _resolverReCall,
+                        _rejecterReCall,
+                        data: getData,
+                        reject
+                      })
+                    } else {
+                      return reject(new Error('You have captcha error, but http client dont recognize where is captcha_sid parameter'))
+                    }
+                  } else {
+                    return reject(new Error('You have captcha error, but http client dont recognize where'))
+                  }
+                }
                 self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
-                  body: res.body,
+                  body: body,
                   section: 'httpClient'
                 })
 
-                self._vk._debugger.push('response', res.body)
-
-                if (err) return reject(new Error(err))
+                self._vk._debugger.push('response', body)
 
                 return createClient(resolve, vHttp)
-              })
+              }).catch(err => reject(err))
+            }
+
+            return makeAuth(0, 0, 0, {
+              email: login,
+              pass,
+              captcha_sid: captchaSid,
+              captcha_key: captchaKey
             })
-          }
-        }, reject)
+          })
+        }
 
         async function createClient (r, vHttp) {
           let HTTPClient = new HTTPEasyVKClient({
@@ -670,10 +665,7 @@ class HTTPEasyVK {
 
           await HTTPClient.goDesktop()
 
-          return r({
-            client: HTTPClient,
-            vk: self._vk
-          })
+          return r(HTTPClient)
         }
       }, reject)
     })

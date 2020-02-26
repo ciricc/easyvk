@@ -10,9 +10,12 @@
 'use strict'
 
 const fs = require('fs')
-const request = require('request')
+const fetch = require('node-fetch')
+const mime = require('mime-types')
+
 const staticMethods = require('./staticMethods.js')
 const path = require('path')
+const FormData = require('form-data')
 
 class EasyVKUploader {
   constructor (vk) {
@@ -65,9 +68,6 @@ class EasyVKUploader {
 
       let fetchingFileUrl = fileUrl.url
       let filename = fileUrl.name || fetchingFileUrl.split('/').pop().split('#')[0].split('?')[0]
-      let form = {}
-
-      form = Object.assign(form, paramsUpload)
 
       if (!filename) {
         return reject(this._vk._error('is_not_string', {
@@ -77,54 +77,32 @@ class EasyVKUploader {
         }))
       }
 
-      request.get({
-        url: fetchingFileUrl,
-        followAllRedirects: true,
+      return fetch(fetchingFileUrl, {
         agent: this._agent
-      }, (err, res) => {
-        if (err) {
-          return reject(this._vk._error('server_error', {
-            error: err
-          }))
-        }
+      }).then(async (res) => {
+        let buff = await res.buffer()
 
-        form[fieldName] = {
-          value: request(fetchingFileUrl),
-          options: {
-            filename,
-            contentType: res.headers['content-type']
-          }
-        }
+        let form = new FormData()
 
-        request.post({
-          url: url,
-          formData: form,
+        form.append(fieldName, buff, {
+          filename: fieldName + '.' + mime.extension(res.headers.get('content-type') || 'text/plain')
+        })
+
+        return fetch(url, {
+          method: 'POST',
+          body: form,
           agent: this._agent
-        }, (err, response) => {
-          if (err) {
-            return reject(this._vk._error('server_error', {
-              error: err
-            }))
-          }
-
-          if (!response) response = {}
-
-          let vkr = response.body
+        }).then(async (response) => {
+          let vkr = await response.json()
 
           if (vkr) {
             if (form.custom) {
-              return resolve({
-                vkr: vkr,
-                vk: this._vk
-              })
+              return resolve(vkr)
             } else {
               let json = staticMethods.checkJSONErrors(vkr, reject)
 
               if (json) {
-                return resolve({
-                  vkr: json,
-                  vk: this._vk
-                })
+                return resolve(vkr)
               } else {
                 return reject(this._vk._error('invalid_response', {
                   response: response
@@ -184,54 +162,37 @@ class EasyVKUploader {
       let stream, data
 
       stream = (filePath instanceof fs.ReadStream) ? filePath : fs.createReadStream(filePath)
-      data = {}
+      data = new FormData()
 
       Object.keys(paramsUpload)
         .forEach((param) => {
           if (param !== fieldName) {
-            data[param] = paramsUpload[param]
+            data.append(param, paramsUpload[param])
           }
         })
 
       stream.on('error', (error) => {
-        reject(new Error(error))
+        return reject(new Error(error))
       })
 
       stream.on('open', () => {
-        data[fieldName] = stream
-
-        let _data = {}
-        _data[fieldName] = stream
-
-        request.post({
-          url: url,
-          formData: _data,
-          agent: self._agent
-        }, (err, response) => {
-          if (err) {
-            return reject(self._vk._error('server_error', {
-              error: err
-            }))
-          }
-
-          if (!response) response = {}
-
-          let vkr = response.body
+        data.append(fieldName, stream)
+        return fetch(url, {
+          method: 'POST',
+          body: data,
+          agent: self._agent,
+          headers: data.getHeaders()
+        }).then(async (response) => {
+          let vkr = await response.json()
 
           if (vkr) {
             if (data.custom) {
-              return resolve({
-                vkr: vkr,
-                vk: self._vk
-              })
+              return resolve(vkr)
             } else {
               let json = staticMethods.checkJSONErrors(vkr, reject)
 
               if (json) {
-                return resolve({
-                  vkr: json,
-                  vk: self._vk
-                })
+                return resolve(vkr)
               } else {
                 return reject(self._vk._error('invalid_response', {
                   response: response
@@ -243,7 +204,28 @@ class EasyVKUploader {
               response: response
             }))
           }
-        })
+        }).catch(reject)
+      })
+    })
+  }
+
+  async upload ({
+    getUrl,
+    save,
+    file,
+    getUrlParams = {},
+    saveParams = {},
+    uploadParams = {},
+    isWeb = false,
+    fieldName = 'file',
+    uploadUrlField = 'upload_url'
+  }, returnAll = false) {
+    return this.getUploadURL(getUrl, getUrlParams, true).then(({ vkr }) => {
+      let url = vkr[uploadUrlField]
+      let uploadMethod = isWeb ? 'uploadFetchedFile' : 'uploadFile'
+
+      return this[uploadMethod](url, file, fieldName, uploadParams).then(vkr => {
+        return this._vk.call(save, Object.assign(saveParams, vkr))
       })
     })
   }
@@ -259,19 +241,15 @@ class EasyVKUploader {
         }))
       }
 
-      self._vk.call(methodName, params).then(({ vkr, vk }) => {
+      self._vk.call(methodName, params).then((vkr) => {
         if (vkr.upload_url) {
           if (returnAll) {
             return resolve({
               url: vkr,
-              vkr: vkr,
-              vk: self._vk
+              vkr: vkr
             })
           } else {
-            return resolve({
-              url: vkr.upload_url,
-              vk: vk
-            })
+            return resolve(vkr.upload_url)
           }
         } else {
           return reject(self._vk._error('upload_url_error', {

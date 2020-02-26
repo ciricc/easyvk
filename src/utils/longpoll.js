@@ -1,6 +1,8 @@
 'use strict'
 
-const request = require('request')
+const fetch = require('node-fetch')
+const qs = require('qs')
+
 const staticMethods = require('./staticMethods.js')
 const EventEmitter = require('fast-event-emitter')
 const EasyVKMiddlewares = require('./middlewares.js')
@@ -31,7 +33,7 @@ class LongPollConnection extends EventEmitter {
     init()
 
     async function reconnect () {
-      return self._vk.call('messages.getLongPollServer', self.config.userConfig.forGetLongPollServer).then(({ vkr }) => {
+      return self._vk.call('messages.getLongPollServer', self.config.userConfig.forGetLongPollServer).then((vkr) => {
         self.config.longpollServer = vkr.server
         self.config.longpollTs = vkr.ts
         self.config.longpollKey = vkr.key
@@ -73,14 +75,16 @@ class LongPollConnection extends EventEmitter {
       _w = Number(forLongPollServer.wait)
 
       let params = {
-        url: server,
-        qs: forLongPollServer,
         timeout: (_w * 1000) + (1000 * 3),
         headers: {
-          'connection': 'keep-alive'
+          'connection': 'keep-alive',
+          'content-type': 'application/x-www-form-urlencoded'
         },
-        agent: self._vk.agent
+        agent: self._vk.agent,
+        method: 'GET'
       }
+
+      server = server + '?' + qs.stringify(forLongPollServer)
 
       self._debug({
         type: 'longPollParamsQuery',
@@ -88,41 +92,31 @@ class LongPollConnection extends EventEmitter {
       })
 
       self._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
-        url: params.url,
+        url: server,
         query: forLongPollServer,
         method: 'GET',
         section: 'longpoll'
       })
 
-      self.lpConnection = request.get(params, (err, res) => {
-        if (err) {
-          return self.emit('error', err)
-        }
+      self.lpConnection = fetch(server, params).then(async (res) => {
+        res = await res.json()
 
         if (self._vk._debugger) {
           try {
-            self._vk._debugger.push('response', res.body)
+            self._vk._debugger.push('response', res)
           } catch (e) {
             // Ignore
           }
         }
 
-        self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, { body: res.body, section: 'longpoll' })
+        self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, { body: res, section: 'longpoll' })
 
         self._debug({
           type: 'pollResponse',
-          data: res.body
+          data: res
         })
 
-        let vkr = res.body
-
-        try {
-          vkr = JSON.parse(vkr)
-        } catch (e) {
-          self.emit('error', new Error('LongPoll server sended not a json object'))
-          self.emit('failure', vkr)
-          return
-        }
+        let vkr = res
 
         if (vkr.ts) {
           if (vkr.ts) {
@@ -153,7 +147,7 @@ class LongPollConnection extends EventEmitter {
 
             return init()
           } else if ([2, 3].indexOf(vkr.failed) !== -1) { // need reconnect
-            self._vk.call('messages.getLongPollServer', self.config.userConfig.forGetLongPollServer).then(({ vkr }) => {
+            self._vk.call('messages.getLongPollServer', self.config.userConfig.forGetLongPollServer).then((vkr) => {
               self.config.longpollServer = vkr.server
               self.config.longpollTs = vkr.ts
               self.config.longpollKey = vkr.key
@@ -171,6 +165,8 @@ class LongPollConnection extends EventEmitter {
           self.emit('error', vkr.error)
           return reconnect()
         }
+      }).catch(e => {
+        self.emit('error', e)
       })
     }
   }
@@ -320,7 +316,7 @@ class LongPollConnector {
         }
 
         self._vk.call('messages.getLongPollServer', params.forGetLongPollServer)
-          .then(({ vkr }) => {
+          .then((vkr) => {
             let forLongPoll = {
               longpollServer: vkr.server,
               longpollTs: vkr.ts,
@@ -331,10 +327,7 @@ class LongPollConnector {
 
             let con = new LongPollConnection(forLongPoll, self._vk)
 
-            return resolve({
-              connection: con,
-              vk: self._vk
-            })
+            return resolve(con)
           }, reject)
       }
     })

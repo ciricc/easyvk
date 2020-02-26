@@ -49,6 +49,38 @@ module.exports.APPLICATION_AUTH_TYPE = authTypes[2]
 
 async function checkInitParams (params = {}) {
   return new Promise((resolve, reject) => {
+    if (params.saveSession !== undefined) {
+      params.save_session = params.saveSession
+    }
+
+    if (params.token !== undefined) {
+      params.access_token = params.token
+    }
+
+    if (params.v !== undefined) {
+      params.api_vk = params.v
+    }
+
+    if (params.captchaSid !== undefined) {
+      params.captcha_sid = params.captchaSid
+    }
+
+    if (params.captchaKey !== undefined) {
+      params.captcha_key = params.captchaKey
+    }
+
+    if (params.clientId !== undefined) {
+      params.client_id = params.clientId
+    }
+
+    if (params.clientSecret !== undefined) {
+      params.client_secret = params.clientSecret
+    }
+
+    if (params.sessionFile !== undefined) {
+      params.session_file = params.sessionFile
+    }
+
     if (params.save_session !== false) {
       params.save_session = configuration.save_session
     }

@@ -13,6 +13,7 @@ configuration.session_file = path.join(__dirname, '/.vksession')
 // constants
 configuration.PROTOCOL = 'https'
 configuration.BASE_DOMAIN = 'vk.com'
+configuration.MOBILE_SUBDOMAIN = 'm'
 configuration.BASE_CALL_URL = configuration.PROTOCOL + '://' + 'api.' + configuration.BASE_DOMAIN + '/method/'
 configuration.BASE_OAUTH_URL = configuration.PROTOCOL + '://' + 'oauth.' + configuration.BASE_DOMAIN + '/'
 

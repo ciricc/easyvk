@@ -7,7 +7,9 @@
 
 'use strict'
 
-const request = require('request')
+const fetch = require('node-fetch')
+const qs = require('qs')
+
 const staticMethods = require('./staticMethods.js')
 const EasyVKMiddlewares = require('./middlewares.js')
 
@@ -30,7 +32,7 @@ class LongPollConnection extends EventEmitter {
     init()
 
     async function reconnect () {
-      return self._vk.call('groups.getLongPollServer', self.config.userConfig.forGetLongPollServer).then(({ vkr }) => {
+      return self._vk.call('groups.getLongPollServer', self.config.userConfig.forGetLongPollServer).then((vkr) => {
         self.config.longpollServer = vkr.server
         self.config.longpollTs = vkr.ts
         self.config.longpollKey = vkr.key
@@ -68,14 +70,15 @@ class LongPollConnection extends EventEmitter {
       _w = forLongPollServer.wait
 
       let params = {
-        url: server,
-        qs: forLongPollServer,
         timeout: (_w * 1000) + (1000 * 3),
         headers: {
-          'connection': 'keep-alive'
+          'connection': 'keep-alive',
+          'content-type': 'application/x-www-form-urlencoded'
         },
         agent: self._vk.agent
       }
+
+      server = server + '?' + qs.stringify(forLongPollServer)
 
       if (self._debug) {
         self._debug({
@@ -85,50 +88,36 @@ class LongPollConnection extends EventEmitter {
       }
 
       self._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
-        url: params.url,
+        url: server,
         query: forLongPollServer,
         method: 'GET',
         section: 'bots.longpoll'
       })
 
-      self.lpConnection = request.get(params, (err, res) => {
-        if (err) {
-          if (err.toString().match('TIMEDOUT') || err.toString().match('ENOENT')) {
-            return reconnect()
-          }
-
-          return self.emit('error', err)
-        }
+      self.lpConnection = fetch(server, params).then(async (res) => {
+        res = await res.json()
 
         if (self._vk._debugger) {
           try {
-            self._vk._debugger.push('response', res.body)
+            self._vk._debugger.push('response', res)
           } catch (e) {
             // Ignore
           }
         }
 
         self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
-          body: res.body,
+          body: res,
           section: 'bots.longpoll'
         })
 
         if (self._debug) {
           self._debug({
             type: 'pollResponse',
-            data: res.body
+            data: res
           })
         }
 
-        let vkr = res.body
-
-        try {
-          vkr = JSON.parse(vkr)
-        } catch (e) {
-          self.emit('error', new Error('LongPoll server sended not a json object'))
-          self.emit('failure', vkr)
-          return
-        }
+        let vkr = res
 
         if (vkr.ts) {
           self.config.longpollTs = vkr.ts
@@ -162,6 +151,11 @@ class LongPollConnection extends EventEmitter {
           self.emit('error', vkr.error)
           return reconnect()
         }
+      }).catch(err => {
+        if (err.toString().match('TIMEDOUT') || err.toString().match('ENOENT')) {
+          return reconnect()
+        }
+        return self.emit('error', err)
       })
     }
   }
@@ -254,9 +248,8 @@ class LongPollConnector {
    *
    *  @return {Promise}
    *  @promise Conneto to longpoll server
-   *  @resolve {Object} - Is object which content this parameters:
-   *   { vk: EasyVK, connection: LongPollConnection }
-   *  @reject {Error} - vk.com error or just an error from request module
+   *  @resolve {Object} - Is object which contents LongPollConnection
+   *  @reject {Error} - vk.com error or just an error from node-fetch module
    *
    */
 
@@ -293,7 +286,7 @@ class LongPollConnector {
           params.forGetLongPollServer.group_id = self._vk.session.group_id
         }
 
-        self._vk.call('groups.getLongPollServer', params.forGetLongPollServer).then(({ vkr }) => {
+        self._vk.call('groups.getLongPollServer', params.forGetLongPollServer).then((vkr) => {
           let forLongPoll = {
             longpollServer: vkr.server,
             longpollTs: vkr.ts,
@@ -302,10 +295,7 @@ class LongPollConnector {
             userConfig: params
           }
 
-          return resolve({
-            connection: new LongPollConnection(forLongPoll, self._vk),
-            vk: self._vk
-          })
+          return resolve(new LongPollConnection(forLongPoll, self._vk))
         }, reject)
       }
     })

@@ -10,7 +10,9 @@
 
 'use strict'
 
-const request = require('request')
+const fetch = require('node-fetch')
+const qs = require('qs')
+
 const staticMethods = require('./staticMethods.js')
 const EventEmitter = require('fast-event-emitter')
 
@@ -69,10 +71,7 @@ class StreamingAPIConnection extends EventEmitter {
 
     return new Promise((resolve, reject) => {
       if (self._wsc) {
-        return resolve({
-          response: self._wsc.close(),
-          vk: self._vk
-        })
+        return resolve(self._wsc.close())
       } else {
         return reject(new Error('WebSocket not connected'))
       }
@@ -80,117 +79,88 @@ class StreamingAPIConnection extends EventEmitter {
   }
 
   async __MRHTTPURL (method, json) {
-    let self = this
-
     return new Promise((resolve, reject) => {
       method = method.toString().toLocaleLowerCase()
 
-      if (request.hasOwnProperty(method)) {
-        let queryParams = {
-          method: method.toLocaleUpperCase(),
-          uri: `${self._urlHttp}/rules?key=${self._key}`,
-          json: json,
-          agent: self._vk.agent
+      let url = `${this._urlHttp}/rules`
+      json = {
+        ...json,
+        key: this._key
+      }
+
+      let queryParams = {
+        method: method,
+        body: method === 'post' ? qs.stringify(json) : null,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        agent: this._vk.agent
+      }
+
+      if (this._vk && this._vk.debug) {
+        this._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
+          url,
+          query: json,
+          section: 'streamingAPI',
+          method: method.toUpperCase()
+        })
+      }
+
+      if (method === 'get') {
+        url = url + '?' + qs.stringify(json)
+      }
+
+      return fetch(url, queryParams).then(async (res) => {
+        let vkr = await res.json()
+
+        if (this._vk && this._vk._debugger) {
+          try {
+            this._vk._debugger.push('response', vkr)
+          } catch (e) {
+            // Ignore
+          }
         }
 
-        if (this._vk) {
-          this._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
-            url: queryParams.uri,
-            query: json,
-            section: 'streamingAPI',
-            method: method.toUpperCase()
+        if (this._vk && this._vk.debug) {
+          this._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
+            body: vkr,
+            section: 'streamingAPI'
           })
         }
 
-        request[method](queryParams, (err, res) => {
-          if (err) {
-            return reject(new Error(err))
-          }
-
-          let vkr = res.body
-
-          if (self._vk && self._vk._debugger) {
-            try {
-              self._vk._debugger.push('response', vkr)
-            } catch (e) {
-              // Ignore
-            }
-          }
-
-          if (this._vk) {
-            this._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
-              body: vkr,
-              section: 'streamingAPI'
-            })
-          }
-
-          if (vkr) {
-            if (staticMethods.isObject(vkr)) {
-              vkr = JSON.stringify(vkr)
-            }
-
-            let json = staticMethods.checkJSONErrors(vkr, reject)
-
-            if (json) {
-              return resolve(json)
-            } else {
-              return reject(new Error("JSON is not valid... oor i don't know"))
-            }
+        if (vkr) {
+          let json = staticMethods.checkJSONErrors(vkr, reject)
+          if (json) {
+            return resolve(json)
           } else {
-            reject(new Error(`Empty response ${vkr}`))
+            return reject(new Error("JSON is not valid... oor i don't know"))
           }
-        })
-      } else {
-        return reject(new Error('Undefined method type'))
-      }
+        } else {
+          reject(new Error(`Empty response ${vkr}`))
+        }
+      })
     })
   }
 
   async addRule (tag, rule) {
-    let self = this
-    return new Promise((resolve, reject) => {
-      let MRHTTPParams = {
-        'rule': {
-          'value': rule,
-          'tag': tag
-        }
+    let MRHTTPParams = {
+      'rule': {
+        'value': rule,
+        'tag': tag
       }
-
-      self.__MRHTTPURL('POST', MRHTTPParams).then((d) => {
-        return resolve({
-          vkr: d,
-          vk: self._vk
-        })
-      }, reject)
-    })
+    }
+    return this.__MRHTTPURL('POST', MRHTTPParams)
   }
 
   async deleteRule (tag) {
-    let self = this
-    return new Promise((resolve, reject) => {
-      let MRHTTPParams = {
-        'tag': tag
-      }
-
-      self.__MRHTTPURL('DELETE', MRHTTPParams).then((d) => {
-        return resolve({
-          vkr: d,
-          vk: self._vk
-        })
-      }, reject)
-    })
+    let MRHTTPParams = {
+      'tag': tag
+    }
+    return this.__MRHTTPURL('DELETE', MRHTTPParams)
   }
 
   async getRules () {
-    let self = this
-    return new Promise((resolve, reject) => {
-      self.__MRHTTPURL('GET', {}).then((rules) => {
-        return resolve({
-          vk: self._vk,
-          vkr: rules
-        })
-      }, reject)
-    })
+    return this.__MRHTTPURL('GET', {})
   }
 
   async deleteAllRules () {
@@ -198,13 +168,13 @@ class StreamingAPIConnection extends EventEmitter {
 
     return new Promise((resolve, reject) => {
       // For begin - get All rules
-      self.getRules().then(({ vkr: rules }) => {
+      self.getRules().then((rules) => {
         rules = rules.rules
         let i = 0
 
         function del () {
           if (i === rules.length) {
-            return resolve({ code: 200, vk: self._vk })
+            return resolve(true)
           }
 
           let rule = rules[i]
@@ -221,7 +191,7 @@ class StreamingAPIConnection extends EventEmitter {
         if (rules) {
           del()
         } else {
-          return resolve({ code: 200, vk: self._vk })
+          return resolve(true)
         }
       }, reject)
     })
@@ -242,7 +212,7 @@ class StreamingAPIConnection extends EventEmitter {
       }
 
       // For begin get all rules and then change/add/delete rules
-      self.getRules().then(({ vkr: startedRules }) => {
+      self.getRules().then((startedRules) => {
         let changedRules, stRulesObject, tags, addedRules, deletedRules
 
         startedRules = startedRules.rules
@@ -360,12 +330,9 @@ class StreamingAPIConnection extends EventEmitter {
         function initAddRule () {
           if (iN >= tags.length) {
             return resolve({
-              log: {
-                changedRules: changedRules,
-                addedRules: addedRules,
-                deletedRules: deletedRules
-              },
-              vk: self._vk
+              changedRules: changedRules,
+              addedRules: addedRules,
+              deletedRules: deletedRules
             })
           }
 
@@ -429,10 +396,7 @@ class StreamingAPIConnector {
             let _StreamingAPIConnecton =
             new StreamingAPIConnection(self._vk, streamingSession, wsc)
 
-            return resolve({
-              connection: _StreamingAPIConnecton,
-              vk: self._vk
-            })
+            return resolve(_StreamingAPIConnecton)
           })
         }, reject)
       })
@@ -461,11 +425,9 @@ class StreamingAPIConnector {
             grant_type: 'client_credentials'
           }
 
-          getParams = staticMethods.urlencode(getParams)
+          let url = `${configuration.BASE_OAUTH_URL}access_token?` + qs.stringify(getParams)
 
-          let url = `${configuration.BASE_OAUTH_URL}access_token?${getParams}`
-
-          if (this._vk) {
+          if (this._vk && this._vk.debug) {
             this._vk.debug(Debugger.EVENT_REQUEST_TYPE, {
               url,
               query: getParams,
@@ -474,15 +436,11 @@ class StreamingAPIConnector {
             })
           }
 
-          request.get({
-            url,
+          return fetch(url, {
             agent: self._vk.agent
-          }, (err, res) => {
-            if (err) {
-              return reject(new Error(err))
-            }
+          }).then(async (res) => {
+            let vkr = await res.json()
 
-            let vkr = res.body
             if (self._vk && self._vk._debugger) {
               try {
                 self._vk._debugger.push('response', vkr)
@@ -491,7 +449,7 @@ class StreamingAPIConnector {
               }
             }
 
-            if (this._vk) {
+            if (this._vk && this._vk.debug) {
               this._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
                 body: vkr,
                 section: 'streamingAPI'

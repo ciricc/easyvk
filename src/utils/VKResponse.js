@@ -16,6 +16,9 @@ let VKResponseReturner = function (staticMethods, dataResponse_, returnConstruct
         super(res)
       } else if (Array.isArray(res) || constructorName === 'Array') {
         super(...res)
+        res.forEach((a, i) => {
+          this[i] = a
+        })
       } else if (staticMethods.isObject(res)) {
         super()
 
@@ -52,6 +55,16 @@ let VKResponseReturner = function (staticMethods, dataResponse_, returnConstruct
       }
 
       return this
+    }
+
+    get vkr () {
+      console.warn('[Warning] Vkr option is deprecated, use absolute .then(vkr => console.log(vkr))')
+      return this
+    }
+
+    get vk () {
+      console.warn('[Warning] Vk option is deprecated, use absolute .then(vkr => console.log(vkr))')
+      return null
     }
 
     getFullResponse () {

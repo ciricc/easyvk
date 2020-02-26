@@ -3,19 +3,15 @@
  */
 
 const path = require('path')
-
 const _easyvk = path.join(__dirname, 'easyvk.js')
-
 const easyVK = require(`${_easyvk}`)
-
 const currentSessionFile = path.join(__dirname, '.vksession')
 
-  /*
+/**
  *
  * This test is testing all my Http widgets
  */
-
-;(async () => {
+const main = async () => {
   let VKontakte = await (easyVK({
     api_v: '5.73',
     save_session: true,
@@ -93,7 +89,9 @@ const currentSessionFile = path.join(__dirname, '.vksession')
   }))
 
   console.log(audiosGotById, 'got audios')
-})()
+}
+
+main()
 
 // Handle all rejects and errors
 process.on('unhandledRejection', console.error)

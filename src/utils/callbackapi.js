@@ -10,7 +10,6 @@
 'use strict'
 
 const http = require('http')
-const express = require('express')
 const staticMethods = require('./staticMethods.js')
 const EventEmitter = require('fast-event-emitter')
 const bodyParser = require('body-parser')
@@ -32,6 +31,10 @@ class CallbackAPI extends EventEmitter {
 
     if (!postData.group_id) {
       res.status(400).send('only vk requests')
+      return self.emit('eventEmpty', {
+        postData: postData,
+        description: "This request haven't group_id of event. Event name is empty"
+      })
     }
 
     let group = self._cbparams.groups[postData.group_id.toString()]
@@ -112,33 +115,27 @@ class CallbackAPI extends EventEmitter {
     self._cbparams = params
 
     return new Promise((resolve, reject) => {
-      if (self._app) { // Only one time
-        return reject(new Error('You are listening the server yet!'))
-      } else {
-        let app, server
+      let { app } = params
+      let server
 
-        app = express()
-        app.use(bodyParser.json())
+      if (!app) throw new Error('You must have app parameter, like express application')
 
-        app.post(params.path, (req, res) => {
-          self.__initVKRequest(req, res)
-        })
+      app.use(bodyParser.json())
 
-        app.get(params.path, (req, res) => {
-          self.__init404Error(req, res)
-        })
+      app.post(params.path, (req, res) => {
+        self.__initVKRequest(req, res)
+      })
 
-        server = http.createServer(app)
+      app.get(params.path, (req, res) => {
+        self.__init404Error(req, res)
+      })
 
-        self._app = app
+      server = http.createServer(app)
 
-        server.listen(params.port || process.env.PORT || 3000)
+      this._server = server
+      server.listen(params.port || process.env.PORT || 3000)
 
-        return resolve({
-          app: app,
-          server: server
-        })
-      }
+      return resolve(true)
     })
   }
 }
@@ -189,13 +186,13 @@ class CallbackAPIConnector {
       }
 
       if (!callbackParams.groupId) {
-        if (self._vk.session.group_id) {
+        if (self._vk.session && self._vk.session.group_id) {
           callbackParams.groupId = self._vk.session.group_id
         }
       }
 
       if (callbackParams.groupId) { // If user wants only one group init
-        if (!callbackParams.confirmCode && (self._vk.session.group_id && callbackParams.groupId !== self._vk.session.group_id)) {
+        if (!callbackParams.confirmCode && (self._vk.session && self._vk.session.group_id && callbackParams.groupId !== self._vk.session.group_id)) {
           return reject(new Error("You don't puted confirmation code"))
         }
 
@@ -223,7 +220,7 @@ class CallbackAPIConnector {
           }
 
           if (!group.groupId) {
-            if (self._vk.session.group_id) {
+            if (self._vk.session && self._vk.session.group_id) {
               group.groupId = self._vk.session.group_id
             }
           }
@@ -235,8 +232,8 @@ class CallbackAPIConnector {
           registered.push(group.groupId)
 
           if (!group.confirmCode) {
-            if (group.groupId === self._vk.session.group_id) {
-              let { vkr: confirmToken } = await self._vk.call('groups.getCallbackConfirmationCode', {
+            if (self._vk.session && group.groupId === self._vk.session.group_id) {
+              let confirmToken = await self._vk.call('groups.getCallbackConfirmationCode', {
                 group_id: group.groupId
               })
 
@@ -261,11 +258,7 @@ class CallbackAPIConnector {
       let cbserver = new CallbackAPI(self._vk)
 
       cbserver.__initApp(callbackParams).then((app) => {
-        return resolve({
-          connection: cbserver,
-          web: app,
-          vk: self._vk
-        })
+        return resolve(cbserver)
       })
     })
   }

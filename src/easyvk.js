@@ -1,9 +1,9 @@
-const request = require('request')
+const fetch = require('node-fetch')
+
 const { URL } = require('url')
 const fs = require('fs')
 
 // Modules
-
 const StaticMethods = require('./utils/staticMethods.js')
 const EasyVKUploader = require('./utils/uploader.js')
 const EasyVKLongPoll = require('./utils/longpoll.js')
@@ -202,6 +202,7 @@ class EasyVK {
           getData = prepareRequest(getData)
 
           let url = configuration.BASE_OAUTH_URL + 'token/?' + getData
+
           let headers = {
             'User-Agent': params.userAgent
           }
@@ -212,16 +213,16 @@ class EasyVK {
             method: 'GET'
           })
 
-          request.get({
-            url,
+          fetch(url, {
             agent: self.agent,
             headers: headers
-          }, (err, res) => {
-            completeSession(err, res, {
+          }).then(async (res) => {
+            res = await res.json()
+            return completeSession(null, res, {
               credentials_flow: 1,
               client_id: params.client_id
             }).catch(reject)
-          })
+          }).catch(e => reject(e))
         }
       }
 
@@ -235,23 +236,31 @@ class EasyVK {
           method: 'GET'
         })
 
-        request.get({
-          url,
+        return fetch(url, {
           headers: {
             'User-Agent': params.userAgent
           },
           agent: self.agent
-        }, (err, res) => {
-          completeSession(err, res, {
+        }).then(async res => {
+          res = await res.json()
+          return completeSession(null, res, {
             user_id: null
           }).catch((err) => {
             try {
-              self._catchCaptcha({ err, reCall: makeAuth, _needSolve, _resolverReCall, _rejecterReCall, data: getData, reject })
+              self._catchCaptcha({ err,
+                reCall: () => {
+                  return makeAuth(0, 0, 0, getData)
+                },
+                _needSolve,
+                _resolverReCall,
+                _rejecterReCall,
+                data: getData,
+                reject })
             } catch (e) {
               reject(err)
             }
           })
-        })
+        }).catch(e => reject(e))
       }
 
       function completeSession (err, res, object = {}) {
@@ -304,7 +313,7 @@ class EasyVK {
           return reject(new Error(err))
         }
 
-        let vkr = res.body
+        let vkr = res
 
         if (self.debuggerRun) {
           try {
@@ -337,23 +346,23 @@ class EasyVK {
               fields: params.fields.join(',')
             }
 
-            getData = StaticMethods.urlencode(getData)
-            let url = configuration.BASE_CALL_URL + 'users.get?' + getData
+            let url = configuration.BASE_CALL_URL + 'users.get?' + prepareRequest(getData)
 
             self.debug(DebuggerClass.EVENT_REQUEST_TYPE, {
-              url,
+              url: url + '?' + StaticMethods.urlencode(getData),
               query: getData,
               method: 'GET'
             })
 
-            request.get({
-              url,
+            return fetch(url, {
               agent: self.agent,
               headers: {
                 'User-agent': params.userAgent
               }
-            }, (err, res) => {
-              let vkr = prepareResponse(err, res)
+            }).then(async (res) => {
+              res = await res.json()
+
+              let vkr = prepareResponse(null, res)
 
               if (vkr) {
                 let json = StaticMethods.checkJSONErrors(vkr, reject)
@@ -395,7 +404,7 @@ class EasyVK {
                   where: 'in auth with token (user)'
                 }))
               }
-            })
+            }).catch(e => reject(e))
           }
         } else {
           self.session = session
@@ -414,17 +423,15 @@ class EasyVK {
 
         if (params.lang !== undefined) data.lang = params.lang
 
-        getData = StaticMethods.urlencode(data)
-
         if (self.debuggerRun) {
           try {
-            self.debuggerRun.push('request', configuration.BASE_CALL_URL + 'apps.get?' + getData)
+            self.debuggerRun.push('request', configuration.BASE_CALL_URL + 'apps.get?' + StaticMethods.urlencode(data))
           } catch (e) {
             // Ignore
           }
         }
 
-        let url = configuration.BASE_CALL_URL + 'apps.get?' + getData
+        let url = configuration.BASE_CALL_URL + 'apps.get?' + prepareRequest(getData)
 
         self.debug(DebuggerClass.EVENT_REQUEST_TYPE, {
           url,
@@ -432,19 +439,13 @@ class EasyVK {
           method: 'GET'
         })
 
-        request.get({
-          url,
+        fetch(url, {
           agent: self.agent,
           headers: {
             'User-Agent': params.userAgent
           }
-        }, (err, res) => {
-          if (err) {
-            return reject(new Error(err))
-          }
-
-          let vkr = res.body
-
+        }).then(async (res) => {
+          let vkr = await res.json()
           if (self.debuggerRun) {
             try {
               self.debuggerRun.push('response', vkr)
@@ -459,7 +460,7 @@ class EasyVK {
             let json
 
             json = StaticMethods.checkJSONErrors(vkr, (e) => {
-              if (e.error_code === 5 || e.error_code === 27) {
+              if (e.error_code === 5 || e.error_code === 27 || e.error_code === 28) {
                 if (self.params.authType && self.params.authType === authTypes[2]) {
                   return reject(new Error('Is not an application token! Or this token is not valid (expired)'))
                 } else {
@@ -507,28 +508,28 @@ class EasyVK {
               where: 'in auth with token (group)'
             }))
           }
-        })
+        }).catch(e => reject(e))
       }
 
       function groupToken () {
         let getData
 
-        getData = StaticMethods.urlencode({
+        getData = {
           access_token: params.access_token,
           v: params.api_v,
           lang: params.lang,
           fields: params.fields.join(',')
-        })
+        }
 
         if (self.debuggerRun) {
           try {
-            self.debuggerRun.push('request', configuration.BASE_CALL_URL + 'groups.getById?' + getData)
+            self.debuggerRun.push('request', configuration.BASE_CALL_URL + 'groups.getById?' + StaticMethods.urlencode(getData))
           } catch (e) {
             // Ignore
           }
         }
 
-        let url = configuration.BASE_CALL_URL + 'groups.getById?' + getData
+        let url = configuration.BASE_CALL_URL + 'groups.getById?' + prepareRequest(getData)
 
         self.debug(DebuggerClass.EVENT_REQUEST_TYPE, {
           url,
@@ -536,18 +537,13 @@ class EasyVK {
           method: 'GET'
         })
 
-        request.get({
-          url,
-          proxy: params.proxy,
+        fetch(url, {
+          agent: self.agent,
           headers: {
             'User-Agent': params.userAgent
           }
-        }, (err, res) => {
-          if (err) {
-            return reject(new Error(err))
-          }
-
-          let vkr = res.body
+        }).then(async (res) => {
+          let vkr = await res.json()
 
           if (self.debuggerRun) {
             try {
@@ -564,7 +560,7 @@ class EasyVK {
               if (e.error_code === 100 && self.params.authType && self.params.authType === authTypes[1]) {
                 return reject(new Error('Is not a group token! Or this token is not valid (expired)'))
               } else {
-                return reject(e)
+                return reject(new Error('EasyVK can not recognize this token authentication type'))
               }
             })
 
@@ -597,7 +593,37 @@ class EasyVK {
               where: 'in auth with token (group)'
             }))
           }
-        })
+        }).catch(e => reject(e))
+      }
+
+      function getConnectedUtil (UtilObject) {
+        if (typeof UtilObject === 'function') return new UtilObject(self)
+        return UtilObject
+      }
+
+      function connectUtil (prop, util, connectBool) {
+        if (connectBool === undefined) {
+          connectBool = params.utils[prop] !== false
+        }
+        if (connectBool) {
+          if (Array.isArray(util)) {
+            let utilsWrapper = {}
+
+            util.forEach(util => {
+              utilsWrapper[util[0]] = getConnectedUtil(util[1])
+            })
+
+            Object.defineProperty(self, prop, { value: utilsWrapper })
+          } else {
+            Object.defineProperty(self, prop, { value: getConnectedUtil(util) })
+          }
+        } else {
+          Object.defineProperty(self, prop, {
+            get: () => {
+              throw new Error(`This util not connected. Make params.utils[${prop}] = true in easyvk options`)
+            }
+          })
+        }
       }
 
       function initResolve (s) {
@@ -605,34 +631,21 @@ class EasyVK {
           fs.writeFileSync(params.session_file, '{}')
         }
 
-        if (params.utils.uploader !== false) {
-          self.uploader = new EasyVKUploader(self)
-        }
+        let httpConnetBool = (params.utils.http !== false && self.session.user_id) || params.utils.http === true
+        let botsConnectBool = (params.utils.bots !== false && (self.session.group_id || self.session.user_id)) || params.utils.bots === true
+        let longpollConnectBool = (params.utils.longpoll !== false && (self.session.user_id)) || params.utils.longpoll === true
 
-        if (params.utils.widgets === false) {
-          self.widgets = new EasyVKWidgets(self)
-        }
+        connectUtil('uploader', EasyVKUploader)
+        connectUtil('widgets', EasyVKWidgets)
+        connectUtil('streamingAPI', EasyVKStreamingAPI)
+        connectUtil('callbackAPI', EasyVKCallbackAPI)
+        connectUtil('http', EasyVKHttp, httpConnetBool)
+        connectUtil('longpoll', EasyVKLongPoll, longpollConnectBool)
 
-        if (params.utils.streamingAPI === true) {
-          self.streamingAPI = new EasyVKStreamingAPI(self)
-        }
-
-        if (params.utils.callbackAPI === true) {
-          self.callbackAPI = new EasyVKCallbackAPI(self)
-        }
-
-        if ((params.utils.http !== false && self.session.user_id) || params.utils.http === true) {
-          self.http = new EasyVKHttp(self)
-        }
-
-        if ((params.utils.bots !== false && (self.session.group_id || self.session.user_id)) || params.utils.bots === true) {
-          self.bots = {}
-          self.bots.longpoll = new EasyVKBotsLongPoll(self)
-        }
-
-        if ((params.utils.longpoll !== false && (self.session.user_id)) || params.utils.longpoll === true) {
-          self.longpoll = new EasyVKLongPoll(self)
-        }
+        connectUtil('bots', [
+          ['longpoll', EasyVKBotsLongPoll],
+          ['cb', self.callbackAPI ? self.callbackAPI : EasyVKCallbackAPI]
+        ], botsConnectBool)
 
         self._static = new StaticMethods({
           userAgent: params.userAgent,
@@ -688,7 +701,7 @@ class EasyVK {
  *  @return {Promise}
  *  @promise Call to a method, send request for VKontakte API
  *  @resolve {Object} - Standard object like {vk: EasyVK, vkr: Response}
- *  @reject {Error} - vk.com error response or request module error
+ *  @reject {Error} - vk.com error response or node-fetch module error
      *
  */
 
@@ -743,15 +756,11 @@ class EasyVK {
             } catch (e) {}
           }
 
-          return resolve({
-            vkr: vkr,
-            vk: self
-          })
+          return resolve(vkr)
         }).catch((err) => {
           try {
             self._catchCaptcha({ err, reCall, _needSolve, _resolverReCall, _rejecterReCall, data, reject })
           } catch (e) {
-            err.fullError = e
             reject(err)
           }
         })
@@ -824,7 +833,7 @@ module.exports.class = {
   AudioItem: 'AudioItem'
 }
 
-module.exports.version = '2.5.11'
+module.exports.version = '2.6.0'
 module.exports.callbackAPI = new EasyVKCallbackAPI({})
 module.exports.streamingAPI = new EasyVKStreamingAPI({})
 module.exports.authTypes = authTypes
