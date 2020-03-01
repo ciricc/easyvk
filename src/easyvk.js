@@ -627,7 +627,7 @@ class EasyVK {
       }
 
       function initResolve (s) {
-        if (params.clean_session_file) {
+        if (params.clear) {
           fs.writeFileSync(params.session_file, '{}')
         }
 
@@ -829,8 +829,7 @@ module.exports.is = is
 module.exports.class = {
   VKResponse: 'VKResponse',
   VKResponseError: 'VKResponseError',
-  EasyVKError: 'EasyVKError',
-  AudioItem: 'AudioItem'
+  EasyVKError: 'EasyVKError'
 }
 
 module.exports.version = '2.6.0'

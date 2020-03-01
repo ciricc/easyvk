@@ -1,6 +1,3 @@
-const fs = require('fs')
-const path = require('path')
-
 class EasyVKError extends Error {
   constructor (error, name = '', data = {}) {
     super(error.description)
@@ -20,7 +17,7 @@ class EasyVKErrors {
 
     let errors = {}
 
-    errors = JSON.parse(fs.readFileSync(path.join(__dirname, 'evkerrors.json')).toString())
+    errors = require('./evkerrors')
 
     self._errors = errors
   }
