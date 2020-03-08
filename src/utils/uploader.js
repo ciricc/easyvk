@@ -210,8 +210,8 @@ class EasyVKUploader {
   }
 
   async upload ({
-    getUrl,
-    save,
+    getUrlMethod,
+    saveMethod,
     file,
     getUrlParams = {},
     saveParams = {},
@@ -220,12 +220,12 @@ class EasyVKUploader {
     fieldName = 'file',
     uploadUrlField = 'upload_url'
   }, returnAll = false) {
-    return this.getUploadURL(getUrl, getUrlParams, true).then(({ vkr }) => {
+    return this.getUploadURL(getUrlMethod, getUrlParams, true).then(({ vkr }) => {
       let url = vkr[uploadUrlField]
       let uploadMethod = isWeb ? 'uploadFetchedFile' : 'uploadFile'
 
       return this[uploadMethod](url, file, fieldName, uploadParams).then(vkr => {
-        return this._vk.call(save, Object.assign(saveParams, vkr))
+        return this._vk.call(saveMethod, Object.assign(saveParams, vkr))
       })
     })
   }

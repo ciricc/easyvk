@@ -287,14 +287,15 @@ class StaticMethods {
 
     if (this.params.lang !== 'undefined') data.lang = this.params.lang
     StaticMethods.call('execute', data, 'post', null, Agent, settings).then((vkr) => {
+      let vkrFull = vkr.getFullResponse()
+      console.log(vkrFull.execute_errors)
       vkr.forEach((val, i) => {
         let req = stack[i]
 
         if (val === false) {
-          let vkrFull = vkr.getFullResponse()
           if (vkrFull.execute_errors) {
             let err = vkrFull.execute_errors[i]
-            if (execs[i].match(err.method)) { // "API.messages.send()".match("messages.send")
+            if (err && execs[i].match(err.method)) { // "API.messages.send()".match("messages.send")
               err = new VKResponseError(err.error_msg, err.error_code, execsData[i].data)
               return req.reject(err)
             }
@@ -312,6 +313,13 @@ class StaticMethods {
       })
     }).catch(err => {
       let req = stack[stack.length - 1]
+      
+      err.highload = {
+        stack,
+        settings,
+        data
+      }
+
       req.reject(err)
     })
   }
@@ -346,7 +354,8 @@ class StaticMethods {
         exec: self.createExecute(method, data),
         data: {
           method: method,
-          data: data
+          data: data,
+          token: accessToken
         },
         resolve,
         reject
