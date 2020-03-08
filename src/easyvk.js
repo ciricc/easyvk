@@ -716,7 +716,6 @@ class EasyVK {
 
     return new Promise((resolve, reject) => {
       async function reCall (_needSolve, _resolverReCall, _rejecterReCall) {
-        console.log(methodName, _needSolve, 'sov!!!')
         methodType = String(methodType).toLowerCase()
 
         if (methodType !== 'post') {

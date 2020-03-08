@@ -288,7 +288,6 @@ class StaticMethods {
     if (this.params.lang !== 'undefined') data.lang = this.params.lang
     StaticMethods.call('execute', data, 'post', null, Agent, settings).then((vkr) => {
       let vkrFull = vkr.getFullResponse()
-      console.log(vkrFull.execute_errors)
       vkr.forEach((val, i) => {
         let req = stack[i]
 
