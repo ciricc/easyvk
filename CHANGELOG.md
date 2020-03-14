@@ -126,7 +126,7 @@ let connection = await vk.bots.longpoll.connect()
 - Теперь, настраивая Callback API, вы можете кастомизировать работу сервера. То есть теперь не `easyvk` создает инстанс `express`, а вы, собственноручно. Это позволит вам изменять работу сервера как вам угодно и анализировать трафик.
 
 ```javascript
-require('express');
+const express = require('express');
 const app = express();
 
 let connection = await easyvk.callbackAPI.listen({
@@ -146,7 +146,7 @@ async function reply (event, replyText="") {
   return vk.call('messages.send', {
     peer_id: event.peer_id,
     message: replyText,
-    random_id: easyvk.randomId()
+    random_id: easyvk.randomId() // Ранее это было бы просто easyvk.static.randomId()
   }).catch(console.error)
 } 
 
