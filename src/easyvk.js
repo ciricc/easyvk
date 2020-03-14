@@ -712,7 +712,7 @@ class EasyVK {
       middleWare
     } = other
 
-    let highloadStack = null;
+    let highloadStack = null
 
     return new Promise((resolve, reject) => {
       async function reCall (_needSolve, _resolverReCall, _rejecterReCall) {
@@ -752,7 +752,6 @@ class EasyVK {
         data = FromMiddleWare.query
 
         return self._static.call(methodName, data, methodType, self._debugger, self.agent).then((vkr) => {
-          
           if (_needSolve) {
             try {
               _resolverReCall(true)
@@ -761,7 +760,7 @@ class EasyVK {
 
           if (highloadStack) {
             highloadStack.forEach((stack, i) => {
-              if (i === highloadStack.length - 1) {return resolve(vkr)}
+              if (i === highloadStack.length - 1) { return resolve(vkr) }
               return stack.resolve(vkr)
             })
           } else {
@@ -769,13 +768,10 @@ class EasyVK {
           }
         }).catch((err) => {
           try {
-            let _reCall = reCall;
-            
             if (err.highload) {
-              
               data = {
                 access_token: err.highload.token || self.params.access_token,
-                ...(err.highload.data),
+                ...(err.highload.data)
               }
 
               highloadStack = err.highload.stack
@@ -784,18 +780,20 @@ class EasyVK {
             }
 
             self._catchCaptcha({
-              err, 
-              reCall, 
-              _needSolve, 
-              _resolverReCall, 
-              _rejecterReCall, 
-              data, 
-              reject 
+              err,
+              reCall,
+              _needSolve,
+              _resolverReCall,
+              _rejecterReCall,
+              data,
+              reject
             })
           } catch (e) {
             if (highloadStack) {
-               if (i === highloadStack.length - 1) {return reject(err)}
-              return stack.reject(err)
+              highloadStack.forEach((stack, i) => {
+                if (i === highloadStack.length - 1) { return reject(err) }
+                return stack.reject(err)
+              })
             } else {
               reject(err)
             }

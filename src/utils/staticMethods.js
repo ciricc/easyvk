@@ -312,7 +312,7 @@ class StaticMethods {
       })
     }).catch(err => {
       let req = stack[stack.length - 1]
-      
+
       err.highload = {
         stack,
         settings,
