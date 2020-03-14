@@ -90,9 +90,10 @@ class StreamingAPIConnection extends EventEmitter {
 
       let queryParams = {
         method: method,
-        body: method === 'post' ? qs.stringify(json) : null,
+        body: method === 'get' ? null : JSON.stringify(json),
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
         },
         agent: this._vk.agent
       }
@@ -108,6 +109,8 @@ class StreamingAPIConnection extends EventEmitter {
 
       if (method === 'get') {
         url = url + '?' + qs.stringify(json)
+      } else {
+        url = url + '?key=' + this._key
       }
 
       return fetch(url, queryParams).then(async (res) => {
@@ -197,7 +200,7 @@ class StreamingAPIConnection extends EventEmitter {
     })
   }
 
-  async initRules (rulesObject = {}, callBackError = Function) {
+  async initRules (rulesObject = {}, callBackError) {
     let self = this
 
     return new Promise((resolve, reject) => {
@@ -272,24 +275,32 @@ class StreamingAPIConnection extends EventEmitter {
 
                   next()
                 }, (err) => {
-                  callBackError({
-                    where: 'add changes',
-                    rule: rule,
-                    from: 'user_rules',
-                    description: 'Occured error in add method when we tried add rule which was changed',
-                    error: err
-                  })
+                  if (callBackError) {
+                    callBackError({
+                      where: 'add changes',
+                      rule: rule,
+                      from: 'user_rules',
+                      description: 'Occured error in add method when we tried add rule which was changed',
+                      error: err
+                    })
+                  } else {
+                    throw err
+                  }
 
                   next()
                 })
               }, (err) => {
-                callBackError({
-                  where: 'delete changes',
-                  rule: rule,
-                  from: 'vk_rules',
-                  description: 'Occured error in delete method when we tried delete rule which was changed',
-                  error: err
-                })
+                if (callBackError) {
+                  callBackError({
+                    where: 'delete changes',
+                    rule: rule,
+                    from: 'vk_rules',
+                    description: 'Occured error in delete method when we tried delete rule which was changed',
+                    error: err
+                  })
+                } else {
+                  throw err
+                }
 
                 next()
               })
@@ -304,13 +315,17 @@ class StreamingAPIConnection extends EventEmitter {
 
               next()
             }, (err) => {
-              callBackError({
-                where: 'delete',
-                rule: rule,
-                from: 'vk_rules',
-                description: 'Occured error in delete method when we tried delete rule which not declared in init object',
-                error: err
-              })
+              if (callBackError) {
+                callBackError({
+                  where: 'delete',
+                  rule: rule,
+                  from: 'vk_rules',
+                  description: 'Occured error in delete method when we tried delete rule which not declared in init object',
+                  error: err
+                })
+              } else {
+                throw err
+              }
 
               next()
             })
@@ -348,13 +363,17 @@ class StreamingAPIConnection extends EventEmitter {
 
               nextAdd()
             }, (err) => {
-              callBackError({
-                where: 'add',
-                rule: rule,
-                from: 'user_rules',
-                description: 'Occured error in add method when we tried add rule which not declared in vk rules',
-                error: err
-              })
+              if (callBackError) {
+                callBackError({
+                  where: 'add',
+                  rule: rule,
+                  from: 'user_rules',
+                  description: 'Occured error in add method when we tried add rule which not declared in vk rules',
+                  error: err
+                })
+              } else {
+                throw err
+              }
 
               nextAdd()
             })
