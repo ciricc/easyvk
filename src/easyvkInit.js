@@ -65,7 +65,7 @@ async function checkInitParams (params = {}) {
     }
 
     if (params.v !== undefined) {
-      params.api_vk = params.v
+      params.api_v = params.v
     }
 
     if (params.captchaSid !== undefined) {
