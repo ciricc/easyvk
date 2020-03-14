@@ -34,7 +34,7 @@ const rl = readline.createInterface({
   output: process.stdout
 });
 
-async function loginbyFormWithTwoFactorSupport (code='') {
+async function loginByFormWithTwoFactorSupport (code='') {
   return vk.http.loginByForm({
     cookies: './cookies',
     reauth: true,
@@ -43,7 +43,7 @@ async function loginbyFormWithTwoFactorSupport (code='') {
     if (e.is2fa) {
       return new Promise((resolve, reject) => {
         rl.question(`Введите ключ авторизации `, (key) => {
-          return loginbyFormWithTwoFactorSupport(key).then(resolve).catch(reject)
+          return loginByFormWithTwoFactorSupport(key).then(resolve).catch(reject)
         })
       })
     } else {
@@ -52,7 +52,7 @@ async function loginbyFormWithTwoFactorSupport (code='') {
   })
 }
 
-let client = await loginbyFormWithTwoFactorSupport();
+let client = await loginByFormWithTwoFactorSupport();
 ```
 
 ```javascript
