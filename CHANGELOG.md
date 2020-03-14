@@ -123,6 +123,37 @@ let connection = await vk.bots.longpoll.connect()
 
 - HTTP Клиент теперь настраивается независимо от основной функции-инициализатора. То есть, у него появились собственные параметры и настройки, такие как `captchahandler`, `username`, `password`, `reauth` и другие
 
+- Теперь, настраивая Callback API, вы можете кастомизировать работу сервера. То есть теперь не `easyvk` создает инстанс `express`, а вы, собственноручно. Это позволит вам изменять работу сервера как вам угодно и анализировать трафик.
+
+```javascript
+require('express');
+const app = express();
+
+let connection = await easyvk.callbackAPI.listen({
+  port: process.env.PORT || 8080,
+
+  groupId: 1,
+  secret: 'SecretCodeForGroupOrJustPassword',
+  confirmCode: 'TestConfirmationCode',
+  app
+})
+
+```
+- Теперь статические методы дублируются в верхнем уровне объекта `Auth` (easyvk)
+
+```javascript
+async function reply (event, replyText="") {
+  return vk.call('messages.send', {
+    peer_id: event.peer_id,
+    message: replyText,
+    random_id: easyvk.randomId()
+  }).catch(console.error)
+} 
+
+let res = await reply(event, "Hello!");
+
+```
+
 ### Исправления
 
 - Исправлена ошибка, из-за которой в `highload` режиме не всегда возвращался ответ (он был равен `empty`)
