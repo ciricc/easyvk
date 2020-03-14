@@ -257,6 +257,10 @@ class StaticMethods {
     })
   }
 
+  static randomId (peerId = 0) {
+    return parseInt(new Date().getTime() + '' + peerId + '' + Math.floor(Math.random() * 10000), 10)
+  }
+
   async _completeExecute (token = '', Agent, settings) {
     if (!token) throw new Error('Unused token')
 

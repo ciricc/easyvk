@@ -36,6 +36,13 @@ module.exports.USER_AUTH_TYPE = authTypes[0]
 module.exports.GROUP_AUTH_TYPE = authTypes[1]
 module.exports.APPLICATION_AUTH_TYPE = authTypes[2]
 
+/** Exporting static methods */
+for (let prop of Object.getOwnPropertyNames(staticMethods)) {
+  if (['prototype', 'length', 'name'].indexOf(prop) === -1) {
+    module.exports[prop] = staticMethods[prop]
+  }
+}
+
 /**
  *
  *  This function check all parameters
