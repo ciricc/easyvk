@@ -58,7 +58,8 @@ easyvk({
    //Sending a message using messages.send method
    vk.call('messages.send', {
       message: 'Hi',
-      user_id: me
+      user_id: me,
+      random_id: easyvk.randomId()
    }).then((vkr) => console.log(vkr))
    
 }).catch(console.error)
@@ -125,7 +126,8 @@ easyvk({
     if (!_msg.out) {
       vk.call("messages.send", {
         peer_id: _msg.peer_id,
-        message: "Hi!"
+        message: "Hi!",
+        random_id: easyvk.randomId()
       })
     }
 
@@ -178,8 +180,7 @@ easyvk({
 
         /* Для новых версий API ВКонтакте для сообщений 
            требует поля random_id (уникальный id сообщения) */
-        thread.query.random_id = 
-          new Date().getTime().toString() + '' + (Math.floor(Math.random() * 1000)).toString() ; 
+        thread.query.random_id = easyvk.randomId(); 
       }
 
     }
@@ -258,7 +259,8 @@ easyvk({
       //On message event
       vk.call("messages.send", {
         peer_id: msg.from_id,
-        message: "Reply it!"
+        message: "Reply it!",
+        random_id: easyvk.randomId()
       }).catch(console.error);
 
     });
