@@ -74,23 +74,15 @@ let connection = await vk.bots.longpoll.connect()
 | Было | Стало |
 |--------------|--------|
 | access_token | token |
-|--------------|--------|
 | api_v | v |
-|--------------|--------|
 | save_session | save |
-|--------------|--------|
 | session_file | sessionFile |
-|--------------|--------|
 | captcha_sid  | captchaSid  |
-|--------------|--------|
 | captcha_key  | captchaKey  |
-|--------------|--------|
 | client_secret | clientSecret |
-|--------------|--------|
 | client_id    | clientId |
-|--------------|--------|
 | clean_session | clear |
-|--------------|--------|
+
 
 - В связи с трудной поддержкой, в HTTP Клиенте удален класс для работы Audio API. Теперь Audio API не поддерживается библиотекой
 
