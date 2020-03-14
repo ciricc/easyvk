@@ -208,7 +208,6 @@ class HTTPEasyVKClient {
         stories.forEach((story) => {
           if (Array.isArray(story.items)) {
             story.items.forEach(item => {
-              console.log(story.read_hash, item.raw_id)
               self.__readStory(story.read_hash, item.raw_id, 'feed')
               i++
             })
@@ -399,6 +398,8 @@ class HTTPEasyVK {
       let captchaSid = params.captchaSid || self._vk.params.captcha_sid
       let captchaKey = params.captchaKey || self._vk.params.captcha_key
 
+      let code = params.code
+
       const captchaHandler = params.captchaHandler || self._vk.params.captchaHandler
 
       if (!pass || !login) return reject(self._vk._error('http_client', {}, 'need_auth'))
@@ -470,8 +471,11 @@ class HTTPEasyVK {
 
           fetch(url, {
             method: 'GET',
-            headers: self.headersRequest,
-            agent: self._vk.agent
+            headers: {
+              ...self.headersRequest
+            },
+            agent: self._vk.agent,
+            cache: 'no-cache'
           }).then(async (res) => {
             res = await res.text()
 
@@ -495,7 +499,6 @@ class HTTPEasyVK {
             let POSTLoginFormUrl = matches[1]
 
             if (!POSTLoginFormUrl.match(/login\.vk\.com/)) return reject(self._vk._error('http_client', {}, 'not_supported'))
-
             return actLogin(POSTLoginFormUrl).then(resolve, reject)
           }).catch(err => reject(err))
         }
@@ -592,7 +595,6 @@ class HTTPEasyVK {
         async function actLogin (loginURL) {
           return new Promise((resolve, reject) => {
             async function makeAuth (_needSolve, _resolverReCall, _rejecterReCall, getData) {
-              console.log(getData)
               return fetch(loginURL, {
                 method: 'POST',
                 agent: self._vk.agent,
@@ -602,8 +604,46 @@ class HTTPEasyVK {
                 }
               }).then(async res => {
                 let body = await res.text()
+                if (body.match(/authcheck_code/)) {
+                  if (code) {
+                    let checkCodeURL = body.match(/action([\s]+)?=([\s]+)?("|')(\/login\?act=authcheck_code([^"']+))/)
+
+                    checkCodeURL = checkCodeURL ? checkCodeURL[4] : null
+
+                    if (!checkCodeURL) return reject(new Error('Not found authcheck url'))
+                    checkCodeURL = `${configuration.PROTOCOL}://${configuration.MOBILE_SUBDOMAIN}.${configuration.BASE_DOMAIN}${checkCodeURL}`
+
+                    let checkCodeData = {
+                      _ajax: 1,
+                      code,
+                      remember: 1
+                    }
+
+                    let res = await fetch(checkCodeURL, {
+                      method: 'POST',
+                      agent: self._vk.agent,
+                      body: qs.stringify(checkCodeData),
+                      headers: {
+                        ...self.headersRequest
+                      }
+                    })
+
+                    res = await res.text()
+
+                    if (res.match(/authcheck_code/)) {
+                      let err = new Error('Wrong code')
+                      err.is2fa = true
+                      err.isWrong = true
+                      return reject(err)
+                    }
+                  } else {
+                    let err = new Error('You need input two factor code')
+                    err.is2fa = true
+                    return reject(err)
+                  }
+                }
+
                 if (body.match(/captcha/)) {
-                  console.log('have captcha!')
                   let captchaUrl = body.match(/\/captcha.php([^"]+)/)
                   if (captchaUrl) {
                     captchaUrl = `${configuration.PROTOCOL}:://${configuration.BASE_DOMAIN}${captchaUrl[0]}`

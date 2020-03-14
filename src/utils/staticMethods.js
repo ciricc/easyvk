@@ -119,7 +119,7 @@ class StaticMethods {
         } else if (vkr.error.message) {
           return new VKResponseError(vkr.error.message, vkr.error.code, vkr.error.params)
         } else {
-          return new VKResponseError(vkr.error ? vkr.error : vkr.error_description, vkr.error_code ? vkr.error_code : vkr.error)
+          return new VKResponseError(vkr.error_description ? vkr.error_description : vkr.error, vkr.error_code ? vkr.error_code : vkr.error)
         }
       }
     } catch (e) {

@@ -25,6 +25,35 @@ vk.uploader.upload({
 
 - Добавлена поддержка `captchaHandler` в HTTP Клиенте
 - Добавлен статический метод `easyvk.static.randomId()` для генерации случайного числа специально для отправки сообщений.
+- Добавлена поддержка двухфакторной аутентификации для HTTP Клиента
+```javascript
+const readline = require('readline')
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+async function loginbyFormWithTwoFactorSupport (code='') {
+  return vk.http.loginByForm({
+    cookies: './cookies',
+    reauth: true,
+    code
+  }).catch(e => {
+    if (e.is2fa) {
+      return new Promise((resolve, reject) => {
+        rl.question(`Введите ключ авторизации `, (key) => {
+          return loginbyFormWithTwoFactorSupport(key).then(resolve).catch(reject)
+        })
+      })
+    } else {
+      throw e;
+    }
+  })
+}
+
+let client = await loginbyFormWithTwoFactorSupport();
+```
 
 ```javascript
 vk.call('messages.send', {
@@ -86,11 +115,13 @@ let connection = await vk.bots.longpoll.connect()
 
 - В связи с трудной поддержкой, в HTTP Клиенте удален класс для работы Audio API. Теперь Audio API не поддерживается библиотекой
 
-- По скольку Audio API удален, а я предполагаю, что все-таки кому-то что-т нужно делать, и неофициально, то я сделал метод `client.request()` публичным и задокументировал его на сайте-документации. Он стал проще, логичнее и стабильнее работать.
+- По скольку Audio API удален, а я предполагаю, что все-таки кому-то что-то нужно делать, и неофициально, то я сделал метод `client.request()` публичным и задокументировал его на сайте-документации. Он стал работать проще, логичнее и стабильнее.
 
-- В методе `client.request()` теперь ответ будет стараться возвращаться в JSON, если в ответе нет JSON, то он вернет оригинальную строку `body`.
+- В методе `client.request()` теперь ответ будет возвращаться в JSON. Если в ответе нет JSON, то он вернет оригинальную строку `body`.
 
+- В HTTP Клиенте убрана проверка авторизации. Теперь проблемы лимита атворизаций не будет. <b>Но в своих приложениях рекомендуется делать собственные проверки пароля и логина, через официальный API </b>
 
+- HTTP Клиент теперь настраивается независимо от основной функции-инициализатора. То есть, у него появились собственные параметры и настройки, такие как `captchahandler`, `username`, `password`, `reauth` и другие
 
 ### Исправления
 
