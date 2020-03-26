@@ -79,7 +79,7 @@ class HTTPEasyVKClient {
         headers: self.headersRequest,
         agent: self._vk.agent
       }).then(async (res) => {
-        res = await res.text()
+        res = await res.textConverted()
 
         self._vk.debug(Debugger.EVENT_RESPONSE_TYPE, {
           body: res,
