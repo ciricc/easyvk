@@ -1,6 +1,6 @@
 {
   "name": "easyvk",
-  "version": "2.7.41",
+  "version": "2.8.0",
   "description": "Functional library for support VKontake API (ВКонтакте API) on node.js",
   "author": "ciricc",
   "license": "MIT",

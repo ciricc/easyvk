@@ -957,7 +957,7 @@ export const classes = {
   EasyVKError: 'EasyVKError'
 }
 
-export const version = '2.7.4'
+export const version = '2.8.0'
 export const callbackAPI = new EasyVKCallbackAPI({})
 export const streamingAPI = new EasyVKStreamingAPI({})
 
