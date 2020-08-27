@@ -1,0 +1,12 @@
+{
+  "random": false,
+  "spec_dir": "test",
+  "spec_files": [
+    "**/*.spec.js"
+  ],
+  "env": {
+    "jasmine": true
+  },
+  "plugins": ["jasmine"],
+  "extends": ["plugin:jasmine/recommended"]
+}
