@@ -95,7 +95,7 @@ class EasyVKUploader {
           body: form,
           agent: this._agent
         }).then(async (response) => {
-          let vkr = await response.text()
+          let vkr = await response.json()
           if (vkr) {
             if (paramsUpload.custom) {
               return resolve(vkr)
@@ -186,7 +186,7 @@ class EasyVKUploader {
             ...(data.getHeaders())
           }
         }).then(async (response) => {
-          let vkr = await response.text()
+          let vkr = await response.json()
 
           if (vkr) {
             if (data.custom) {

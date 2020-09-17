@@ -102,6 +102,7 @@ class LongPollConnection extends EventEmitter {
       self.lpConnection = fetch(server, params).catch((e) => {
         return reconnect()
       }).then(async (res) => {
+        if (!res) return false
         if (!res.json) return res
         res = await res.json()
 

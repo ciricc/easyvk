@@ -292,7 +292,6 @@ class EasyVK {
           try {
             res = JSON.parse(res)
           } catch (e) {
-            console.log(res)
             let _e = new Error('Invalid json sent')
             _e.type = 'invalid-json'
             return reject(_e)
@@ -648,7 +647,7 @@ class EasyVK {
 
           if (vkr) {
             let json = StaticMethods.checkJSONErrors(vkr, (e) => {
-              if (e.error_code === 100 && self.params.authType && self.params.authType === authTypes[1]) {
+              if ((e.error_code === 100 || e.error_code === 5) && self.params.authType && self.params.authType === authTypes[1]) {
                 return reject(new Error('Is not a group token! Or this token is not valid (expired)'))
               } else {
                 return reject(new Error('EasyVK can not recognize this token authentication type'))
@@ -957,7 +956,7 @@ export const classes = {
   EasyVKError: 'EasyVKError'
 }
 
-export const version = '2.8.0'
+export const version = '2.8.2'
 export const callbackAPI = new EasyVKCallbackAPI({})
 export const streamingAPI = new EasyVKStreamingAPI({})
 
