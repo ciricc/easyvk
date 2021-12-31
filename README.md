@@ -2,7 +2,9 @@
   <img alt="EasyVK logo" title="EasyVK can help you create applications on VKontakte API easy!" src="https://i.imgur.com/5P6VNOq.png" width="300"/>
 </p>
 
-# EasyVK (VKontakte API Manager) v2.0
+# EasyVK (VKontakte API Manager) v2.0 (DEPRECATED)
+
+## This package has been deprecated and will no longer be supported.
 
 This library helps you easily create a javascript application with VKontakte API!
 Official VK API: [vk.com/dev/](https://vk.com/dev/)
